@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "x-empty": "/components/x/empty"
+  },
+  "component": true
+}

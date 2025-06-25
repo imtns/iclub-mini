@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "widget-avatar": "/pages-sub/detail/widgets/WidgetAvatar",
+    "video-slider": "/pages-sub/detail/sections/components/VideoSlider"
+  }
+}

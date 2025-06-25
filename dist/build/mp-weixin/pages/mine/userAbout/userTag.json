@@ -1,0 +1,9 @@
+{
+  "backgroundTextStyle": "dark",
+  "navigationBarTitleText": "编辑标签",
+  "usingComponents": {
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

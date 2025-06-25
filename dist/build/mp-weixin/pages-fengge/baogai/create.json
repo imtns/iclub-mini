@@ -1,0 +1,15 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "ik-custom-header": "/components/common/custom-header",
+    "x-img": "/components/x/img",
+    "x-footer": "/components/x/footer",
+    "x-btn": "/components/x/btn",
+    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup",
+    "x-pop": "/components/x/pop",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup"
+  }
+}

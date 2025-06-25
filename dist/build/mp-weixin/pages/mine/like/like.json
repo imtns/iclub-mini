@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "赞与收藏",
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition",
+    "x-empty": "/components/x/empty",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "tabs": "/pages/mine/like/components/Tabs",
+    "list": "/pages/mine/like/components/List"
+  }
+}

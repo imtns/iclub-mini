@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "region-picker": "/components/address/region-picker"
+  }
+}

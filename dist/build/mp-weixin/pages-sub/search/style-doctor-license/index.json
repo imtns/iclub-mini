@@ -1,0 +1,15 @@
+{
+  "navigationBarTitleText": "风格美学医生认证查询",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "ik-custom-header": "/components/common/custom-header",
+    "x-loading": "/components/x/loading",
+    "x-empty": "/components/x/empty",
+    "x-img": "/components/x/img",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "query-bar": "/pages-sub/search/style-doctor-license/components/query-bar",
+    "result-pop": "/pages-sub/search/style-doctor-license/components/result"
+  }
+}

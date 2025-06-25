@@ -1,0 +1,1 @@
+<view class="x-section _div data-v-d10e1a00" style="{{'margin-top:'+($slots.title?'0':'24rpx')+';'}}"><slot name="title"></slot><block wx:if="{{$slots.form}}"><view class="data-v-d10e1a00"><slot name="form"></slot></view></block><slot name="footer"></slot></view>

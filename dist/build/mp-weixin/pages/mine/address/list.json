@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "我的地址",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "x-empty": "/components/x/empty",
+    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition",
+    "x-footer": "/components/x/footer",
+    "x-pop": "/components/x/pop",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

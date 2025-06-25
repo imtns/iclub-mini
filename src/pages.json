@@ -1,0 +1,45 @@
+{
+  "pages": [
+    {
+      "path": "pages/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages-sub",
+      "pages": [
+        {
+          "path": "ai-ceyan/index",
+          "style": {
+            "navigationBarTitleText": "AI测颈纹"
+          }
+        }
+      ]
+    }
+  ],
+
+  "sitemapLocation": "sitemap.json",
+
+  "globalStyle": {
+    "pageOrientation": "portrait",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "IMEIK 爱+",
+    "navigationBarTextStyle": "black",
+    "usingComponents": {
+      "t-captcha": "plugin://captcha/t-captcha"
+    }
+  },
+  "insetLoader": {
+    "config": {
+      "toast": "<x-toast ref='toast'></x-toast>",
+      "captcha": "<global-captcha ref='captcha'></global-captcha>",
+      "privacyPopup": "<global-privacy-popup ref='privacyComponent'></global-privacy-popup>"
+    },
+    "label": ["login", "captcha", "privacyPopup", "toast"],
+    "rootEle": ".*"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "usingComponents": {
+    "mp-html": "/uni_modules/mp-html/components/mp-html/mp-html",
+    "x-empty": "/components/x/empty",
+    "comment-list": "/pages-sub/detail/sections/components/CommentList"
+  }
+}

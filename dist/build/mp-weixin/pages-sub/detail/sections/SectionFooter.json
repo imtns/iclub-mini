@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "x-toast": "/components/x/toast"
+  },
+  "component": true
+}

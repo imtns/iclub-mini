@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "x-section": "/components/x/section",
+    "uni-forms": "/uni_modules/uni-forms/components/uni-forms/uni-forms",
+    "uni-forms-item": "/uni_modules/uni-forms/components/uni-forms-item/uni-forms-item",
+    "x-picker": "/components/x/picker",
+    "x-img": "/components/x/img",
+    "x-toast": "/components/x/toast"
+  },
+  "component": true
+}

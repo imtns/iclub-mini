@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition"
+  }
+}

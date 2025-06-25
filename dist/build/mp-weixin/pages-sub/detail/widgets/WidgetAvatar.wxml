@@ -1,0 +1,1 @@
+<view class="container _div data-v-c40add9a"><view data-event-opts="{{[['tap',[['handleClick',['$event']]]]]}}" class="header-info _div data-v-c40add9a" catchtap="__e"><image class="avatar data-v-c40add9a" src="{{logoInfo.header}}"></image>{{''+(logoInfo.name||'')+''}}</view></view>

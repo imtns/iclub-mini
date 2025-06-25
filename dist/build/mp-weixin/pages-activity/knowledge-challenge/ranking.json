@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "排行",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "ik-custom-header": "/components/common/custom-header",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "pop-rule": "/pages-activity/knowledge-challenge/components/PopRule"
+  }
+}

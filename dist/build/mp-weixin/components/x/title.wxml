@@ -1,0 +1,1 @@
+<view class="x-title _div data-v-1dec897a"><view class="title data-v-1dec897a">{{title}}</view><slot></slot></view>

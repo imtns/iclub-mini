@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "医生详情",
+  "usingComponents": {
+    "mp-html": "/uni_modules/mp-html/components/mp-html/mp-html",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup",
+    "l-painter": "/uni_modules/lime-painter/components/l-painter/l-painter"
+  },
+  "component": true
+}

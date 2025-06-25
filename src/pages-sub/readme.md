@@ -1,0 +1,3 @@
+不要加载其他第三放ui组件
+
+请用uni_modules里的组件，或者在components里自定义

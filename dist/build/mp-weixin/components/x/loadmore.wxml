@@ -1,0 +1,1 @@
+<view class="x-loadmore _div data-v-64feb46f"><block wx:if="{{loadmore&&!nomore}}"><view class="loadmore data-v-64feb46f"><image src="https://udstatic.imeik.com/pcUploads/1699437223744/Spinner-1s-200px%20(1).gif" class="data-v-64feb46f"></image>正在加载...</view></block><block wx:if="{{nomore}}"><view class="no-data no-more _div data-v-64feb46f">- 到底了 -</view></block></view>

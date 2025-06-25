@@ -1,0 +1,1 @@
+<view class="{{['x-footer','data-v-326240fc',(center)?'center':'',(flex)?'flex':'']}}" style="{{'background:'+(bg)+';'+('border-radius:'+(borderRadius)+';')+('color:'+(color)+';')}}" id="footer"><slot></slot></view>

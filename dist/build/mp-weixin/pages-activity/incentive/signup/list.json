@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "报名记录",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "x-empty": "/components/x/empty",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

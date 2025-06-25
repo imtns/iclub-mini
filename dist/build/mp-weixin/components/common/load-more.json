@@ -1,0 +1,9 @@
+{
+  "componentGenerics": {
+    "scoped-slots-top": true
+  },
+  "component": true,
+  "usingComponents": {
+    "x-spin": "/components/x/spin"
+  }
+}

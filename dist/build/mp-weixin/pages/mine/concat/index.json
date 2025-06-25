@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "联系我们",
+  "usingComponents": {
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

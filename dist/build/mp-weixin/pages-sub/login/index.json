@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "ik-custom-header": "/components/common/custom-header",
+    "x-loading": "/components/x/loading",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "loginform": "plugin://myPlugin/loginform"
+  }
+}

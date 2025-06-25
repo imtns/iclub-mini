@@ -1,0 +1,1 @@
+<view class="form-view-item data-v-b7b9da72"><text data-event-opts="{{[['longpress',[['onLongPressed',[$root.m0]]]]]}}" bindlongpress="__e" class="data-v-b7b9da72">{{$root.m1}}</text></view>

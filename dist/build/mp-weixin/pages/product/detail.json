@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "品牌详情",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "x-empty": "/components/x/empty",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "banner": "/pages/product/components/Banner",
+    "waterfall": "/components/waterfall/Waterfall"
+  }
+}

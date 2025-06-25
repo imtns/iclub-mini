@@ -1,0 +1,13 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "我的二维码",
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "ik-custom-header": "/components/common/custom-header",
+    "x-btn": "/components/x/btn",
+    "l-painter": "/uni_modules/lime-painter/components/l-painter/l-painter",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

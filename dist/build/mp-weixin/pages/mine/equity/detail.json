@@ -1,0 +1,15 @@
+{
+  "backgroundTextStyle": "dark",
+  "navigationBarTitleText": "权益详情",
+  "usingComponents": {
+    "x-content": "/components/x/content",
+    "x-banner": "/components/x/banner",
+    "mp-html": "/uni_modules/mp-html/components/mp-html/mp-html",
+    "x-footer": "/components/x/footer",
+    "x-btn": "/components/x/btn",
+    "x-empty": "/components/x/empty",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup"
+  }
+}

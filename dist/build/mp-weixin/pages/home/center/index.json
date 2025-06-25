@@ -1,0 +1,10 @@
+{
+  "component": true,
+  "usingComponents": {
+    "x-wrapper": "/components/x/wrapper",
+    "x-loading": "/components/x/loading",
+    "ik-custom-header": "/components/common/custom-header",
+    "widget-user-info": "/pages/home/center/widgets/WidgetUserInfo",
+    "widget-point-check-in": "/pages/home/center/widgets/WidgetPointCheckIn"
+  }
+}

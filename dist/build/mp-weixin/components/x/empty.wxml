@@ -1,0 +1,1 @@
+<view class="empty c" style="{{'top:'+(top)+';'}}"><image style="{{'width:'+(imgWidth+'rpx')+';'}}" src="{{img}}" mode="widthFix" alt></image><view class="text" style="{{'font-size:'+(fontSize)+';'+('color:'+(textColor)+';')}}"><slot></slot></view></view>

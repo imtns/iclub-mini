@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "x-input": "/components/x/input",
+    "x-empty": "/components/x/empty"
+  }
+}

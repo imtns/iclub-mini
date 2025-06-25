@@ -1,0 +1,21 @@
+{
+  "navigationBarTitleText": "核销福利金",
+  "usingComponents": {
+    "x-wrapper": "/components/x/wrapper",
+    "x-section": "/components/x/section",
+    "x-title": "/components/x/title",
+    "uni-forms": "/uni_modules/uni-forms/components/uni-forms/uni-forms",
+    "uni-forms-item": "/uni_modules/uni-forms/components/uni-forms-item/uni-forms-item",
+    "x-input": "/components/x/input",
+    "uni-icons": "/uni_modules/uni-icons/components/uni-icons/uni-icons",
+    "x-picker": "/components/x/picker",
+    "x-uploader": "/components/x/uploader",
+    "x-footer": "/components/x/footer",
+    "x-btn": "/components/x/btn",
+    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "treat-site-list": "/pages/mine/benefits/widgets/treatsite-list"
+  }
+}

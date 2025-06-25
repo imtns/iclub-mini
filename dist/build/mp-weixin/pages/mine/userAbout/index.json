@@ -1,0 +1,12 @@
+{
+  "backgroundTextStyle": "dark",
+  "navigationBarTitleText": "个人信息",
+  "usingComponents": {
+    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "pic-popup": "/pages/mine/userAbout/components/PicPopup",
+    "name-change": "/pages/mine/userAbout/components/NameChange"
+  }
+}

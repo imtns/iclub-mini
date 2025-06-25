@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "x-spin": "/components/x/spin",
+    "ik-custom-header": "/components/common/custom-header",
+    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

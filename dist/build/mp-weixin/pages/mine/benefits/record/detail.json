@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "核销福利金详情",
+  "usingComponents": {
+    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition",
+    "x-img": "/components/x/img",
+    "x-footer": "/components/x/footer",
+    "x-btn": "/components/x/btn",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast"
+  }
+}

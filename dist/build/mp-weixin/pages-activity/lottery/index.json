@@ -1,0 +1,13 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "x-wrapper": "/components/x/wrapper",
+    "ik-custom-header": "/components/common/custom-header",
+    "x-footer": "/components/x/footer",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "rule-pop": "/pages-activity/lottery/pop/RulePop",
+    "join-pop": "/pages-activity/lottery/pop/JoinPop"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "component": true,
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "ik-custom-header": "/components/common/custom-header",
+    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup",
+    "widget-user-info": "/pages/home/home/widgets/WidgetUserInfo",
+    "widget-rotate-brand": "/pages/home/home/widgets/WidgetRotateBrand",
+    "widget-search": "/pages/home/home/widgets/WidgetSearch",
+    "widget-banner": "/pages/home/home/widgets/WidgetBanner",
+    "widget-waterfall": "/pages/home/home/widgets/WidgetWaterfall"
+  }
+}

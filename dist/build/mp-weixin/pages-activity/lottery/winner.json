@@ -1,0 +1,14 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "x-wrapper": "/components/x/wrapper",
+    "ik-custom-header": "/components/common/custom-header",
+    "x-loading": "/components/x/loading",
+    "x-img": "/components/x/img",
+    "x-loadmore": "/components/x/loadmore",
+    "x-empty": "/components/x/empty",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup"
+  }
+}

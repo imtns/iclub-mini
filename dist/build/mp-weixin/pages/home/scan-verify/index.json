@@ -1,0 +1,8 @@
+{
+  "component": true,
+  "usingComponents": {
+    "ik-custom-header": "/components/common/custom-header",
+    "x-toast": "/components/x/toast",
+    "product-desc": "/pages/home/scan-verify/components/ProductDesc"
+  }
+}

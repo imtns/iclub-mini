@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "福利金使用记录",
+  "usingComponents": {
+    "x-placeholder": "/components/x/placeholder",
+    "x-loading": "/components/x/loading",
+    "x-empty": "/components/x/empty",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "item": "/pages/mine/benefits/record/widgets/Item"
+  }
+}

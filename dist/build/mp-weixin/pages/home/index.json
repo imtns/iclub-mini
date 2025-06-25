@@ -1,0 +1,17 @@
+{
+  "navigationStyle": "custom",
+  "backgroundColor": "#f9f9f9",
+  "usingComponents": {
+    "x-wrapper": "/components/x/wrapper",
+    "global-tabbar": "/components/global/tabbar",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "x-toast": "/components/x/toast",
+    "s-datepicker": "/components/datetime-picker/uni-datetime-picker",
+    "home-page": "/pages/home/home/index",
+    "brand-page": "/pages/home/brand/index",
+    "scan-verify-page": "/pages/home/scan-verify/index",
+    "points-page": "/pages/home/points/index",
+    "center-page": "/pages/home/center/index"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "navigationBarTitleText": "填写注射信息",
+  "usingComponents": {
+    "x-loading": "/components/x/loading",
+    "x-wrapper": "/components/x/wrapper",
+    "x-section": "/components/x/section",
+    "uni-easyinput": "/uni_modules/uni-easyinput/components/uni-easyinput/uni-easyinput",
+    "x-footer": "/components/x/footer",
+    "x-btn": "/components/x/btn",
+    "x-pop": "/components/x/pop",
+    "x-toast": "/components/x/toast",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
+    "address-info": "/pages-activity/incentive/injection-info/components/Address",
+    "section-basic": "/pages-activity/incentive/injection-info/sections/SectionBasic",
+    "section-consumption": "/pages-activity/incentive/injection-info/sections/SectionConsumption",
+    "section-consumption-voucher": "/pages-activity/incentive/injection-info/sections/SectionConsumptionVoucher",
+    "section-prize-pick": "/pages-activity/incentive/injection-info/sections/SectionPrizePick"
+  }
+}
