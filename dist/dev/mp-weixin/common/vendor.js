@@ -1254,7 +1254,7 @@ function initData(vueOptions, context) {
     try {
       data = data.call(context); // 支持 Vue.prototype 上挂的数据
     } catch (e) {
-      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.warn('根据 Vue 的 data 函数初始化小程序 data 失败，请尽量确保 data 函数中不访问 vm 对象，否则可能影响首次数据渲染速度。', data);
       }
     }
@@ -8205,7 +8205,7 @@ function type(obj) {
 
 function flushCallbacks$1(vm) {
     if (vm.__next_tick_callbacks && vm.__next_tick_callbacks.length) {
-        if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+        if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:flushCallbacks[' + vm.__next_tick_callbacks.length + ']');
@@ -8226,14 +8226,14 @@ function nextTick$1(vm, cb) {
     //1.nextTick 之前 已 setData 且 setData 还未回调完成
     //2.nextTick 之前存在 render watcher
     if (!vm.__next_tick_pending && !hasRenderWatcher(vm)) {
-        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:nextVueTick');
         }
         return nextTick(cb, vm)
     }else{
-        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance$1 = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance$1.is || mpInstance$1.route) + '][' + vm._uid +
                 ']:nextMPTick');
@@ -8319,7 +8319,7 @@ var patch = function(oldVnode, vnode) {
     });
     var diffData = this.$shouldDiffData === false ? data : diff(data, mpData);
     if (Object.keys(diffData).length) {
-      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + this._uid +
           ']差量更新',
           JSON.stringify(diffData));
@@ -8741,7 +8741,9 @@ internalMixin(Vue);
 /* 6 */,
 /* 7 */,
 /* 8 */,
-/* 9 */
+/* 9 */,
+/* 10 */,
+/* 11 */
 /*!**********************************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/runtime/componentNormalizer.js ***!
   \**********************************************************************************************************/
@@ -8869,7 +8871,7 @@ function normalizeComponent (
 
 
 /***/ }),
-/* 10 */
+/* 12 */
 /*!****************************!*\
   !*** ./src/store/store.js ***!
   \****************************/
@@ -8884,9 +8886,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
-var _vuex = _interopRequireDefault(__webpack_require__(/*! vuex */ 11));
-var _wx = __webpack_require__(/*! @/http/wx.js */ 12);
-var _util = __webpack_require__(/*! @/utils/util */ 14);
+var _vuex = _interopRequireDefault(__webpack_require__(/*! vuex */ 13));
+var _wx = __webpack_require__(/*! @/http/wx.js */ 14);
+var _util = __webpack_require__(/*! @/utils/util */ 16);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 _vue.default.use(_vuex.default);
 const store = new _vuex.default.Store({
@@ -9044,7 +9046,7 @@ var _default = store;
 exports.default = _default;
 
 /***/ }),
-/* 11 */
+/* 13 */
 /*!**************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vuex3/dist/vuex.common.js ***!
   \**************************************************************************************/
@@ -10300,7 +10302,7 @@ module.exports = index_cjs;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2)))
 
 /***/ }),
-/* 12 */
+/* 14 */
 /*!************************!*\
   !*** ./src/http/wx.js ***!
   \************************/
@@ -10309,7 +10311,7 @@ module.exports = index_cjs;
 
 const {
   request
-} = __webpack_require__(/*! ./request */ 13);
+} = __webpack_require__(/*! ./request */ 15);
 module.exports = {
   // 获取用户信息
   userInfo: data => request('/iclub/api/user/queryUserInfo', 'post', data, true, true),
@@ -10327,7 +10329,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 13 */
+/* 15 */
 /*!*****************************!*\
   !*** ./src/http/request.js ***!
   \*****************************/
@@ -10337,18 +10339,18 @@ module.exports = {
 "use strict";
 /* WEBPACK VAR INJECTION */(function(uni) {
 
-var _util = __webpack_require__(/*! @/utils/util */ 14);
-var _index = __webpack_require__(/*! @/utils/index */ 17);
-var _tools = __webpack_require__(/*! @/utils/tools */ 18);
-var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 10));
-var _sm = __webpack_require__(/*! @/utils/sm4 */ 19);
+var _util = __webpack_require__(/*! @/utils/util */ 16);
+var _index = __webpack_require__(/*! @/utils/index */ 19);
+var _tools = __webpack_require__(/*! @/utils/tools */ 20);
+var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 12));
+var _sm = __webpack_require__(/*! @/utils/sm4 */ 21);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 // 配置专属域名
 
 const {
   baseNewUrl,
   baseIclubUrl
-} = __webpack_require__(/*! ./env */ 16);
+} = __webpack_require__(/*! ./env */ 18);
 module.exports = {
   /**
    *
@@ -10361,18 +10363,18 @@ module.exports = {
    * @param {*} hideLoading
    * @returns
    */
-  request: function (url, method = 'GET', data = {}, isMessage = true, isJson = false, noToast = false, hideLoading = true, headers = {}) {
-    const json = isJson ? 'application/json' : 'application/x-www-form-urlencoded';
+  request: function (url, method = "GET", data = {}, isMessage = true, isJson = false, noToast = false, hideLoading = true, headers = {}) {
+    const json = isJson ? "application/json" : "application/x-www-form-urlencoded";
     // iclub的请求走另外的接口域名
-    const base = url.includes('/iclub/') ? baseIclubUrl : baseNewUrl;
-    const fullUrl = url.includes('http') ? url : `${base}${url}`;
-    let token = (0, _util.lsGet)('iclubUserToken3');
+    const base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
+    const fullUrl = url.includes("http") ? url : `${base}${url}`;
+    let token = (0, _util.lsGet)("iclubUserToken3");
 
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       // 不需要登录就可以调用的接口白名单
-      const whiteList = ['/biz-passport/passport/login/getOpenId', 'iclub/api/operate/queryOperate', 'iclub/api/authenticity/queryAuthenticity', 'qxcollege/api/dictionary/tree', 'qxcollege/api/buryPoint/click', 'iclub/api/content/info', 'iclub/api/operate/queryOperate', 'iclub/api/home/listhomeContent', 'iclub/api/product/list', 'iclub/api/product/info', 'qxcollege/api/fileUpload/findAliToken', 'iclub/api/user/loginForMiniProgram', 'passport/api/sso/openid', 'passport/api/user/uploadUserInfo', '/iclub/api/content/listProductContent', '/iclub/api/goods/list', '/iclub/api/content/info2', '/iclub/api/goddess/queryActivityInfo', '/passport/api/sso/sendSmsVerCode', '/passport/api/sso/loginForMiniProgramForNewUser', 'loginByMiniApp', '/iclub/api/activity/ehi/getEhiGameInfo', '/qxcollege/admin/city/tree'];
-      if (!token && !whiteList.find(i => url.includes(i)) && url.indexOf('openApi') === -1) {
+      const whiteList = ["http", "/biz-passport/passport/login/getOpenId", "iclub/api/operate/queryOperate", "iclub/api/authenticity/queryAuthenticity", "qxcollege/api/dictionary/tree", "qxcollege/api/buryPoint/click", "iclub/api/content/info", "iclub/api/operate/queryOperate", "iclub/api/home/listhomeContent", "iclub/api/product/list", "iclub/api/product/info", "qxcollege/api/fileUpload/findAliToken", "iclub/api/user/loginForMiniProgram", "passport/api/sso/openid", "passport/api/user/uploadUserInfo", "/iclub/api/content/listProductContent", "/iclub/api/goods/list", "/iclub/api/content/info2", "/iclub/api/goddess/queryActivityInfo", "/passport/api/sso/sendSmsVerCode", "/passport/api/sso/loginForMiniProgramForNewUser", "loginByMiniApp", "/iclub/api/activity/ehi/getEhiGameInfo", "/qxcollege/admin/city/tree"];
+      if (!token && !whiteList.find(i => url.includes(i)) && url.indexOf("openApi") === -1) {
         resolve({
           data: {}
         });
@@ -10382,26 +10384,26 @@ module.exports = {
       // 把小程序版本号拼接到query里传给接口
       const _version = (0, _index.getCurrentAppVersion)();
       // 请求头带上渠道code
-      const channel = getApp() && getApp().globalData && getApp().globalData.userSource || '';
-      const encryptKey = (0, _util.lsGet)('encryptKey');
-      const encryptIV = (0, _util.lsGet)('encryptIV');
-      const SecurityVersion = (0, _util.lsGet)('encryptVersion');
+      const channel = getApp() && getApp().globalData && getApp().globalData.userSource || "";
+      const encryptKey = (0, _util.lsGet)("encryptKey");
+      const encryptIV = (0, _util.lsGet)("encryptIV");
+      const SecurityVersion = (0, _util.lsGet)("encryptVersion");
       const uniqueFlag = (0, _tools.getUniqID)();
-      console.log('🚀 ~ returnnewPromise ~ uniqueFlag:', uniqueFlag);
+      console.log("🚀 ~ returnnewPromise ~ uniqueFlag:", uniqueFlag);
       uni.request({
-        url: fullUrl + (fullUrl.includes('?') ? '&' : '?') + '_version=' + _version,
+        url: fullUrl + (fullUrl.includes("?") ? "&" : "?") + "_version=" + _version,
         timeout: 30000,
         method,
         data: (0, _tools.sortObjectKeys)(data),
         header: {
           ...headers,
-          'Content-type': json,
+          "Content-type": json,
           Authorization: token,
           channel: channel,
-          'business-sys': 'iclub',
-          'business-app': 'iclub',
-          Ticket: (0, _util.lsGet)('ticket'),
-          app: 'IClub',
+          "business-sys": "iclub",
+          "business-app": "iclub",
+          Ticket: (0, _util.lsGet)("ticket"),
+          app: "IClub",
           SecurityVerify: encryptKey && new _sm.SM4Util().encryptCustom_CBC(JSON.stringify({
             uniqueFlag,
             callTime: Date.now(),
@@ -10411,14 +10413,14 @@ module.exports = {
           SecurityVersion
         },
         success(res) {
-          console.log('%c%s', 'color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;', ' 出参明细：', res);
+          console.log("%c%s", "color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;", " 出参明细：", res);
 
           // 新的token
-          if (res.header && res.header['x-imeik-refreshToken']) {
-            (0, _util.ls)('iclubUserToken3', res.header['x-imeik-refreshToken']);
+          if (res.header && res.header["x-imeik-refreshToken"]) {
+            (0, _util.ls)("iclubUserToken3", res.header["x-imeik-refreshToken"]);
           }
           function isObject(value) {
-            return typeof value === 'object' && value !== null;
+            return typeof value === "object" && value !== null;
           }
           if (res.data && isObject(res.data)) {
             // 解密
@@ -10426,7 +10428,7 @@ module.exports = {
             return;
           }
           // 请求成功，清除ticket
-          (0, _util.lsDel)('ticket');
+          (0, _util.lsDel)("ticket");
           if (res.data.code === 10000) {
             const pages = getCurrentPages().reverse();
             const pageUrl = pages[0] && pages[0].route;
@@ -10443,10 +10445,10 @@ module.exports = {
             }
           } else if (res.data.code === 300) {
             // token 错误、过期
-            uni.$emit('toast', '登录状态失效\r\n请重新登录');
+            uni.$emit("toast", "登录状态失效\r\n请重新登录");
             uni.clearLogin(); // 清除token
-            _store.default.commit('setIsLogin', false);
-            _store.default.commit('setTodayCheckIn', false);
+            _store.default.commit("setIsLogin", false);
+            _store.default.commit("setTodayCheckIn", false);
 
             // 刷新当前页面，重新登录
             setTimeout(() => {
@@ -10454,21 +10456,21 @@ module.exports = {
               reject();
             }, 2000);
           } else {
-            const msg = res.data && res.data.message || '接口问题，请检查';
+            const msg = res.data && res.data.message || "接口问题，请检查";
             // 有些业务自己处理错误信息，不需要这里toast
             if (!noToast) {
               setTimeout(() => {
-                uni.$emit('toast', msg);
+                uni.$emit("toast", msg);
               }, 300);
             }
             reject(res.data);
           }
         },
         fail(err) {
-          console.log('请求失败，请检查网络', err);
-          uni.$emit('toast', '请求失败，请检查网络');
+          console.log("请求失败，请检查网络", err);
+          uni.$emit("toast", "请求失败，请检查网络");
           // eslint-disable-next-line prefer-promise-reject-errors
-          reject('请求失败，请检查网络');
+          reject("请求失败，请检查网络");
         }
       });
     });
@@ -10477,7 +10479,7 @@ module.exports = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-/* 14 */
+/* 16 */
 /*!***************************!*\
   !*** ./src/utils/util.js ***!
   \***************************/
@@ -10487,10 +10489,10 @@ module.exports = {
 "use strict";
 /* WEBPACK VAR INJECTION */(function(uni) {
 
-var _validate = __webpack_require__(/*! ./validate */ 15);
+var _validate = __webpack_require__(/*! ./validate */ 17);
 const {
   env
-} = __webpack_require__(/*! @/http/env */ 16);
+} = __webpack_require__(/*! @/http/env */ 18);
 const formatTime = date => {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
@@ -10766,7 +10768,7 @@ module.exports = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-/* 15 */
+/* 17 */
 /*!*******************************!*\
   !*** ./src/utils/validate.js ***!
   \*******************************/
@@ -10798,7 +10800,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 18 */
 /*!*************************!*\
   !*** ./src/http/env.js ***!
   \*************************/
@@ -10809,16 +10811,16 @@ const conf = {
   // 环境
   env: "test",
   // 测试环境跳 体验版
-  envVersion: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : "trial",
+  envVersion: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION,
   // 接口调用API地址
-  baseNewUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : "https://user-test.imeik.com",
+  baseNewUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API,
   // iclub接口地址
-  baseIclubUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : "https://iclub-backend-test.imeik.com"
+  baseIclubUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_ICLUB
 };
 module.exports = conf;
 
 /***/ }),
-/* 17 */
+/* 19 */
 /*!****************************!*\
   !*** ./src/utils/index.js ***!
   \****************************/
@@ -10839,7 +10841,7 @@ exports.getCurrentAppVersion = getCurrentAppVersion;
 exports.mergeObject = mergeObject;
 exports.navigateBack = navigateBack;
 exports.pageOptionsToQuery = pageOptionsToQuery;
-var _util = __webpack_require__(/*! @/utils/util */ 14);
+var _util = __webpack_require__(/*! @/utils/util */ 16);
 // 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
 
 function getCurrentAppVersion() {
@@ -10949,7 +10951,7 @@ function base6ImageToTempPath(data, opt) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-/* 18 */
+/* 20 */
 /*!****************************!*\
   !*** ./src/utils/tools.js ***!
   \****************************/
@@ -11179,7 +11181,7 @@ exports.deepClone = deepClone;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-/* 19 */
+/* 21 */
 /*!********************************!*\
   !*** ./src/utils/sm4/index.js ***!
   \********************************/
@@ -11193,7 +11195,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.SM4Util = void 0;
-var _base = _interopRequireDefault(__webpack_require__(/*! ./base64 */ 24));
+var _base = _interopRequireDefault(__webpack_require__(/*! ./base64 */ 26));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 /**
  * 调用方法：
@@ -11670,10 +11672,10 @@ const SM4Util = function (secretKey, iv) {
   };
 };
 exports.SM4Util = SM4Util;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/buffer/index.js */ 20).Buffer))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/buffer/index.js */ 22).Buffer))
 
 /***/ }),
-/* 20 */
+/* 22 */
 /*!**************************************!*\
   !*** ./node_modules/buffer/index.js ***!
   \**************************************/
@@ -11691,9 +11693,9 @@ exports.SM4Util = SM4Util;
 
 
 
-var base64 = __webpack_require__(/*! base64-js */ 21)
-var ieee754 = __webpack_require__(/*! ieee754 */ 22)
-var isArray = __webpack_require__(/*! isarray */ 23)
+var base64 = __webpack_require__(/*! base64-js */ 23)
+var ieee754 = __webpack_require__(/*! ieee754 */ 24)
+var isArray = __webpack_require__(/*! isarray */ 25)
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -13474,7 +13476,7 @@ function isnan (val) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 2)))
 
 /***/ }),
-/* 21 */
+/* 23 */
 /*!*****************************************!*\
   !*** ./node_modules/base64-js/index.js ***!
   \*****************************************/
@@ -13635,7 +13637,7 @@ function fromByteArray (uint8) {
 
 
 /***/ }),
-/* 22 */
+/* 24 */
 /*!***************************************!*\
   !*** ./node_modules/ieee754/index.js ***!
   \***************************************/
@@ -13730,7 +13732,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 
 /***/ }),
-/* 23 */
+/* 25 */
 /*!***************************************!*\
   !*** ./node_modules/isarray/index.js ***!
   \***************************************/
@@ -13745,7 +13747,7 @@ module.exports = Array.isArray || function (arr) {
 
 
 /***/ }),
-/* 24 */
+/* 26 */
 /*!*********************************!*\
   !*** ./src/utils/sm4/base64.js ***!
   \*********************************/
@@ -13834,7 +13836,7 @@ var require;var require;/* eslint-disable */
 });
 
 /***/ }),
-/* 25 */
+/* 27 */
 /*!****************************!*\
   !*** ./src/store/hooks.js ***!
   \****************************/
@@ -13914,7 +13916,7 @@ var _default = {
 exports.default = _default;
 
 /***/ }),
-/* 26 */
+/* 28 */
 /*!***************************************************************!*\
   !*** ./node_modules/spa-custom-hooks/lib/spa-custom-hooks.js ***!
   \***************************************************************/
@@ -13925,7 +13927,7 @@ exports.default = _default;
 
 
 /***/ }),
-/* 27 */
+/* 29 */
 /*!**********************************!*\
   !*** ./src/polyfill/polyfill.js ***!
   \**********************************/
@@ -13948,7 +13950,7 @@ exports.default = _default;
  *
  * Author: 375890534@qq.com
  */
-const base64Binary = __webpack_require__(/*! ./base64Binary */ 28);
+const base64Binary = __webpack_require__(/*! ./base64Binary */ 30);
 
 /**
  * 获取guid
@@ -14961,7 +14963,7 @@ module.exports = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-/* 28 */
+/* 30 */
 /*!**************************************!*\
   !*** ./src/polyfill/base64Binary.js ***!
   \**************************************/
@@ -15064,8 +15066,6 @@ module.exports = {
 };
 
 /***/ }),
-/* 29 */,
-/* 30 */,
 /* 31 */,
 /* 32 */,
 /* 33 */,
@@ -15096,7 +15096,9 @@ module.exports = {
 /* 58 */,
 /* 59 */,
 /* 60 */,
-/* 61 */
+/* 61 */,
+/* 62 */,
+/* 63 */
 /*!*************************************************************************************!*\
   !*** ./src/uni_modules/uni-transition/components/uni-transition/createAnimation.js ***!
   \*************************************************************************************/

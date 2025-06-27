@@ -1,10 +1,13 @@
 <script>
 export default {
   data() {
-    return {}
+    return {};
   },
   onLaunch(options) {},
   onShow(options) {},
-  onHide() {}
-}
+  onHide() {},
+};
 </script>
+<style lang="scss">
+@import "./uni.scss";
+</style>
