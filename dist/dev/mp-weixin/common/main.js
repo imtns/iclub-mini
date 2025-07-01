@@ -16,9 +16,22 @@ var _hooks = _interopRequireDefault(__webpack_require__(/*! ./store/hooks */ 27)
 var _spaCustomHooks = _interopRequireDefault(__webpack_require__(/*! spa-custom-hooks */ 28));
 var _polyfill = _interopRequireDefault(__webpack_require__(/*! ./polyfill/polyfill */ 29));
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 // @ts-ignore
 wx.__webpack_require_UNI_MP_PLUGIN__ = __webpack_require__;
+// 全局分享
+
+// vuex store
+
+// 引入自定义的具体钩子实现
+
+// 自定义全局钩子，需结合store使用
+
+// Api函数polyfill（目前为实验版本，如不需要，可删除！）';
+
+// import MixinToken from './mixin/token'
+// import Tabbar from './custom-tab-bar'
+
 // import uView from 'uview-ui'
 // 埋点上报
 
@@ -111,7 +124,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _default = {
+var _default = exports.default = {
   data() {
     return {};
   },
@@ -119,7 +132,6 @@ var _default = {
   onShow(options) {},
   onHide() {}
 };
-exports.default = _default;
 
 /***/ }),
 /* 9 */

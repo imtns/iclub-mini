@@ -19,6 +19,26 @@ module.exports = {
   testAPI1: data => request('https://xxxx.com', 'post', data)
 };
 
+/***/ }),
+
+/***/ 44:
+/*!*********************************************!*\
+  !*** ./src/pages-sub/ai-ceyan/tool/tool.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = exports.default = {
+  ASSETSURL: 'https://cdn1.vrupup.com/s/1549/img/'
+};
+
 /***/ })
 
 }]);

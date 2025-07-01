@@ -13,7 +13,7 @@
 __webpack_require__(/*! uni-pages */ 5);
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
 var _index = _interopRequireDefault(__webpack_require__(/*! ./pages/index.vue */ 32));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 // @ts-ignore
 wx.__webpack_require_UNI_MP_PLUGIN__ = __webpack_require__;
 createPage(_index.default);
@@ -150,7 +150,7 @@ exports.default = void 0;
 //
 //
 //
-var _default = {
+var _default = exports.default = {
   data() {
     return {};
   },
@@ -162,7 +162,6 @@ var _default = {
     }
   }
 };
-exports.default = _default;
 
 /***/ })
 

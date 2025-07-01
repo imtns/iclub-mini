@@ -14,15 +14,14 @@
         {
           "path": "ai-ceyan/index",
           "style": {
-            "navigationBarTitleText": "AI测颈纹"
+            "navigationBarTitleText": "AI测颈纹",
+            "navigationStyle": "custom"
           }
         }
       ]
     }
   ],
-
   "sitemapLocation": "sitemap.json",
-
   "globalStyle": {
     "pageOrientation": "portrait",
     "backgroundTextStyle": "light",
@@ -39,7 +38,12 @@
       "captcha": "<global-captcha ref='captcha'></global-captcha>",
       "privacyPopup": "<global-privacy-popup ref='privacyComponent'></global-privacy-popup>"
     },
-    "label": ["login", "captcha", "privacyPopup", "toast"],
+    "label": [
+      "login",
+      "captcha",
+      "privacyPopup",
+      "toast"
+    ],
     "rootEle": ".*"
   }
 }
