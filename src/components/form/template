@@ -1,0 +1,92 @@
+<template>
+  <!--  -->
+  <view class="ik-form-item" :class="'ik-form-pos-'+(field.labelPosition||'left')">
+    <view class="ik-form-row">
+      <uni-forms-item class="ik-form-wrap" :label="field.label" :name="field.code">
+        <!-- 查看状态 -->
+        <form-view-item v-if="field.isView" :format-value="formatValue" :model="model" :field="field"></form-view-item>
+        <!-- 编辑状态 -->
+        <uni-easyinput v-else v-model="model[field.code]" :type="field.type || 'text'"
+                    :placeholder="`请输入${field.label}`" @input="handleInput" :disabled="field.disabled || false" />
+      </uni-forms-item>
+
+      <image v-if="!field.isView && field.labelPosition!=='top'" class="narrow" src="https://udstatic.imeik.com/pcUploads/1651050347935_wode_icon_right%402x"></image>
+    </view>
+
+    <!-- 提示信息 -->
+    <view class="extraClass" v-if="field.props && field.props.extra">
+      {{ field.props.extra }}
+    </view>
+  </view>
+</template>
+
+<script>
+import { getCommonRules } from './util'
+export default {
+  name: "",
+  props: {
+    // 配置项
+    field: {
+      type: Object,
+      default: () => {}
+    },
+    // 绑定的model
+    model: {
+      type: Object,
+      default: () => {}
+    }
+  },
+  created() {
+    this.setDefaultValue()
+    this.setFieldRule()
+  },
+  methods: {
+    // 设置默认值
+    setDefaultValue() {
+      // todo
+    },
+
+    // 校验规则
+    setFieldRule() {
+      const props = this.field.props || {}
+      const rules = getCommonRules(this.field)
+
+      // 字数范围校验
+      if (typeof props.min !== 'undefined' && typeof props.max !== 'undefined') {
+        const m = props.min
+        const n = props.max
+        if (m < n) {
+          rules.push({
+            pattern: new RegExp(`^[\\s\\S]{${m},${n}}$`),
+            message: `请输入${m}到${n}个字符`
+          })
+        } else if (m === n) {
+          rules.push({
+            pattern: new RegExp(`^[\\s\\S]{${m},${n}}$`),
+            message: `请输入${m}个字符`
+          })
+        }
+      }
+
+      // emit到父组件 - 更新校验规则
+      this.$emit('updateRules', this.field.code, rules)
+    },
+
+    // 输入事件 - 需要通过emit来更新父组件的值
+    handleInput() {
+      this.$emit('update:model', this.model)
+    },
+
+    // 详情展示
+    formatValue(model, field) {
+      const val = model[field.code]
+
+      return `${val}`
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+  @import "./style.scss";
+</style>

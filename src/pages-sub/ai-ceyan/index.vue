@@ -9,10 +9,12 @@
         <view v-for="item in 60" :key="item">可滚动内容 {{ item }}</view>
       </scroll-view>
     </uni-drawer>
+    <button @click="toast">Toast提示， 页面toast不要用wx.showLoading，要用这个，页面添加x-toast 标签</button>
     <button @click="open">打开弹窗</button>
     <uni-popup ref="popup" border-radius="10px 10px 0 0">
       <div style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">这是弹窗</div>
     </uni-popup>
+    <x-toast ref="toast"/>
   </view>
 </template>
 
@@ -25,6 +27,9 @@ export default {
     }
   },
   methods: {
+    toast() {
+      this.$refs.toast.show('提示信息')
+    },
     async TestAPI() {
       try {
         const res = await testAPI()

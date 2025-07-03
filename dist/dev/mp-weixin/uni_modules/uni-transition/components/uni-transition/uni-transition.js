@@ -1,6 +1,6 @@
 (global["webpackJsonp"] = global["webpackJsonp"] || []).push([["uni_modules/uni-transition/components/uni-transition/uni-transition"],{
 
-/***/ 58:
+/***/ 72:
 /*!*************************************************************************************!*\
   !*** ./src/uni_modules/uni-transition/components/uni-transition/uni-transition.vue ***!
   \*************************************************************************************/
@@ -9,8 +9,8 @@
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./uni-transition.vue?vue&type=template&id=6369f8c4& */ 59);
-/* harmony import */ var _uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./uni-transition.vue?vue&type=script&lang=js& */ 61);
+/* harmony import */ var _uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./uni-transition.vue?vue&type=template&id=6369f8c4& */ 73);
+/* harmony import */ var _uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./uni-transition.vue?vue&type=script&lang=js& */ 75);
 /* harmony reexport (unknown) */ for(var __WEBPACK_IMPORT_KEY__ in _uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__) if(["default"].indexOf(__WEBPACK_IMPORT_KEY__) < 0) (function(key) { __webpack_require__.d(__webpack_exports__, key, function() { return _uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__[key]; }) }(__WEBPACK_IMPORT_KEY__));
 /* harmony import */ var _node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/runtime/componentNormalizer.js */ 11);
 
@@ -39,7 +39,7 @@ component.options.__file = "uni_modules/uni-transition/components/uni-transition
 
 /***/ }),
 
-/***/ 59:
+/***/ 73:
 /*!********************************************************************************************************************!*\
   !*** ./src/uni_modules/uni-transition/components/uni-transition/uni-transition.vue?vue&type=template&id=6369f8c4& ***!
   \********************************************************************************************************************/
@@ -48,7 +48,7 @@ component.options.__file = "uni_modules/uni-transition/components/uni-transition
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_15_0_node_modules_dcloudio_webpack_uni_mp_loader_lib_template_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_uni_app_loader_page_meta_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--15-0!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/template.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-uni-app-loader/page-meta.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!../../../../../node_modules/vue-inset-loader!./uni-transition.vue?vue&type=template&id=6369f8c4& */ 60);
+/* harmony import */ var _node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_15_0_node_modules_dcloudio_webpack_uni_mp_loader_lib_template_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_uni_app_loader_page_meta_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--15-0!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/template.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-uni-app-loader/page-meta.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!../../../../../node_modules/vue-inset-loader!./uni-transition.vue?vue&type=template&id=6369f8c4& */ 74);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_15_0_node_modules_dcloudio_webpack_uni_mp_loader_lib_template_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_uni_app_loader_page_meta_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__["render"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_15_0_node_modules_dcloudio_webpack_uni_mp_loader_lib_template_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_uni_app_loader_page_meta_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_template_id_6369f8c4___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
@@ -61,7 +61,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 60:
+/***/ 74:
 /*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--15-0!./node_modules/@dcloudio/webpack-uni-mp-loader/lib/template.js!./node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-uni-app-loader/page-meta.js!./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!./node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!./node_modules/vue-inset-loader!./src/uni_modules/uni-transition/components/uni-transition/uni-transition.vue?vue&type=template&id=6369f8c4& ***!
   \****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
@@ -88,7 +88,7 @@ render._withStripped = true
 
 /***/ }),
 
-/***/ 61:
+/***/ 75:
 /*!**************************************************************************************************************!*\
   !*** ./src/uni_modules/uni-transition/components/uni-transition/uni-transition.vue?vue&type=script&lang=js& ***!
   \**************************************************************************************************************/
@@ -97,14 +97,14 @@ render._withStripped = true
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/babel-loader/lib!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--13-1!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/script.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!../../../../../node_modules/vue-inset-loader!./uni-transition.vue?vue&type=script&lang=js& */ 62);
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../../../node_modules/babel-loader/lib!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--13-1!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/script.js!../../../../../node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!../../../../../node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!../../../../../node_modules/vue-inset-loader!./uni-transition.vue?vue&type=script&lang=js& */ 76);
 /* harmony import */ var _node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__);
 /* harmony reexport (unknown) */ for(var __WEBPACK_IMPORT_KEY__ in _node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__) if(["default"].indexOf(__WEBPACK_IMPORT_KEY__) < 0) (function(key) { __webpack_require__.d(__webpack_exports__, key, function() { return _node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__[key]; }) }(__WEBPACK_IMPORT_KEY__));
  /* harmony default export */ __webpack_exports__["default"] = (_node_modules_babel_loader_lib_index_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_webpack_preprocess_loader_index_js_ref_13_1_node_modules_dcloudio_webpack_uni_mp_loader_lib_script_js_node_modules_dcloudio_vue_cli_plugin_uni_packages_vue_loader_lib_index_js_vue_loader_options_node_modules_dcloudio_webpack_uni_mp_loader_lib_style_js_node_modules_vue_inset_loader_index_js_uni_transition_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0___default.a); 
 
 /***/ }),
 
-/***/ 62:
+/***/ 76:
 /*!*****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/babel-loader/lib!./node_modules/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader??ref--13-1!./node_modules/@dcloudio/webpack-uni-mp-loader/lib/script.js!./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib??vue-loader-options!./node_modules/@dcloudio/webpack-uni-mp-loader/lib/style.js!./node_modules/vue-inset-loader!./src/uni_modules/uni-transition/components/uni-transition/uni-transition.vue?vue&type=script&lang=js& ***!
   \*****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
@@ -118,11 +118,17 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _createAnimation = __webpack_require__(/*! ./createAnimation */ 63);
-//
-//
-//
-//
+var _createAnimation = __webpack_require__(/*! ./createAnimation */ 77);
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 /**
  * Transition 过渡动画
  * @description 简单过渡动画组件
@@ -139,7 +145,7 @@ var _createAnimation = __webpack_require__(/*! ./createAnimation */ 63);
  * @property {Number} duration 过渡动画持续时间
  * @property {Object} styles 组件样式，同 css 样式，注意带’-‘连接符的属性需要使用小驼峰写法如：`backgroundColor:red`
  */
-var _default = {
+var _default2 = {
   name: 'uniTransition',
   emits: ['click', 'change'],
   props: {
@@ -149,7 +155,7 @@ var _default = {
     },
     modeClass: {
       type: [Array, String],
-      default() {
+      default: function _default() {
         return 'fade';
       }
     },
@@ -159,7 +165,7 @@ var _default = {
     },
     styles: {
       type: Object,
-      default() {
+      default: function _default() {
         return {};
       }
     },
@@ -168,7 +174,7 @@ var _default = {
       default: ''
     }
   },
-  data() {
+  data: function data() {
     return {
       isShow: false,
       transform: '',
@@ -180,7 +186,7 @@ var _default = {
   },
   watch: {
     show: {
-      handler(newVal) {
+      handler: function handler(newVal) {
         if (newVal) {
           this.open();
         } else {
@@ -195,24 +201,23 @@ var _default = {
   },
   computed: {
     // 生成样式数据
-    stylesObject() {
-      let styles = {
-        ...this.styles,
+    stylesObject: function stylesObject() {
+      var styles = _objectSpread(_objectSpread({}, this.styles), {}, {
         'transition-duration': this.duration / 1000 + 's'
-      };
-      let transform = '';
-      for (let i in styles) {
-        let line = this.toLine(i);
+      });
+      var transform = '';
+      for (var i in styles) {
+        var line = this.toLine(i);
         transform += line + ':' + styles[i] + ';';
       }
       return transform;
     },
     // 初始化动画条件
-    transformStyles() {
+    transformStyles: function transformStyles() {
       return 'transform:' + this.transform + ';' + 'opacity:' + this.opacity + ';' + this.stylesObject;
     }
   },
-  created() {
+  created: function created() {
     // 动画默认配置
     this.config = {
       duration: this.duration,
@@ -226,7 +231,8 @@ var _default = {
     /**
      *  ref 触发 初始化动画
      */
-    init(obj = {}) {
+    init: function init() {
+      var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       if (obj.duration) {
         this.durationTime = obj.duration;
       }
@@ -235,7 +241,7 @@ var _default = {
     /**
      * 点击组件触发回调
      */
-    onClick() {
+    onClick: function onClick() {
       this.$emit('click', {
         detail: this.isShow
       });
@@ -244,17 +250,19 @@ var _default = {
      * ref 触发 动画分组
      * @param {Object} obj
      */
-    step(obj, config = {}) {
+    step: function step(obj) {
+      var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       if (!this.animation) return;
-      for (let i in obj) {
+      for (var i in obj) {
         try {
-          if (typeof obj[i] === 'object') {
-            this.animation[i](...obj[i]);
+          if (_typeof(obj[i]) === 'object') {
+            var _this$animation;
+            (_this$animation = this.animation)[i].apply(_this$animation, _toConsumableArray(obj[i]));
           } else {
             this.animation[i](obj[i]);
           }
         } catch (e) {
-          console.error(`方法 ${i} 不存在`);
+          console.error("\u65B9\u6CD5 ".concat(i, " \u4E0D\u5B58\u5728"));
         }
       }
       this.animation.step(config);
@@ -263,79 +271,81 @@ var _default = {
     /**
      *  ref 触发 执行动画
      */
-    run(fn) {
+    run: function run(fn) {
       if (!this.animation) return;
       this.animation.run(fn);
     },
     // 开始过度动画
-    open() {
+    open: function open() {
+      var _this = this;
       clearTimeout(this.timer);
       this.transform = '';
       this.isShow = true;
-      let {
-        opacity,
-        transform
-      } = this.styleInit(false);
+      var _this$styleInit = this.styleInit(false),
+        opacity = _this$styleInit.opacity,
+        transform = _this$styleInit.transform;
       if (typeof opacity !== 'undefined') {
         this.opacity = opacity;
       }
       this.transform = transform;
       // 确保动态样式已经生效后，执行动画，如果不加 nextTick ，会导致 wx 动画执行异常
-      this.$nextTick(() => {
+      this.$nextTick(function () {
         // TODO 定时器保证动画完全执行，目前有些问题，后面会取消定时器
-        this.timer = setTimeout(() => {
-          this.animation = (0, _createAnimation.createAnimation)(this.config, this);
-          this.tranfromInit(false).step();
-          this.animation.run();
-          this.$emit('change', {
-            detail: this.isShow
+        _this.timer = setTimeout(function () {
+          _this.animation = (0, _createAnimation.createAnimation)(_this.config, _this);
+          _this.tranfromInit(false).step();
+          _this.animation.run();
+          _this.$emit('change', {
+            detail: _this.isShow
           });
         }, 20);
       });
     },
     // 关闭过度动画
-    close(type) {
+    close: function close(type) {
+      var _this2 = this;
       if (!this.animation) return;
-      this.tranfromInit(true).step().run(() => {
-        this.isShow = false;
-        this.animationData = null;
-        this.animation = null;
-        let {
-          opacity,
-          transform
-        } = this.styleInit(false);
-        this.opacity = opacity || 1;
-        this.transform = transform;
-        this.$emit('change', {
-          detail: this.isShow
+      this.tranfromInit(true).step().run(function () {
+        _this2.isShow = false;
+        _this2.animationData = null;
+        _this2.animation = null;
+        var _this2$styleInit = _this2.styleInit(false),
+          opacity = _this2$styleInit.opacity,
+          transform = _this2$styleInit.transform;
+        _this2.opacity = opacity || 1;
+        _this2.transform = transform;
+        _this2.$emit('change', {
+          detail: _this2.isShow
         });
       });
     },
     // 处理动画开始前的默认样式
-    styleInit(type) {
-      let styles = {
+    styleInit: function styleInit(type) {
+      var _this3 = this;
+      var styles = {
         transform: ''
       };
-      let buildStyle = (type, mode) => {
+      var buildStyle = function buildStyle(type, mode) {
         if (mode === 'fade') {
-          styles.opacity = this.animationType(type)[mode];
+          styles.opacity = _this3.animationType(type)[mode];
         } else {
-          styles.transform += this.animationType(type)[mode] + ' ';
+          styles.transform += _this3.animationType(type)[mode] + ' ';
         }
       };
       if (typeof this.modeClass === 'string') {
         buildStyle(type, this.modeClass);
       } else {
-        this.modeClass.forEach(mode => {
+        this.modeClass.forEach(function (mode) {
           buildStyle(type, mode);
         });
       }
       return styles;
     },
     // 处理内置组合动画
-    tranfromInit(type) {
-      let buildTranfrom = (type, mode) => {
-        let aniNum = null;
+    tranfromInit: function tranfromInit(type) {
+      var _this4 = this;
+      var buildTranfrom = function buildTranfrom(type, mode) {
+        var aniNum = null;
         if (mode === 'fade') {
           aniNum = type ? 0 : 1;
         } else {
@@ -353,30 +363,30 @@ var _default = {
             aniNum = type ? '100%' : '0';
           }
         }
-        this.animation[this.animationMode()[mode]](aniNum);
+        _this4.animation[_this4.animationMode()[mode]](aniNum);
       };
       if (typeof this.modeClass === 'string') {
         buildTranfrom(type, this.modeClass);
       } else {
-        this.modeClass.forEach(mode => {
+        this.modeClass.forEach(function (mode) {
           buildTranfrom(type, mode);
         });
       }
       return this.animation;
     },
-    animationType(type) {
+    animationType: function animationType(type) {
       return {
         fade: type ? 1 : 0,
-        'slide-top': `translateY(${type ? '0' : '-100%'})`,
-        'slide-right': `translateX(${type ? '0' : '100%'})`,
-        'slide-bottom': `translateY(${type ? '0' : '100%'})`,
-        'slide-left': `translateX(${type ? '0' : '-100%'})`,
-        'zoom-in': `scaleX(${type ? 1 : 0.8}) scaleY(${type ? 1 : 0.8})`,
-        'zoom-out': `scaleX(${type ? 1 : 1.2}) scaleY(${type ? 1 : 1.2})`
+        'slide-top': "translateY(".concat(type ? '0' : '-100%', ")"),
+        'slide-right': "translateX(".concat(type ? '0' : '100%', ")"),
+        'slide-bottom': "translateY(".concat(type ? '0' : '100%', ")"),
+        'slide-left': "translateX(".concat(type ? '0' : '-100%', ")"),
+        'zoom-in': "scaleX(".concat(type ? 1 : 0.8, ") scaleY(").concat(type ? 1 : 0.8, ")"),
+        'zoom-out': "scaleX(".concat(type ? 1 : 1.2, ") scaleY(").concat(type ? 1 : 1.2, ")")
       };
     },
     // 内置动画类型与实际动画对应字典
-    animationMode() {
+    animationMode: function animationMode() {
       return {
         fade: 'opacity',
         'slide-top': 'translateY',
@@ -388,21 +398,22 @@ var _default = {
       };
     },
     // 驼峰转中横线
-    toLine(name) {
+    toLine: function toLine(name) {
       return name.replace(/([A-Z])/g, '-$1').toLowerCase();
     }
   }
 };
-exports.default = _default;
+exports.default = _default2;
 
 /***/ })
 
 }]);
+//# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uni-transition/components/uni-transition/uni-transition.js.map
 ;(global["webpackJsonp"] = global["webpackJsonp"] || []).push([
     'uni_modules/uni-transition/components/uni-transition/uni-transition-create-component',
     {
         'uni_modules/uni-transition/components/uni-transition/uni-transition-create-component':(function(module, exports, __webpack_require__){
-            __webpack_require__('1')['createComponent'](__webpack_require__(58))
+            __webpack_require__('1')['createComponent'](__webpack_require__(72))
         })
     },
     [['uni_modules/uni-transition/components/uni-transition/uni-transition-create-component']]

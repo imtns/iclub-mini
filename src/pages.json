@@ -22,7 +22,14 @@
   ],
 
   "sitemapLocation": "sitemap.json",
-
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^ik-(.*)": "@/components/common/$1.vue",
+      "^form-(.*)": "@/components/form/$1.vue",
+      "^x-(.*)": "@/components/x/$1.vue"
+    }
+  },
   "globalStyle": {
     "pageOrientation": "portrait",
     "backgroundTextStyle": "light",

@@ -17,6 +17,9 @@ var _spaCustomHooks = _interopRequireDefault(__webpack_require__(/*! spa-custom-
 var _polyfill = _interopRequireDefault(__webpack_require__(/*! ./polyfill/polyfill */ 29));
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 // @ts-ignore
 wx.__webpack_require_UNI_MP_PLUGIN__ = __webpack_require__;
 // import uView from 'uview-ui'
@@ -28,12 +31,10 @@ _vue.default.use(_spaCustomHooks.default, _hooks.default, _store.default);
 _vue.default.config.productionTip = false;
 _App.default.mpType = 'app';
 _App.default.store = _store.default;
-_vue.default.prototype.$onLaunched = new Promise(resolve => {
+_vue.default.prototype.$onLaunched = new Promise(function (resolve) {
   _vue.default.prototype.$isResolve = resolve;
 });
-const app = new _vue.default({
-  ..._App.default
-});
+var app = new _vue.default(_objectSpread({}, _App.default));
 createApp(app).$mount();
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["createApp"]))
 
@@ -112,12 +113,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _default = {
-  data() {
+  data: function data() {
     return {};
   },
-  onLaunch(options) {},
-  onShow(options) {},
-  onHide() {}
+  onLaunch: function onLaunch(options) {},
+  onShow: function onShow(options) {},
+  onHide: function onHide() {}
 };
 exports.default = _default;
 
@@ -150,3 +151,4 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ })
 ],[[0,"common/runtime","common/vendor"]]]);
+//# sourceMappingURL=../../.sourcemap/mp-weixin/common/main.js.map

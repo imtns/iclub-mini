@@ -11,14 +11,18 @@
  * ai测颜数据在这里
  *
  */
-const {
-  request
-} = __webpack_require__(/*! @/http/request */ 15);
+var _require = __webpack_require__(/*! @/http/request */ 15),
+  request = _require.request;
 module.exports = {
-  testAPI: params => request('https://picsum.photos/id/0/info', 'get', params),
-  testAPI1: data => request('https://xxxx.com', 'post', data)
+  testAPI: function testAPI(params) {
+    return request('https://picsum.photos/id/0/info', 'get', params);
+  },
+  testAPI1: function testAPI1(data) {
+    return request('https://xxxx.com', 'post', data);
+  }
 };
 
 /***/ })
 
 }]);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages-sub/common/vendor.js.map
