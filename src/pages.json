@@ -12,9 +12,43 @@
       "root": "pages-sub",
       "pages": [
         {
+          "path": "login/index",
+          "style": {
+            "navigationBarTitleText": "登录",
+            "mp-weixin": {
+              "usingComponents": {
+                "loginform": "plugin://myPlugin/loginform"
+              }
+            }
+          }
+        },
+        {
           "path": "ai-ceyan/index",
           "style": {
             "navigationBarTitleText": "AI测颈纹"
+          }
+        }
+      ],
+      "plugins": {
+        "myPlugin": {
+          "version": "1.0.25",
+          "provider": "wx49ba8c2e81bce02f"
+        }
+      }
+    },
+    {
+      "root": "pages/mine",
+      "pages": [
+        {
+          "path": "address/list",
+          "style": {
+            "navigationBarTitleText": "我的地址"
+          }
+        },
+        {
+          "path": "address/manage",
+          "style": {
+            "navigationBarTitleText": "编辑地址"
           }
         }
       ]
@@ -25,9 +59,10 @@
   "easycom": {
     "autoscan": true,
     "custom": {
-      "^ik-(.*)": "@/components/common/$1.vue",
+      // "^ik-(.*)": "@/components/common/$1.vue",
       "^form-(.*)": "@/components/form/$1.vue",
-      "^x-(.*)": "@/components/x/$1.vue"
+      "^x-(.*)": "@/components/x/$1.vue",
+      "^global-(.*)": "@/components/global/$1.vue"
     }
   },
   "globalStyle": {

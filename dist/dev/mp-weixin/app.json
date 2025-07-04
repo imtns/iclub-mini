@@ -6,7 +6,21 @@
     {
       "root": "pages-sub",
       "pages": [
+        "login/index",
         "ai-ceyan/index"
+      ],
+      "plugins": {
+        "myPlugin": {
+          "version": "1.0.25",
+          "provider": "wx49ba8c2e81bce02f"
+        }
+      }
+    },
+    {
+      "root": "pages/mine",
+      "pages": [
+        "address/list",
+        "address/manage"
       ]
     }
   ],

@@ -1,6 +1,9 @@
 {
   "navigationBarTitleText": "首页",
   "usingComponents": {
+    "x-btn": "/components/x/btn",
+    "global-captcha": "/components/global/captcha",
+    "global-privacy-popup": "/components/global/privacy-popup",
     "x-toast": "/components/x/toast"
   }
 }
