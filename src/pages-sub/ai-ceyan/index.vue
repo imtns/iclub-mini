@@ -88,7 +88,6 @@
 <script>
 import { testAPI, testAPI1 } from './api'
 import Tool from './tool/tool.js'
-
 export default {
   data () {
     return {
@@ -101,6 +100,7 @@ export default {
     }
   },
   onShow () {
+    this.intelligentAnimation = false
   },
   methods: {
     async TestAPI () {
@@ -189,8 +189,12 @@ export default {
           thst.intelligentAnimation = true
           thst.image = res.tempFilePaths[0]
           console.log(res, '相册上传');
+
           setTimeout(() => {
-            this.$refs.popup.open('center')
+            uni.navigateTo({
+              url: '/pages-sub/ai-ceyan/uploaded'
+            })
+            //   this.$refs.popup.open('center')
           }, 3000);
         },
         fail: (err) => {

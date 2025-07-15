@@ -17,6 +17,13 @@
             "navigationBarTitleText": "AI测颈纹",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "ai-ceyan/uploaded",
+          "style": {
+            "navigationBarTitleText": "上传成功海报",
+            "navigationStyle": "custom"
+          }
         }
       ]
     }

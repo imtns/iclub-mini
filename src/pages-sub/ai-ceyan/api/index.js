@@ -9,7 +9,7 @@ module.exports = {
     request('https://picsum.photos/id/0/info', 'get', params),
   testAPI1: (data) =>
     request(
-      'https://picsum.photos/api/activity/csly/game/gameRank',
+      'https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind',
       'post',
       data
     ),
