@@ -1,6 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "uni-grid": "/uni_modules/uni-grid/components/uni-grid/uni-grid"
-  }
-}

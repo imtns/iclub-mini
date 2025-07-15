@@ -1,1 +1,0 @@
-(global["webpackJsonp"]=global["webpackJsonp"]||[]).push([["pages-sub/common/vendor"],{"27fc":function(o,e,t){var a=t("cc7f"),c=a.request2;o.exports={apiGetStyleDoctorList:function(o){return c({url:"/iclub/api/style/queryPageForStyleDoctor",data:o})}}}}]);

@@ -1,1 +1,0 @@
-<t-captcha vue-id="e7c689c6-1" id="captcha" app-id="196408503" data-event-opts="{{[['^verify',[['handlerVerify']]],['^ready',[['handlerReady']]],['^close',[['handlerClose']]],['^error',[['handlerError']]]]}}" data-com-type="wx" bind:verify="__e" bind:ready="__e" bind:close="__e" bind:error="__e" class="data-v-14ea00df" bind:__l="__l"></t-captcha>

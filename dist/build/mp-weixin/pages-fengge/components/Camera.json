@@ -1,6 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "face-detect": "/pages-fengge/components/FaceDetect"
-  }
-}
