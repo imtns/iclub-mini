@@ -22,6 +22,9 @@
     <div v-if="addressInfo">地址信息：{{ JSON.stringify(addressInfo) }}</div>
 
     <x-btn @click="handleCaptcha">接口滑块示例</x-btn>
+    <x-btn @click="handleUpload">上传图片</x-btn>
+    <image :src="uploadImage" style="width: 200rpx; height: 200rpx" mode="aspectFill" />
+    <text style="color: red">图片地址<br />{{ uploadImage }}</text>
     <x-toast ref="toast" />
   </view>
 </template>
@@ -29,11 +32,13 @@
 <script>
 import { apiDianzan } from "./api";
 import { mapState } from "vuex";
+import { upload } from "./upload/upload";
 export default {
   data() {
     return {
       responseData: null,
       addressInfo: "",
+      uploadImage: "",
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
@@ -71,6 +76,36 @@ export default {
         // 按钮点击时候的分享图片
         buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
       };
+    },
+
+    getUploadImage() {
+      return new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          mediaType: ["image"],
+          count: 1,
+          sourceType: ["album", "camera"],
+          sizeType: ["original", "compressed"],
+          success: async (res) => {
+            const savePath = "image";
+            const filePath = res.tempFiles[0].tempFilePath;
+            upload(filePath, savePath, (imageUrl) => {
+              console.log("imageUrl----------", imageUrl);
+              if (imageUrl) {
+                console.log("图片上传成功", imageUrl);
+                resolve(imageUrl);
+              } else {
+                console.log("图片上传失败，请稍后重试");
+              }
+            });
+          },
+          fail: reject,
+        });
+      });
+    },
+    async handleUpload() {
+      const imageUrl = await this.getUploadImage();
+      console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
+      this.uploadImage = imageUrl;
     },
     handleCaptcha() {
       if (!this.isLogin) {

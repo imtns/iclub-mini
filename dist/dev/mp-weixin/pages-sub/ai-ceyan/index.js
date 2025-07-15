@@ -190,6 +190,10 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 var _api = __webpack_require__(/*! ./api */ 106);
 var _vuex = __webpack_require__(/*! vuex */ 14);
+var _upload = __webpack_require__(/*! ./upload/upload */ 404);
+//
+//
+//
 //
 //
 //
@@ -223,6 +227,7 @@ var _default = {
     return {
       responseData: null,
       addressInfo: "",
+      uploadImage: "",
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
@@ -261,6 +266,35 @@ var _default = {
         // 按钮点击时候的分享图片
         buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg"
       };
+    },
+    getUploadImage() {
+      return new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          mediaType: ["image"],
+          count: 1,
+          sourceType: ["album", "camera"],
+          sizeType: ["original", "compressed"],
+          success: async res => {
+            const savePath = "image";
+            const filePath = res.tempFiles[0].tempFilePath;
+            (0, _upload.upload)(filePath, savePath, imageUrl => {
+              console.log("imageUrl----------", imageUrl);
+              if (imageUrl) {
+                console.log("图片上传成功", imageUrl);
+                resolve(imageUrl);
+              } else {
+                console.log("图片上传失败，请稍后重试");
+              }
+            });
+          },
+          fail: reject
+        });
+      });
+    },
+    async handleUpload() {
+      const imageUrl = await this.getUploadImage();
+      console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
+      this.uploadImage = imageUrl;
     },
     handleCaptcha() {
       if (!this.isLogin) {
