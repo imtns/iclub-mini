@@ -10,9 +10,13 @@
 </template>
 
 <script>
+import xBtn from "@/components/x/btn.vue"
 export default {
   data () {
     return {};
+  },
+  components: {
+    xBtn
   },
   methods: {
     go () {

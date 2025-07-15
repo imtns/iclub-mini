@@ -7,7 +7,8 @@ const { request } = require('@/http/request');
 module.exports = {
   testAPI: (params) =>
     request('https://picsum.photos/id/0/info', 'get', params),
-  testAPI1: (data) =>
+  //科技馆 - 用户进入科技馆板块，弹框助力提醒
+  assistRemind: (data) =>
     request(
       'https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind',
       'post',

@@ -1,6 +1,5 @@
 <template>
   <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}bg.png)` }">
-    <button type="primary" @click="TestAPI">测试请求</button>
     <!-- <button type="primary" @click="TestAPI">测试请求</button>
     {{ responseData }}
     <button type="primary" @click="showDrawer">右侧弹出 显示Drawer</button>
@@ -24,7 +23,7 @@
     </uni-popup> -->
     <uni-nav-bar fixed statusBar title=" " :border="false" backgroundColor="transparent">
       <template #left>
-        <image class="" :src="`${ASSETSURL}leftIcon.png`" style="width: 32rpx; height: 48rpx;"
+        <image @click="leftClick" class="" :src="`${ASSETSURL}leftIcon.png`" style="width: 32rpx; height: 48rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </template>
     </uni-nav-bar>
@@ -82,19 +81,12 @@
         </image>
       </view>
     </uni-popup>
-    <x-btn @click="maidian">埋点记录</x-btn>
-    <button type="primary" open-type="share" @click="handleShareClick">按钮分享</button>
-    <span style="color: red">页面所有加载和点击要记录埋点操作</span>
-    <x-btn @click="goAddress">跳转选择地址页面</x-btn>
-    <div v-if="addressInfo">地址信息：{{ JSON.stringify(addressInfo) }}</div>
-
-    <x-btn @click="handleCaptcha">接口滑块示例</x-btn>
-    <x-toast ref="toast" />
   </view>
 </template>
 
 <script>
-import { testAPI, testAPI1 } from './api'
+import xBtn from "@/components/x/btn.vue"
+import { testAPI, assistRemind } from './api'
 import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 export default {
@@ -111,19 +103,29 @@ export default {
   computed: {
     ...mapState(["isLogin", "userInfo"]),
   },
+  components: {
+    xBtn
+  },
   onShow () {
+    console.log(this.userInfo, 'userInfouserInfouserInfo');
+
     if (!this.isLogin) {
       this.goLogin();
       return;
     }
+    this.getAssis()
     this.intelligentAnimation = false
   },
   methods: {
-    async TestAPI () {
+    leftClick () {
+      uni.navigateBack()
+    },
+    //科技馆 - 用户进入科技馆板块，弹框助力提醒
+    async getAssis () {
       try {
-        const res = await testAPI1()
+        const res = await assistRemind()
         this.responseData = JSON.stringify(res)
-        console.log(res)
+        console.log(res, '用户进入科技馆板块，弹框助力提醒')
       } catch (err) {
         console.log(err)
       }
