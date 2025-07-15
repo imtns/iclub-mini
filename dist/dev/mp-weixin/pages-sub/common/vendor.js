@@ -1,6 +1,6 @@
 (global["webpackJsonp"] = global["webpackJsonp"] || []).push([["pages-sub/common/vendor"],{
 
-/***/ 106:
+/***/ 107:
 /*!*********************************************!*\
   !*** ./src/pages-sub/ai-ceyan/api/index.js ***!
   \*********************************************/

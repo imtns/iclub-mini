@@ -1,6 +1,6 @@
-(global["webpackJsonp"] = global["webpackJsonp"] || []).push([["common/vendor"],{
-
-/***/ 1:
+(global["webpackJsonp"] = global["webpackJsonp"] || []).push([["common/vendor"],[
+/* 0 */,
+/* 1 */
 /*!************************************************************!*\
   !*** ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js ***!
   \************************************************************/
@@ -21,7 +21,7 @@ exports.createSubpackageApp = createSubpackageApp;
 exports.default = void 0;
 var _uniI18n = __webpack_require__(/*! @dcloudio/uni-i18n */ 3);
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 let realAtob;
 const b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 const b64re = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
@@ -103,6 +103,9 @@ function isFn(fn) {
 }
 function isStr(str) {
   return typeof str === 'string';
+}
+function isObject(obj) {
+  return obj !== null && typeof obj === 'object';
 }
 function isPlainObject(obj) {
   return _toString.call(obj) === '[object Object]';
@@ -303,14 +306,14 @@ const promiseInterceptor = {
     });
   }
 };
-const SYNC_API_RE = /^\$|Window$|WindowStyle$|sendHostEvent|sendNativeEvent|restoreGlobal|requireGlobal|getCurrentSubNVue|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64|getLocale|setLocale|invokePushCallback|getWindowInfo|getDeviceInfo|getAppBaseInfo/;
+const SYNC_API_RE = /^\$|Window$|WindowStyle$|sendHostEvent|sendNativeEvent|restoreGlobal|requireGlobal|getCurrentSubNVue|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64|getLocale|setLocale|invokePushCallback|getWindowInfo|getDeviceInfo|getAppBaseInfo|getSystemSetting|getAppAuthorizeSetting/;
 const CONTEXT_API_RE = /^create|Manager$/;
 
 // Context例外情况
 const CONTEXT_API_RE_EXC = ['createBLEConnection'];
 
 // 同步例外情况
-const ASYNC_API = ['createBLEConnection'];
+const ASYNC_API = ['createBLEConnection', 'createPushMessage'];
 const CALLBACK_API_RE = /^on|^off/;
 function isContextApi(name) {
   return CONTEXT_API_RE.test(name) && CONTEXT_API_RE_EXC.indexOf(name) === -1;
@@ -695,8 +698,8 @@ function populateParameters(result) {
     appVersion: "1.0.0",
     appVersionCode: "100",
     appLanguage: getAppLanguage(hostLanguage),
-    uniCompileVersion: "3.4.18",
-    uniRuntimeVersion: "3.4.18",
+    uniCompileVersion: "3.6.10",
+    uniRuntimeVersion: "3.6.10",
     uniPlatform: undefined || "mp-weixin",
     deviceBrand,
     deviceModel: model,
@@ -828,6 +831,19 @@ var getWindowInfo = {
     }));
   }
 };
+var getAppAuthorizeSetting = {
+  returnValue: function (result) {
+    const {
+      locationReducedAccuracy
+    } = result;
+    result.locationAccuracy = 'unsupported';
+    if (locationReducedAccuracy === true) {
+      result.locationAccuracy = 'reduced';
+    } else if (locationReducedAccuracy === false) {
+      result.locationAccuracy = 'full';
+    }
+  }
+};
 
 // import navigateTo from 'uni-helpers/navigate-to'
 
@@ -840,7 +856,8 @@ const protocols = {
   showActionSheet,
   getAppBaseInfo,
   getDeviceInfo,
-  getWindowInfo
+  getWindowInfo,
+  getAppAuthorizeSetting
 };
 const todos = ['vibrate', 'preloadPage', 'unPreloadPage', 'loadSubPackage'];
 const canIUses = [];
@@ -1041,6 +1058,7 @@ function getApiCallbacks(params) {
 }
 let cid;
 let cidErrMsg;
+let enabled;
 function normalizePushMessage(message) {
   try {
     return JSON.parse(message);
@@ -1048,17 +1066,25 @@ function normalizePushMessage(message) {
   return message;
 }
 function invokePushCallback(args) {
-  if (args.type === 'clientId') {
+  if (args.type === 'enabled') {
+    enabled = true;
+  } else if (args.type === 'clientId') {
     cid = args.cid;
     cidErrMsg = args.errMsg;
     invokeGetPushCidCallbacks(cid, args.errMsg);
   } else if (args.type === 'pushMsg') {
-    onPushMessageCallbacks.forEach(callback => {
-      callback({
-        type: 'receive',
-        data: normalizePushMessage(args.message)
-      });
-    });
+    const message = {
+      type: 'receive',
+      data: normalizePushMessage(args.message)
+    };
+    for (let i = 0; i < onPushMessageCallbacks.length; i++) {
+      const callback = onPushMessageCallbacks[i];
+      callback(message);
+      // 该消息已被阻止
+      if (message.stopped) {
+        break;
+      }
+    }
   } else if (args.type === 'click') {
     onPushMessageCallbacks.forEach(callback => {
       callback({
@@ -1075,7 +1101,7 @@ function invokeGetPushCidCallbacks(cid, errMsg) {
   });
   getPushCidCallbacks.length = 0;
 }
-function getPushClientid(args) {
+function getPushClientId(args) {
   if (!isPlainObject(args)) {
     args = {};
   }
@@ -1087,25 +1113,32 @@ function getPushClientid(args) {
   const hasSuccess = isFn(success);
   const hasFail = isFn(fail);
   const hasComplete = isFn(complete);
-  getPushCidCallbacks.push((cid, errMsg) => {
-    let res;
-    if (cid) {
-      res = {
-        errMsg: 'getPushClientid:ok',
-        cid
-      };
-      hasSuccess && success(res);
-    } else {
-      res = {
-        errMsg: 'getPushClientid:fail' + (errMsg ? ' ' + errMsg : '')
-      };
-      hasFail && fail(res);
+  Promise.resolve().then(() => {
+    if (typeof enabled === 'undefined') {
+      enabled = false;
+      cid = '';
+      cidErrMsg = 'uniPush is not enabled';
     }
-    hasComplete && complete(res);
+    getPushCidCallbacks.push((cid, errMsg) => {
+      let res;
+      if (cid) {
+        res = {
+          errMsg: 'getPushClientId:ok',
+          cid
+        };
+        hasSuccess && success(res);
+      } else {
+        res = {
+          errMsg: 'getPushClientId:fail' + (errMsg ? ' ' + errMsg : '')
+        };
+        hasFail && fail(res);
+      }
+      hasComplete && complete(res);
+    });
+    if (typeof cid !== 'undefined') {
+      invokeGetPushCidCallbacks(cid, cidErrMsg);
+    }
   });
-  if (typeof cid !== 'undefined') {
-    Promise.resolve().then(() => invokeGetPushCidCallbacks(cid, cidErrMsg));
-  }
 }
 const onPushMessageCallbacks = [];
 // 不使用 defineOnApi 实现，是因为 defineOnApi 依赖 UniServiceJSBridge ，该对象目前在小程序上未提供，故简单实现
@@ -1126,11 +1159,130 @@ const offPushMessage = fn => {
 };
 var api = /*#__PURE__*/Object.freeze({
   __proto__: null,
-  getPushClientid: getPushClientid,
+  getPushClientId: getPushClientId,
   onPushMessage: onPushMessage,
   offPushMessage: offPushMessage,
   invokePushCallback: invokePushCallback
 });
+const mocks = ['__route__', '__wxExparserNodeId__', '__wxWebviewId__'];
+function findVmByVueId(vm, vuePid) {
+  const $children = vm.$children;
+  // 优先查找直属(反向查找:https://github.com/dcloudio/uni-app/issues/1200)
+  for (let i = $children.length - 1; i >= 0; i--) {
+    const childVm = $children[i];
+    if (childVm.$scope._$vueId === vuePid) {
+      return childVm;
+    }
+  }
+  // 反向递归查找
+  let parentVm;
+  for (let i = $children.length - 1; i >= 0; i--) {
+    parentVm = findVmByVueId($children[i], vuePid);
+    if (parentVm) {
+      return parentVm;
+    }
+  }
+}
+function initBehavior(options) {
+  return Behavior(options);
+}
+function isPage() {
+  return !!this.route;
+}
+function initRelation(detail) {
+  this.triggerEvent('__l', detail);
+}
+function selectAllComponents(mpInstance, selector, $refs) {
+  const components = mpInstance.selectAllComponents(selector) || [];
+  components.forEach(component => {
+    const ref = component.dataset.ref;
+    $refs[ref] = component.$vm || toSkip(component);
+    {
+      if (component.dataset.vueGeneric === 'scoped') {
+        component.selectAllComponents('.scoped-ref').forEach(scopedComponent => {
+          selectAllComponents(scopedComponent, selector, $refs);
+        });
+      }
+    }
+  });
+}
+function syncRefs(refs, newRefs) {
+  const oldKeys = new Set(...Object.keys(refs));
+  const newKeys = Object.keys(newRefs);
+  newKeys.forEach(key => {
+    const oldValue = refs[key];
+    const newValue = newRefs[key];
+    if (Array.isArray(oldValue) && Array.isArray(newValue) && oldValue.length === newValue.length && newValue.every(value => oldValue.includes(value))) {
+      return;
+    }
+    refs[key] = newValue;
+    oldKeys.delete(key);
+  });
+  oldKeys.forEach(key => {
+    delete refs[key];
+  });
+  return refs;
+}
+function initRefs(vm) {
+  const mpInstance = vm.$scope;
+  const refs = {};
+  Object.defineProperty(vm, '$refs', {
+    get() {
+      const $refs = {};
+      selectAllComponents(mpInstance, '.vue-ref', $refs);
+      // TODO 暂不考虑 for 中的 scoped
+      const forComponents = mpInstance.selectAllComponents('.vue-ref-in-for') || [];
+      forComponents.forEach(component => {
+        const ref = component.dataset.ref;
+        if (!$refs[ref]) {
+          $refs[ref] = [];
+        }
+        $refs[ref].push(component.$vm || toSkip(component));
+      });
+      return syncRefs(refs, $refs);
+    }
+  });
+}
+function handleLink(event) {
+  const {
+    vuePid,
+    vueOptions
+  } = event.detail || event.value; // detail 是微信,value 是百度(dipatch)
+
+  let parentVm;
+  if (vuePid) {
+    parentVm = findVmByVueId(this.$vm, vuePid);
+  }
+  if (!parentVm) {
+    parentVm = this.$vm;
+  }
+  vueOptions.parent = parentVm;
+}
+function markMPComponent(component) {
+  // 在 Vue 中标记为小程序组件
+  const IS_MP = '__v_isMPComponent';
+  Object.defineProperty(component, IS_MP, {
+    configurable: true,
+    enumerable: false,
+    value: true
+  });
+  return component;
+}
+function toSkip(obj) {
+  const OB = '__ob__';
+  const SKIP = '__v_skip';
+  if (isObject(obj) && Object.isExtensible(obj)) {
+    // 避免被 @vue/composition-api 观测
+    Object.defineProperty(obj, OB, {
+      configurable: true,
+      enumerable: false,
+      value: {
+        [SKIP]: true
+      }
+    });
+  }
+  return obj;
+}
 const MPPage = Page;
 const MPComponent = Component;
 const customizeRE = /:/g;
@@ -1140,7 +1292,17 @@ const customize = cached(str => {
 function initTriggerEvent(mpInstance) {
   const oldTriggerEvent = mpInstance.triggerEvent;
   const newTriggerEvent = function (event, ...args) {
-    return oldTriggerEvent.apply(mpInstance, [customize(event), ...args]);
+    // 事件名统一转驼峰格式，仅处理：当前组件为 vue 组件、当前组件为 vue 组件子组件
+    if (this.$vm || this.dataset && this.dataset.comType) {
+      event = customize(event);
+    } else {
+      // 针对微信/QQ小程序单独补充驼峰格式事件，以兼容历史项目
+      const newEvent = customize(event);
+      if (newEvent !== event) {
+        oldTriggerEvent.apply(this, [newEvent, ...args]);
+      }
+    }
+    return oldTriggerEvent.apply(this, [event, ...args]);
   };
   try {
     // 京东小程序 triggerEvent 为只读
@@ -1151,16 +1313,13 @@ function initTriggerEvent(mpInstance) {
 }
 function initHook(name, options, isComponent) {
   const oldHook = options[name];
-  if (!oldHook) {
-    options[name] = function () {
-      initTriggerEvent(this);
-    };
-  } else {
-    options[name] = function (...args) {
-      initTriggerEvent(this);
+  options[name] = function (...args) {
+    markMPComponent(this);
+    initTriggerEvent(this);
+    if (oldHook) {
       return oldHook.apply(this, args);
-    };
-  }
+    }
+  };
 }
 if (!MPPage.__$wrappered) {
   MPPage.__$wrappered = true;
@@ -1200,7 +1359,7 @@ function hasHook(hook, vueOptions) {
     }
     return false;
   }
-  if (isFn(vueOptions[hook])) {
+  if (isFn(vueOptions[hook]) || Array.isArray(vueOptions[hook])) {
     return true;
   }
   const mixins = vueOptions.mixins;
@@ -1216,6 +1375,26 @@ function initHooks(mpOptions, hooks, vueOptions) {
       };
     }
   });
+}
+function initUnknownHooks(mpOptions, vueOptions, excludes = []) {
+  findHooks(vueOptions).forEach(hook => initHook$1(mpOptions, hook, excludes));
+}
+function findHooks(vueOptions, hooks = []) {
+  if (vueOptions) {
+    Object.keys(vueOptions).forEach(name => {
+      if (name.indexOf('on') === 0 && isFn(vueOptions[name])) {
+        hooks.push(name);
+      }
+    });
+  }
+  return hooks;
+}
+function initHook$1(mpOptions, hook, excludes) {
+  if (excludes.indexOf(hook) === -1 && !hasOwn(mpOptions, hook)) {
+    mpOptions[hook] = function (args) {
+      return this.$vm && this.$vm.__call_hook(hook, args);
+    };
+  }
 }
 function initVueComponent(Vue, vueOptions) {
   vueOptions = vueOptions.default || vueOptions;
@@ -1254,7 +1433,7 @@ function initData(vueOptions, context) {
     try {
       data = data.call(context); // 支持 Vue.prototype 上挂的数据
     } catch (e) {
-      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.warn('根据 Vue 的 data 函数初始化小程序 data 失败，请尽量确保 data 函数中不访问 vm 对象，否则可能影响首次数据渲染速度。', data);
       }
     }
@@ -1282,7 +1461,6 @@ function createObserver(name) {
     }
   };
 }
-
 function initBehaviors(vueOptions, initBehavior) {
   const vueBehaviors = vueOptions.behaviors;
   const vueExtends = vueOptions.extends;
@@ -1335,18 +1513,25 @@ function parsePropType(key, type, defaultValue, file) {
   }
   return type;
 }
-function initProperties(props, isBehavior = false, file = '') {
+function initProperties(props, isBehavior = false, file = '', options) {
   const properties = {};
   if (!isBehavior) {
     properties.vueId = {
       type: String,
       value: ''
     };
-    // 用于字节跳动小程序模拟抽象节点
-    properties.generic = {
-      type: Object,
-      value: null
-    };
+    {
+      if (options.virtualHost) {
+        properties.virtualHostStyle = {
+          type: null,
+          value: ''
+        };
+        properties.virtualHostClass = {
+          type: null,
+          value: ''
+        };
+      }
+    }
     // scopedSlotsCompiler auto
     properties.scopedSlotsCompiler = {
       type: String,
@@ -1468,7 +1653,7 @@ function getExtraValue(vm, dataPathsArray) {
   });
   return context;
 }
-function processEventExtra(vm, extra, event) {
+function processEventExtra(vm, extra, event, __args__) {
   const extraObj = {};
   if (Array.isArray(extra) && extra.length) {
     /**
@@ -1492,11 +1677,7 @@ function processEventExtra(vm, extra, event) {
             // $event
             extraObj['$' + index] = event;
           } else if (dataPath === 'arguments') {
-            if (event.detail && event.detail.__args__) {
-              extraObj['$' + index] = event.detail.__args__;
-            } else {
-              extraObj['$' + index] = [event];
-            }
+            extraObj['$' + index] = event.detail ? event.detail.__args__ || __args__ : __args__;
           } else if (dataPath.indexOf('$event.') === 0) {
             // $event.target.value
             extraObj['$' + index] = vm.__get_value(dataPath.replace('$event.', ''), event);
@@ -1521,6 +1702,9 @@ function getObjByArray(arr) {
 }
 function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName) {
   let isCustomMPEvent = false; // wxcomponent 组件，传递原始 event 对象
+
+  // fixed 用户直接触发 mpInstance.triggerEvent
+  const __args__ = isPlainObject(event.detail) ? event.detail.__args__ || [event.detail] : [event.detail];
   if (isCustom) {
     // 自定义事件
     isCustomMPEvent = event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.comType === 'wx';
@@ -1529,10 +1713,10 @@ function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName
       if (isCustomMPEvent) {
         return [event];
       }
-      return event.detail.__args__ || event.detail;
+      return __args__;
     }
   }
-  const extraObj = processEventExtra(vm, extra, event);
+  const extraObj = processEventExtra(vm, extra, event, __args__);
   const ret = [];
   args.forEach(arg => {
     if (arg === '$event') {
@@ -1541,7 +1725,7 @@ function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName
         ret.push(event.target.value);
       } else {
         if (isCustom && !isCustomMPEvent) {
-          ret.push(event.detail.__args__[0]);
+          ret.push(__args__[0]);
         } else {
           // wxcomponent 组件或内置组件
           ret.push(event);
@@ -1610,7 +1794,9 @@ function handleEvent(event) {
           }
           const handler = handlerCtx[methodName];
           if (!isFn(handler)) {
-            throw new Error(` _vm.${methodName} is not a function`);
+            const type = this.$vm.mpType === 'page' ? 'Page' : 'Component';
+            const path = this.route || this.is;
+            throw new Error(`${type} "${path}" does not have a method "${methodName}"`);
           }
           if (isOnce) {
             if (handler.once) {
@@ -1783,83 +1969,8 @@ function parseBaseApp(vm, {
   }
   initAppLocale(_vue.default, vm, normalizeLocale(wx.getSystemInfoSync().language) || LOCALE_EN);
   initHooks(appOptions, hooks);
+  initUnknownHooks(appOptions, vm.$options);
   return appOptions;
-}
-const mocks = ['__route__', '__wxExparserNodeId__', '__wxWebviewId__'];
-function findVmByVueId(vm, vuePid) {
-  const $children = vm.$children;
-  // 优先查找直属(反向查找:https://github.com/dcloudio/uni-app/issues/1200)
-  for (let i = $children.length - 1; i >= 0; i--) {
-    const childVm = $children[i];
-    if (childVm.$scope._$vueId === vuePid) {
-      return childVm;
-    }
-  }
-  // 反向递归查找
-  let parentVm;
-  for (let i = $children.length - 1; i >= 0; i--) {
-    parentVm = findVmByVueId($children[i], vuePid);
-    if (parentVm) {
-      return parentVm;
-    }
-  }
-}
-function initBehavior(options) {
-  return Behavior(options);
-}
-function isPage() {
-  return !!this.route;
-}
-function initRelation(detail) {
-  this.triggerEvent('__l', detail);
-}
-function selectAllComponents(mpInstance, selector, $refs) {
-  const components = mpInstance.selectAllComponents(selector);
-  components.forEach(component => {
-    const ref = component.dataset.ref;
-    $refs[ref] = component.$vm || component;
-    {
-      if (component.dataset.vueGeneric === 'scoped') {
-        component.selectAllComponents('.scoped-ref').forEach(scopedComponent => {
-          selectAllComponents(scopedComponent, selector, $refs);
-        });
-      }
-    }
-  });
-}
-function initRefs(vm) {
-  const mpInstance = vm.$scope;
-  Object.defineProperty(vm, '$refs', {
-    get() {
-      const $refs = {};
-      selectAllComponents(mpInstance, '.vue-ref', $refs);
-      // TODO 暂不考虑 for 中的 scoped
-      const forComponents = mpInstance.selectAllComponents('.vue-ref-in-for');
-      forComponents.forEach(component => {
-        const ref = component.dataset.ref;
-        if (!$refs[ref]) {
-          $refs[ref] = [];
-        }
-        $refs[ref].push(component.$vm || component);
-      });
-      return $refs;
-    }
-  });
-}
-function handleLink(event) {
-  const {
-    vuePid,
-    vueOptions
-  } = event.detail || event.value; // detail 是微信,value 是百度(dipatch)
-
-  let parentVm;
-  if (vuePid) {
-    parentVm = findVmByVueId(this.$vm, vuePid);
-  }
-  if (!parentVm) {
-    parentVm = this.$vm;
-  }
-  vueOptions.parent = parentVm;
 }
 function parseApp(vm) {
   return parseBaseApp(vm, {
@@ -1909,7 +2020,7 @@ function stringifyQuery(obj, encodeStr = encode) {
 function parseBaseComponent(vueComponentOptions, {
   isPage,
   initRelation
-} = {}) {
+} = {}, needVueOptions) {
   const [VueComponent, vueOptions] = initVueComponent(_vue.default, vueComponentOptions);
   const options = {
     multipleSlots: true,
@@ -1926,7 +2037,7 @@ function parseBaseComponent(vueComponentOptions, {
     options,
     data: initData(vueOptions, _vue.default.prototype),
     behaviors: initBehaviors(vueOptions, initBehavior),
-    properties: initProperties(vueOptions.props, false, vueOptions.__file),
+    properties: initProperties(vueOptions.props, false, vueOptions.__file, options),
     lifetimes: {
       attached() {
         const properties = this.properties;
@@ -1992,25 +2103,25 @@ function parseBaseComponent(vueComponentOptions, {
       };
     });
   }
+  if (needVueOptions) {
+    return [componentOptions, vueOptions, VueComponent];
+  }
   if (isPage) {
     return componentOptions;
   }
   return [componentOptions, VueComponent];
 }
-function parseComponent(vueComponentOptions) {
+function parseComponent(vueComponentOptions, needVueOptions) {
   return parseBaseComponent(vueComponentOptions, {
     isPage,
     initRelation
-  });
+  }, needVueOptions);
 }
 const hooks$1 = ['onShow', 'onHide', 'onUnload'];
 hooks$1.push(...PAGE_EVENT_HOOKS);
-function parseBasePage(vuePageOptions, {
-  isPage,
-  initRelation
-}) {
-  const pageOptions = parseComponent(vuePageOptions);
-  initHooks(pageOptions.methods, hooks$1, vuePageOptions);
+function parseBasePage(vuePageOptions) {
+  const [pageOptions, vueOptions] = parseComponent(vuePageOptions, true);
+  initHooks(pageOptions.methods, hooks$1, vueOptions);
   pageOptions.methods.onLoad = function (query) {
     this.options = query;
     const copyQuery = Object.assign({}, query);
@@ -2021,13 +2132,13 @@ function parseBasePage(vuePageOptions, {
     this.$vm.$mp.query = query; // 兼容 mpvue
     this.$vm.__call_hook('onLoad', query);
   };
+  {
+    initUnknownHooks(pageOptions.methods, vuePageOptions, ['onReady']);
+  }
   return pageOptions;
 }
 function parsePage(vuePageOptions) {
-  return parseBasePage(vuePageOptions, {
-    isPage,
-    initRelation
-  });
+  return parseBasePage(vuePageOptions);
 }
 function createPage(vuePageOptions) {
   {
@@ -2125,7 +2236,7 @@ if (typeof Proxy !== 'undefined' && "mp-weixin" !== 'app-plus') {
       if (eventApi[name]) {
         return eventApi[name];
       }
-      if (!hasOwn(wx, name) && !hasOwn(protocols, name)) {
+      if (typeof wx[name] !== 'function' && !hasOwn(protocols, name)) {
         return;
       }
       return promisify(name, wrapper(name, wx[name]));
@@ -2165,3128 +2276,11 @@ wx.createComponent = createComponent;
 wx.createSubpackageApp = createSubpackageApp;
 wx.createPlugin = createPlugin;
 var uni$1 = uni;
-var _default = uni$1;
-exports.default = _default;
+var _default = exports.default = uni$1;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../webpack/buildin/global.js */ 2)))
 
 /***/ }),
-
-/***/ 10:
-/*!***************************!*\
-  !*** ./src/utils/util.js ***!
-  \***************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-var _validate = __webpack_require__(/*! ./validate */ 11);
-const {
-  env
-} = __webpack_require__(/*! @/http/env */ 12);
-const formatTime = date => {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-  return `${[year, month, day].map(formatNumber).join('/')} ${[hour, minute, second].map(formatNumber).join(':')}`;
-};
-const getQueryParam = key => {
-  const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i');
-  const r = window.location.search.substr(1).match(reg);
-  if (r != null) {
-    return decodeURI(r[2]);
-  }
-  return null;
-};
-const formatNumber = n => {
-  n = n.toString();
-  return n[1] ? n : `0${n}`;
-};
-
-// 格式化数字
-const numberFormat = value => {
-  const param = {};
-  const k = 10000;
-  const sizes = ['', '万', '亿', '万亿'];
-  let i;
-  if (value < k) {
-    param.value = value;
-    param.unit = '';
-  } else {
-    i = Math.floor(Math.log(value) / Math.log(k));
-    param.value = (value / Math.pow(k, i)).toFixed(0);
-    param.unit = sizes[i];
-  }
-  return param.value + param.unit;
-};
-
-// 格式化时间
-// 这都n年了iOS依然不认识2020-12-12，需要转换为2020/12/12
-const getDate = time => {
-  if (time instanceof Date) {
-    return time;
-  }
-  switch (typeof time) {
-    case 'string':
-      {
-        // 2020-12-12T12:12:12.000Z、2020-12-12T12:12:12.000
-        if (time.indexOf('T') > -1) {
-          return new Date(time);
-        }
-        return new Date(time.replace(/-/g, '/'));
-      }
-    default:
-      return new Date(time);
-  }
-};
-const pad = (str, length = 2) => {
-  str += '';
-  while (str.length < length) {
-    str = '0' + str;
-  }
-  return str.slice(-length);
-};
-const parser = {
-  yyyy: dateObj => {
-    return pad(dateObj.year, 4);
-  },
-  yy: dateObj => {
-    return pad(dateObj.year);
-  },
-  MM: dateObj => {
-    return pad(dateObj.month);
-  },
-  M: dateObj => {
-    return dateObj.month;
-  },
-  dd: dateObj => {
-    return pad(dateObj.day);
-  },
-  d: dateObj => {
-    return dateObj.day;
-  },
-  hh: dateObj => {
-    return pad(dateObj.hour);
-  },
-  h: dateObj => {
-    return dateObj.hour;
-  },
-  mm: dateObj => {
-    return pad(dateObj.minute);
-  },
-  m: dateObj => {
-    return dateObj.minute;
-  },
-  ss: dateObj => {
-    return pad(dateObj.second);
-  },
-  s: dateObj => {
-    return dateObj.second;
-  },
-  SSS: dateObj => {
-    return pad(dateObj.millisecond, 3);
-  },
-  S: dateObj => {
-    return dateObj.millisecond;
-  }
-};
-const formatDate = (date, format = 'yyyy-MM-dd') => {
-  if (!date && date !== 0) {
-    return '';
-  }
-  date = getDate(date);
-  const dateObj = {
-    year: date.getFullYear(),
-    month: date.getMonth() + 1,
-    day: date.getDate(),
-    hour: date.getHours(),
-    minute: date.getMinutes(),
-    second: date.getSeconds(),
-    millisecond: date.getMilliseconds()
-  };
-  const tokenRegExp = /yyyy|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/;
-  let flag = true;
-  let result = format;
-  while (flag) {
-    flag = false;
-    result = result.replace(tokenRegExp, function (matched) {
-      flag = true;
-      return parser[matched](dateObj);
-    });
-  }
-  return result;
-};
-function getAppIdFromUrl(url) {
-  const appidMatch = url.match(/appid=([^&]*)/);
-  return appidMatch ? appidMatch[1] : null;
-}
-const pageJump = (url, callback = null) => {
-  console.log('url', url);
-  if (url.includes('appid')) {
-    const pathMatch = url.match(/(.*)&appid=/);
-    const path = pathMatch ? pathMatch[1].replace(/^\//, '') : null; // 去掉前面的斜杠
-    const appId = getAppIdFromUrl(url);
-    if (path && appId) {
-      console.log({
-        path,
-        appId
-      });
-      uni.navigateToMiniProgram({
-        appId,
-        path,
-        success: res => {
-          console.log('跳转结果', res);
-        },
-        complete() {
-          callback === null || callback === void 0 ? void 0 : callback();
-        }
-      });
-    }
-    return;
-  }
-  // webview跳转外网地址带上token
-  if ((0, _validate.isHttpLink)(url)) {
-    url += (url.indexOf('?') > -1 ? '&' : '?') + '&token=' + lsGet('iclubUserToken3');
-    url = '/pages/webview/webView?url=' + encodeURIComponent(url);
-  }
-  uni.navigateTo({
-    url,
-    success(res) {
-      callback === null || callback === void 0 ? void 0 : callback();
-    }
-  });
-};
-
-// 回退到指定页面，如果没有，则回退到上一页
-const backToPage = url => {
-  const routers = getCurrentPages().map(i => i.route).reverse();
-  const index = routers.indexOf(url);
-  uni.navigateBack({
-    delta: Math.max(index, 1)
-  });
-};
-
-// 刷新当前页面
-const refreshCurrentPage = () => {
-  const pages = getCurrentPages().reverse();
-  const url = pages[0] && pages[0].$page.fullPath;
-  console.log(url, 'urlurl刷新当前页面');
-  function reloadPage() {
-    console.log('页面列表', getCurrentPages());
-    const pages = getCurrentPages().slice(0, -1);
-    const currentPage = pages[pages.length - 1];
-    console.log('刷新当前页面', currentPage);
-    if (currentPage) {
-      currentPage.onLoad(currentPage.options);
-    }
-  }
-  if (!url) return;
-  if (url.includes('login')) {
-    wx.navigateBack({
-      success: function () {
-        reloadPage();
-      }
-    });
-  } else {
-    reloadPage();
-    // uni.redirectTo({ url })
-  }
-};
-
-// 判断是否登录
-const isLogin = () => {
-  return !!lsGet('iclubUserToken3');
-};
-
-// 获取微信二维码进来的参数
-const getScene = scene => {
-  // 当重新获取用户信息第一次进的时候,得到的%3D会变成%253D, 这里兼容一下
-  const newScene = scene.replace('%253D', '%3D');
-  const str = decodeURIComponent(newScene).replace('?', '');
-  const strArr = str.split('&').filter(item => item);
-  const result = {};
-  strArr.map(item => {
-    const key = item.split('=');
-    result[key[0]] = key[1];
-    return item;
-  });
-  return result;
-};
-
-/**
- * storage存储 - 可以区分环境
- */
-const ls = (key, value, opt = {}) => {
-  // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  uni.setStorageSync(diffEnv ? `${env}_${key}` : key, value);
-};
-
-/**
- * storage获取 - 可以区分环境
- */
-const lsGet = (key, opt = {}) => {
-  // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  return uni.getStorageSync(diffEnv ? `${env}_${key}` : key);
-};
-
-/**
- * storage清除 - 可以区分环境
- */
-const lsDel = (key, opt = {}) => {
-  // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  return uni.removeStorageSync(diffEnv ? `${env}_${key}` : key);
-};
-module.exports = {
-  ls,
-  lsGet,
-  lsDel,
-  isLogin,
-  getScene,
-  pageJump,
-  backToPage,
-  refreshCurrentPage,
-  formatTime,
-  formatDate,
-  numberFormat,
-  getQueryParam
-};
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 11:
-/*!*******************************!*\
-  !*** ./src/utils/validate.js ***!
-  \*******************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/**
- * 常用的校验
- */
-
-// 手机号校验
-const isMobile = str => {
-  return /^1\d{10}$/.test(str);
-};
-
-// 邮箱校验
-const isEmail = str => {
-  return /^\S+?@\S+?\.\S+?$/.test(str);
-};
-
-// http链接校验
-const isHttpLink = str => {
-  return /^https?/.test(str);
-};
-module.exports = {
-  isEmail,
-  isMobile,
-  isHttpLink
-};
-
-/***/ }),
-
-/***/ 12:
-/*!*************************!*\
-  !*** ./src/http/env.js ***!
-  \*************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-const conf = {
-  // 环境
-  env: "test",
-  // 测试环境跳 体验版
-  envVersion: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : "trial",
-  // 接口调用API地址
-  baseNewUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : "https://user-test.imeik.com",
-  // iclub接口地址
-  baseIclubUrl: Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : "https://iclub-backend-test.imeik.com"
-};
-module.exports = conf;
-
-/***/ }),
-
-/***/ 13:
-/*!****************************!*\
-  !*** ./src/store/store.js ***!
-  \****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
-var _vuex = _interopRequireDefault(__webpack_require__(/*! vuex */ 14));
-var _tasks = __webpack_require__(/*! @/http/tasks */ 15);
-var _wx = __webpack_require__(/*! @/http/wx.js */ 25);
-var _mine = __webpack_require__(/*! @/http/mine.js */ 26);
-var _common = __webpack_require__(/*! @/http/common */ 27);
-var _util = __webpack_require__(/*! @/utils/util */ 10);
-var _utils = __webpack_require__(/*! @/utils */ 17);
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-// import { checkFuliFlag } from "@/http/fuli";
-// import { getComment } from '@/http/content'
-
-_vue.default.use(_vuex.default);
-const store = new _vuex.default.Store({
-  state: {
-    commonConfig: {},
-    isLogin: !!(0, _util.lsGet)("iclubUserToken3"),
-    captchaFlag: false,
-    userInfo: {},
-    addressId: "",
-    commentList: [],
-    isTodayCheckIn: false,
-    // 今日签到状态
-    defaultAvatar: "",
-    balance: 0,
-    // 用户活力值
-    willExpiredBalance: 0,
-    // 即将过期活力值
-    // dictionaryTree: {}, // 数据字典
-    iclubDictoryTree: {},
-    // 数据字典
-    signTask: {},
-    // 签到任务
-    isSpecialEventRunning: false,
-    // 是否有活动在进行中
-    fuliFlag: false,
-    // 判断用户是否拥有过福利金
-    systemUpdate: false,
-    // 系统升级弹窗
-    // 分享code
-    shareCode: "",
-    // 赠卡code
-    shareCode1: "",
-    openId: "",
-    unionId: "",
-    hihiPageStart: false,
-    hihiInvitedEntry: false,
-    openIdHasSetted: false,
-    cityTree: []
-  },
-  getters: {
-    isLogin(state) {
-      return state.isLogin;
-    },
-    sms4(state) {
-      var _find, _find2;
-      return {
-        key: ((_find = (state.iclubDictoryTree.options || []).find(item => item.name === "sms_key")) === null || _find === void 0 ? void 0 : _find.sign) || "",
-        iv: ((_find2 = (state.iclubDictoryTree.options || []).find(item => item.name === "sms_iv")) === null || _find2 === void 0 ? void 0 : _find2.sign) || ""
-      };
-    },
-    eventInfo(state) {
-      var _find3, _find4;
-      return {
-        startTime: ((_find3 = (state.iclubDictoryTree.options || []).find(item => item.name === "activityStartTime")) === null || _find3 === void 0 ? void 0 : _find3.sign) || "",
-        endTime: ((_find4 = (state.iclubDictoryTree.options || []).find(item => item.name === "activityEndTime")) === null || _find4 === void 0 ? void 0 : _find4.sign) || ""
-      };
-    }
-  },
-  mutations: {
-    setDictionaryTree(state, payload) {
-      console.log("setDictionaryTree", payload);
-      //   state.dictionaryTree = payload
-      state.iclubDictoryTree = payload;
-    },
-    setFuliFlag(state, payload) {
-      state.fuliFlag = payload;
-    },
-    setIsLogin(state, payload) {
-      console.warn("setIsLogin::::", payload);
-      state.isLogin = payload;
-    },
-    setCommentList(state, payload) {
-      state.commentList = payload;
-    },
-    setUserInfo(state, payload) {
-      state.userInfo = payload;
-    },
-    setBalance(state, payload) {
-      state.balance = payload.integralBalance;
-      state.willExpiredBalance = payload.willExpiredIntegral;
-    },
-    setTodayCheckIn(state, payload) {
-      state.isTodayCheckIn = payload;
-    },
-    setSignTask(state, payload) {
-      state.signTask = payload;
-    },
-    setDefaultAvatar(state) {
-      const defaultAvatars = ["https://udstatic.imeik.com/pcUploads/1705285352902/1.png", "https://udstatic.imeik.com/pcUploads/1705285380205/2.png", "https://udstatic.imeik.com/pcUploads/1705285409154/3.png"];
-      const randomNumber = Math.floor(Math.random() * defaultAvatars.length);
-      state.defaultAvatar = defaultAvatars[randomNumber];
-    },
-    setConfig(state, payload) {
-      console.warn("load-config::::::::", payload);
-      state.commonConfig = payload;
-      if (payload.systemUpdate) {
-        // state.systemUpdate = true
-        state.systemUpdate = payload.systemUpdate;
-      }
-    },
-    setIsSpecialEventRunning(state, payload) {
-      state.isSpecialEventRunning = payload;
-    },
-    setCaptchaFlag(state, value) {
-      state.captchaFlag = value;
-    },
-    setSystemUpdate(state, value) {
-      state.systemUpdate = value;
-    },
-    // 设置分享码
-    storeShareCode(state, params) {
-      state.shareCode = params;
-    },
-    // 设置分享码
-    storeShareCode1(state, params) {
-      state.shareCode1 = params;
-    },
-    setAddressId(state, addressId) {
-      state.addressId = addressId;
-    },
-    setOpenIdSetted(state, value) {
-      state.openIdHasSetted = value;
-    },
-    setOpenId(state, {
-      unionid,
-      openid
-    }) {
-      var _state$userInfo, _fromPage;
-      state.openId = openid;
-      console.log("🚀 ~ setOpenId ~ openid:", openid);
-      state.unionId = unionid;
-      // 记录分享信息
-      let fromPage = getApp().globalData.shareLink || "/pages/home/index";
-      const inviteOpenId = getApp().globalData.inviteOpenId;
-      const inviteUserCode = getApp().globalData.inviteCode;
-      const inviteeOpenId = openid;
-      const inviteeUserCode = (_state$userInfo = state.userInfo) === null || _state$userInfo === void 0 ? void 0 : _state$userInfo.objectCode;
-      const shareTime = getApp().globalData.shareLinkTime;
-      if ((_fromPage = fromPage) !== null && _fromPage !== void 0 && _fromPage.includes("%")) {
-        fromPage = decodeURIComponent(fromPage);
-      }
-      // 两个相等代表自己点自己的分享
-      if (inviteOpenId === inviteeOpenId) {
-        return;
-      }
-      // 通过渠道二维码进来的小程序记录分享信息等
-      if (!getApp().globalData.userSource && inviteOpenId && !state.openIdHasSetted) {
-        console.error("----------------- mixinGetOpenId -----------------");
-        (0, _common.apiRecordShareInfo)({
-          channelCode: "",
-          fromPage,
-          inviteOpenId,
-          inviteUserCode,
-          inviteeOpenId,
-          inviteeUserCode,
-          shareTime
-        }).then(() => {
-          state.openIdHasSetted = true;
-        });
-      }
-    },
-    setHihiPageStart(state, hihiPageStart) {
-      state.hihiPageStart = hihiPageStart;
-    },
-    setHihiInvitedEntry(state, hihiInvitedEntry) {
-      state.hihiInvitedEntry = hihiInvitedEntry;
-    },
-    setCityTree(state, payload) {
-      state.cityTree = payload;
-    }
-  },
-  actions: {
-    getCityTree({
-      commit
-    }) {
-      console.error("getCityTree");
-      return new Promise(resolve => {
-        wx.request({
-          url: "https://udstatic.imeik.com/iclub/json/city.json",
-          success(res) {
-            commit("setCityTree", res.data.data);
-            resolve();
-          }
-        });
-      });
-      // cityTree().then((res) => {
-      //   commit('setCityTree', res)
-      // })
-    },
-
-    getConfig({
-      commit
-    }) {
-      wx.request({
-        url: `https://imeikud.oss-cn-beijing.aliyuncs.com/iclub/config${Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "prod" ? "" : "_test"}.json?v=${Math.random()}`,
-        success(res) {
-          console.log("setConfig-data", res.data);
-          commit("setConfig", res.data);
-        }
-      });
-    },
-    getDictTree({
-      commit
-    }) {
-      return new Promise(resolve => {
-        wx.request({
-          url: `https://imeikud.oss-cn-beijing.aliyuncs.com/iclub/json/tree${Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "prod" ? "" : "_test"}.json`,
-          success(res) {
-            console.log("setConfig-tree", res.data);
-            commit("setDictionaryTree", res.data);
-            resolve();
-          }
-        });
-      });
-    },
-    async getPointBalance({
-      commit
-    }) {
-      const {
-        data
-      } = await (0, _tasks.getIntegralBalanceNew)();
-      console.log("data", data);
-      commit("setBalance", data);
-    },
-    async getUserInfo({
-      commit,
-      dispatch,
-      state
-    }) {
-      return new Promise(resolve => {
-        (0, _wx.userInfo)().then(res => {
-          commit("setUserInfo", res);
-          commit("setIsLogin", true);
-          dispatch("getSignTask");
-          dispatch("detectFuliFlag");
-          dispatch("getPointBalance");
-          (0, _util.ls)("userInfo", res);
-          // 如果没有unionId，上报
-          if (!res.unionid) {
-            //   dispatch('uploadUserUnionId')
-          }
-          resolve(res);
-        }).catch(() => {
-          commit("setIsLogin", false);
-          commit("setUserInfo", {});
-          resolve("");
-        });
-      });
-    },
-    uploadUserUnionId() {
-      uni.login({
-        success(data) {
-          if (data.errMsg === "login:ok") {
-            (0, _wx.wxUpdateOpenId)({
-              appId: "wx4cef4e6f8975a519",
-              code: data.code
-            }).then(res => {
-              console.log("update unionId成功", res);
-            }).catch(() => {});
-          }
-        },
-        fail(err) {
-          console.log("update unionId失败", err);
-        }
-      });
-    },
-    // async getComment({ commit }, contentCode) {
-    //   const result = await getComment({ page: 1, limit: 9999, contentCode })
-    //   commit('setCommentList', result.list || [])
-    // },
-    // detectFuliFlag({ commit }) {
-    //   // eslint-disable-next-line no-async-promise-executor
-    //   return new Promise(async (resolve) => {
-    //     const { data } = await checkFuliFlag();
-    //     console.log("!!!!!flag", data);
-    //     commit("setFuliFlag", data);
-    //     resolve(data);
-    //   });
-    // },
-    async getSignTask({
-      commit
-    }) {
-      // eslint-disable-next-line no-async-promise-executor
-      return new Promise(async resolve => {
-        try {
-          const [{
-            value: StatusData
-          }, {
-            value: TaskData
-          }] = await Promise.allSettled([(0, _tasks.getUserSignForOneWeek)(), (0, _tasks.getIntegralTask)()]);
-          commit("setSignTask", {
-            StatusData,
-            TaskData
-          });
-        } catch {} finally {
-          resolve(true);
-        }
-      });
-    },
-    // 判断是否是特殊活动,如果在活动期间，则首页弹窗活动广告
-    async getSpecialEventInfo({
-      commit,
-      state
-    }) {
-      var _state$iclubDictoryTr, _state$iclubDictoryTr2, _state$iclubDictoryTr3, _state$iclubDictoryTr4, _state$iclubDictoryTr5, _state$iclubDictoryTr6;
-      const startTime = ((_state$iclubDictoryTr = state.iclubDictoryTree.options) === null || _state$iclubDictoryTr === void 0 ? void 0 : (_state$iclubDictoryTr2 = _state$iclubDictoryTr.find) === null || _state$iclubDictoryTr2 === void 0 ? void 0 : (_state$iclubDictoryTr3 = _state$iclubDictoryTr2.call(_state$iclubDictoryTr, item => item.name === "activityStartTime")) === null || _state$iclubDictoryTr3 === void 0 ? void 0 : _state$iclubDictoryTr3.sign) || "";
-      const endTime = ((_state$iclubDictoryTr4 = state.iclubDictoryTree.options) === null || _state$iclubDictoryTr4 === void 0 ? void 0 : (_state$iclubDictoryTr5 = _state$iclubDictoryTr4.find) === null || _state$iclubDictoryTr5 === void 0 ? void 0 : (_state$iclubDictoryTr6 = _state$iclubDictoryTr5.call(_state$iclubDictoryTr4, item => item.name === "activityEndTime")) === null || _state$iclubDictoryTr6 === void 0 ? void 0 : _state$iclubDictoryTr6.sign) || "";
-      const currentTime = new Date();
-      // const currentDay = moment().format('yyyy-MM-DD')
-      // const cacheKey = 'showAd' + currentDay
-      // const cacheKey = 'showAd'
-      // const adCache = wx.getStorageSync(cacheKey)
-      // console.log('🚀 ~ getSpecialEventInfo ~ adCache:', adCache)
-      if (currentTime > new Date(startTime) && currentTime < new Date(endTime)) {
-        // if (!adCache) {
-        // wx.setStorageSync(cacheKey, 1)
-        commit("setIsSpecialEventRunning", true);
-        // }
-      }
-    },
-
-    setIntegral({
-      state,
-      dispatch
-    }, {
-      changeSource,
-      objectCode
-    }) {
-      const businessCode = objectCode || state.userInfo.objectCode;
-      if (!businessCode) return;
-      return new Promise(resolve => {
-        (0, _mine.iclubApiUserAddIntegral)({
-          changeSource,
-          businessCode
-        }).then(res => {
-          console.log("iclubApiUserAddIntegral", res);
-          dispatch("getPointBalance");
-          resolve(true);
-        });
-      });
-    }
-  }
-});
-var _default = store;
-exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 14:
-/*!**************************************************************************************!*\
-  !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vuex3/dist/vuex.common.js ***!
-  \**************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(global) {/*!
- * vuex v3.6.2
- * (c) 2021 Evan You
- * @license MIT
- */
-
-
-function applyMixin (Vue) {
-  var version = Number(Vue.version.split('.')[0]);
-
-  if (version >= 2) {
-    Vue.mixin({ beforeCreate: vuexInit });
-  } else {
-    // override init and inject vuex init procedure
-    // for 1.x backwards compatibility.
-    var _init = Vue.prototype._init;
-    Vue.prototype._init = function (options) {
-      if ( options === void 0 ) options = {};
-
-      options.init = options.init
-        ? [vuexInit].concat(options.init)
-        : vuexInit;
-      _init.call(this, options);
-    };
-  }
-
-  /**
-   * Vuex init hook, injected into each instances init hooks list.
-   */
-
-  function vuexInit () {
-    var options = this.$options;
-    // store injection
-    if (options.store) {
-      this.$store = typeof options.store === 'function'
-        ? options.store()
-        : options.store;
-    } else if (options.parent && options.parent.$store) {
-      this.$store = options.parent.$store;
-    }
-  }
-}
-
-var target = typeof window !== 'undefined'
-  ? window
-  : typeof global !== 'undefined'
-    ? global
-    : {};
-var devtoolHook = target.__VUE_DEVTOOLS_GLOBAL_HOOK__;
-
-function devtoolPlugin (store) {
-  if (!devtoolHook) { return }
-
-  store._devtoolHook = devtoolHook;
-
-  devtoolHook.emit('vuex:init', store);
-
-  devtoolHook.on('vuex:travel-to-state', function (targetState) {
-    store.replaceState(targetState);
-  });
-
-  store.subscribe(function (mutation, state) {
-    devtoolHook.emit('vuex:mutation', mutation, state);
-  }, { prepend: true });
-
-  store.subscribeAction(function (action, state) {
-    devtoolHook.emit('vuex:action', action, state);
-  }, { prepend: true });
-}
-
-/**
- * Get the first item that pass the test
- * by second argument function
- *
- * @param {Array} list
- * @param {Function} f
- * @return {*}
- */
-function find (list, f) {
-  return list.filter(f)[0]
-}
-
-/**
- * Deep copy the given object considering circular structure.
- * This function caches all nested objects and its copies.
- * If it detects circular structure, use cached copy to avoid infinite loop.
- *
- * @param {*} obj
- * @param {Array<Object>} cache
- * @return {*}
- */
-function deepCopy (obj, cache) {
-  if ( cache === void 0 ) cache = [];
-
-  // just return if obj is immutable value
-  if (obj === null || typeof obj !== 'object') {
-    return obj
-  }
-
-  // if obj is hit, it is in circular structure
-  var hit = find(cache, function (c) { return c.original === obj; });
-  if (hit) {
-    return hit.copy
-  }
-
-  var copy = Array.isArray(obj) ? [] : {};
-  // put the copy into cache at first
-  // because we want to refer it in recursive deepCopy
-  cache.push({
-    original: obj,
-    copy: copy
-  });
-
-  Object.keys(obj).forEach(function (key) {
-    copy[key] = deepCopy(obj[key], cache);
-  });
-
-  return copy
-}
-
-/**
- * forEach for object
- */
-function forEachValue (obj, fn) {
-  Object.keys(obj).forEach(function (key) { return fn(obj[key], key); });
-}
-
-function isObject (obj) {
-  return obj !== null && typeof obj === 'object'
-}
-
-function isPromise (val) {
-  return val && typeof val.then === 'function'
-}
-
-function assert (condition, msg) {
-  if (!condition) { throw new Error(("[vuex] " + msg)) }
-}
-
-function partial (fn, arg) {
-  return function () {
-    return fn(arg)
-  }
-}
-
-// Base data struct for store's module, package with some attribute and method
-var Module = function Module (rawModule, runtime) {
-  this.runtime = runtime;
-  // Store some children item
-  this._children = Object.create(null);
-  // Store the origin module object which passed by programmer
-  this._rawModule = rawModule;
-  var rawState = rawModule.state;
-
-  // Store the origin module's state
-  this.state = (typeof rawState === 'function' ? rawState() : rawState) || {};
-};
-
-var prototypeAccessors = { namespaced: { configurable: true } };
-
-prototypeAccessors.namespaced.get = function () {
-  return !!this._rawModule.namespaced
-};
-
-Module.prototype.addChild = function addChild (key, module) {
-  this._children[key] = module;
-};
-
-Module.prototype.removeChild = function removeChild (key) {
-  delete this._children[key];
-};
-
-Module.prototype.getChild = function getChild (key) {
-  return this._children[key]
-};
-
-Module.prototype.hasChild = function hasChild (key) {
-  return key in this._children
-};
-
-Module.prototype.update = function update (rawModule) {
-  this._rawModule.namespaced = rawModule.namespaced;
-  if (rawModule.actions) {
-    this._rawModule.actions = rawModule.actions;
-  }
-  if (rawModule.mutations) {
-    this._rawModule.mutations = rawModule.mutations;
-  }
-  if (rawModule.getters) {
-    this._rawModule.getters = rawModule.getters;
-  }
-};
-
-Module.prototype.forEachChild = function forEachChild (fn) {
-  forEachValue(this._children, fn);
-};
-
-Module.prototype.forEachGetter = function forEachGetter (fn) {
-  if (this._rawModule.getters) {
-    forEachValue(this._rawModule.getters, fn);
-  }
-};
-
-Module.prototype.forEachAction = function forEachAction (fn) {
-  if (this._rawModule.actions) {
-    forEachValue(this._rawModule.actions, fn);
-  }
-};
-
-Module.prototype.forEachMutation = function forEachMutation (fn) {
-  if (this._rawModule.mutations) {
-    forEachValue(this._rawModule.mutations, fn);
-  }
-};
-
-Object.defineProperties( Module.prototype, prototypeAccessors );
-
-var ModuleCollection = function ModuleCollection (rawRootModule) {
-  // register root module (Vuex.Store options)
-  this.register([], rawRootModule, false);
-};
-
-ModuleCollection.prototype.get = function get (path) {
-  return path.reduce(function (module, key) {
-    return module.getChild(key)
-  }, this.root)
-};
-
-ModuleCollection.prototype.getNamespace = function getNamespace (path) {
-  var module = this.root;
-  return path.reduce(function (namespace, key) {
-    module = module.getChild(key);
-    return namespace + (module.namespaced ? key + '/' : '')
-  }, '')
-};
-
-ModuleCollection.prototype.update = function update$1 (rawRootModule) {
-  update([], this.root, rawRootModule);
-};
-
-ModuleCollection.prototype.register = function register (path, rawModule, runtime) {
-    var this$1 = this;
-    if ( runtime === void 0 ) runtime = true;
-
-  if ((true)) {
-    assertRawModule(path, rawModule);
-  }
-
-  var newModule = new Module(rawModule, runtime);
-  if (path.length === 0) {
-    this.root = newModule;
-  } else {
-    var parent = this.get(path.slice(0, -1));
-    parent.addChild(path[path.length - 1], newModule);
-  }
-
-  // register nested modules
-  if (rawModule.modules) {
-    forEachValue(rawModule.modules, function (rawChildModule, key) {
-      this$1.register(path.concat(key), rawChildModule, runtime);
-    });
-  }
-};
-
-ModuleCollection.prototype.unregister = function unregister (path) {
-  var parent = this.get(path.slice(0, -1));
-  var key = path[path.length - 1];
-  var child = parent.getChild(key);
-
-  if (!child) {
-    if ((true)) {
-      console.warn(
-        "[vuex] trying to unregister module '" + key + "', which is " +
-        "not registered"
-      );
-    }
-    return
-  }
-
-  if (!child.runtime) {
-    return
-  }
-
-  parent.removeChild(key);
-};
-
-ModuleCollection.prototype.isRegistered = function isRegistered (path) {
-  var parent = this.get(path.slice(0, -1));
-  var key = path[path.length - 1];
-
-  if (parent) {
-    return parent.hasChild(key)
-  }
-
-  return false
-};
-
-function update (path, targetModule, newModule) {
-  if ((true)) {
-    assertRawModule(path, newModule);
-  }
-
-  // update target module
-  targetModule.update(newModule);
-
-  // update nested modules
-  if (newModule.modules) {
-    for (var key in newModule.modules) {
-      if (!targetModule.getChild(key)) {
-        if ((true)) {
-          console.warn(
-            "[vuex] trying to add a new module '" + key + "' on hot reloading, " +
-            'manual reload is needed'
-          );
-        }
-        return
-      }
-      update(
-        path.concat(key),
-        targetModule.getChild(key),
-        newModule.modules[key]
-      );
-    }
-  }
-}
-
-var functionAssert = {
-  assert: function (value) { return typeof value === 'function'; },
-  expected: 'function'
-};
-
-var objectAssert = {
-  assert: function (value) { return typeof value === 'function' ||
-    (typeof value === 'object' && typeof value.handler === 'function'); },
-  expected: 'function or object with "handler" function'
-};
-
-var assertTypes = {
-  getters: functionAssert,
-  mutations: functionAssert,
-  actions: objectAssert
-};
-
-function assertRawModule (path, rawModule) {
-  Object.keys(assertTypes).forEach(function (key) {
-    if (!rawModule[key]) { return }
-
-    var assertOptions = assertTypes[key];
-
-    forEachValue(rawModule[key], function (value, type) {
-      assert(
-        assertOptions.assert(value),
-        makeAssertionMessage(path, key, type, value, assertOptions.expected)
-      );
-    });
-  });
-}
-
-function makeAssertionMessage (path, key, type, value, expected) {
-  var buf = key + " should be " + expected + " but \"" + key + "." + type + "\"";
-  if (path.length > 0) {
-    buf += " in module \"" + (path.join('.')) + "\"";
-  }
-  buf += " is " + (JSON.stringify(value)) + ".";
-  return buf
-}
-
-var Vue; // bind on install
-
-var Store = function Store (options) {
-  var this$1 = this;
-  if ( options === void 0 ) options = {};
-
-  // Auto install if it is not done yet and `window` has `Vue`.
-  // To allow users to avoid auto-installation in some cases,
-  // this code should be placed here. See #731
-  if (!Vue && typeof window !== 'undefined' && window.Vue) {
-    install(window.Vue);
-  }
-
-  if ((true)) {
-    assert(Vue, "must call Vue.use(Vuex) before creating a store instance.");
-    assert(typeof Promise !== 'undefined', "vuex requires a Promise polyfill in this browser.");
-    assert(this instanceof Store, "store must be called with the new operator.");
-  }
-
-  var plugins = options.plugins; if ( plugins === void 0 ) plugins = [];
-  var strict = options.strict; if ( strict === void 0 ) strict = false;
-
-  // store internal state
-  this._committing = false;
-  this._actions = Object.create(null);
-  this._actionSubscribers = [];
-  this._mutations = Object.create(null);
-  this._wrappedGetters = Object.create(null);
-  this._modules = new ModuleCollection(options);
-  this._modulesNamespaceMap = Object.create(null);
-  this._subscribers = [];
-  this._watcherVM = new Vue();
-  this._makeLocalGettersCache = Object.create(null);
-
-  // bind commit and dispatch to self
-  var store = this;
-  var ref = this;
-  var dispatch = ref.dispatch;
-  var commit = ref.commit;
-  this.dispatch = function boundDispatch (type, payload) {
-    return dispatch.call(store, type, payload)
-  };
-  this.commit = function boundCommit (type, payload, options) {
-    return commit.call(store, type, payload, options)
-  };
-
-  // strict mode
-  this.strict = strict;
-
-  var state = this._modules.root.state;
-
-  // init root module.
-  // this also recursively registers all sub-modules
-  // and collects all module getters inside this._wrappedGetters
-  installModule(this, state, [], this._modules.root);
-
-  // initialize the store vm, which is responsible for the reactivity
-  // (also registers _wrappedGetters as computed properties)
-  resetStoreVM(this, state);
-
-  // apply plugins
-  plugins.forEach(function (plugin) { return plugin(this$1); });
-
-  var useDevtools = options.devtools !== undefined ? options.devtools : Vue.config.devtools;
-  if (useDevtools) {
-    devtoolPlugin(this);
-  }
-};
-
-var prototypeAccessors$1 = { state: { configurable: true } };
-
-prototypeAccessors$1.state.get = function () {
-  return this._vm._data.$$state
-};
-
-prototypeAccessors$1.state.set = function (v) {
-  if ((true)) {
-    assert(false, "use store.replaceState() to explicit replace store state.");
-  }
-};
-
-Store.prototype.commit = function commit (_type, _payload, _options) {
-    var this$1 = this;
-
-  // check object-style commit
-  var ref = unifyObjectStyle(_type, _payload, _options);
-    var type = ref.type;
-    var payload = ref.payload;
-    var options = ref.options;
-
-  var mutation = { type: type, payload: payload };
-  var entry = this._mutations[type];
-  if (!entry) {
-    if ((true)) {
-      console.error(("[vuex] unknown mutation type: " + type));
-    }
-    return
-  }
-  this._withCommit(function () {
-    entry.forEach(function commitIterator (handler) {
-      handler(payload);
-    });
-  });
-
-  this._subscribers
-    .slice() // shallow copy to prevent iterator invalidation if subscriber synchronously calls unsubscribe
-    .forEach(function (sub) { return sub(mutation, this$1.state); });
-
-  if (
-    ( true) &&
-    options && options.silent
-  ) {
-    console.warn(
-      "[vuex] mutation type: " + type + ". Silent option has been removed. " +
-      'Use the filter functionality in the vue-devtools'
-    );
-  }
-};
-
-Store.prototype.dispatch = function dispatch (_type, _payload) {
-    var this$1 = this;
-
-  // check object-style dispatch
-  var ref = unifyObjectStyle(_type, _payload);
-    var type = ref.type;
-    var payload = ref.payload;
-
-  var action = { type: type, payload: payload };
-  var entry = this._actions[type];
-  if (!entry) {
-    if ((true)) {
-      console.error(("[vuex] unknown action type: " + type));
-    }
-    return
-  }
-
-  try {
-    this._actionSubscribers
-      .slice() // shallow copy to prevent iterator invalidation if subscriber synchronously calls unsubscribe
-      .filter(function (sub) { return sub.before; })
-      .forEach(function (sub) { return sub.before(action, this$1.state); });
-  } catch (e) {
-    if ((true)) {
-      console.warn("[vuex] error in before action subscribers: ");
-      console.error(e);
-    }
-  }
-
-  var result = entry.length > 1
-    ? Promise.all(entry.map(function (handler) { return handler(payload); }))
-    : entry[0](payload);
-
-  return new Promise(function (resolve, reject) {
-    result.then(function (res) {
-      try {
-        this$1._actionSubscribers
-          .filter(function (sub) { return sub.after; })
-          .forEach(function (sub) { return sub.after(action, this$1.state); });
-      } catch (e) {
-        if ((true)) {
-          console.warn("[vuex] error in after action subscribers: ");
-          console.error(e);
-        }
-      }
-      resolve(res);
-    }, function (error) {
-      try {
-        this$1._actionSubscribers
-          .filter(function (sub) { return sub.error; })
-          .forEach(function (sub) { return sub.error(action, this$1.state, error); });
-      } catch (e) {
-        if ((true)) {
-          console.warn("[vuex] error in error action subscribers: ");
-          console.error(e);
-        }
-      }
-      reject(error);
-    });
-  })
-};
-
-Store.prototype.subscribe = function subscribe (fn, options) {
-  return genericSubscribe(fn, this._subscribers, options)
-};
-
-Store.prototype.subscribeAction = function subscribeAction (fn, options) {
-  var subs = typeof fn === 'function' ? { before: fn } : fn;
-  return genericSubscribe(subs, this._actionSubscribers, options)
-};
-
-Store.prototype.watch = function watch (getter, cb, options) {
-    var this$1 = this;
-
-  if ((true)) {
-    assert(typeof getter === 'function', "store.watch only accepts a function.");
-  }
-  return this._watcherVM.$watch(function () { return getter(this$1.state, this$1.getters); }, cb, options)
-};
-
-Store.prototype.replaceState = function replaceState (state) {
-    var this$1 = this;
-
-  this._withCommit(function () {
-    this$1._vm._data.$$state = state;
-  });
-};
-
-Store.prototype.registerModule = function registerModule (path, rawModule, options) {
-    if ( options === void 0 ) options = {};
-
-  if (typeof path === 'string') { path = [path]; }
-
-  if ((true)) {
-    assert(Array.isArray(path), "module path must be a string or an Array.");
-    assert(path.length > 0, 'cannot register the root module by using registerModule.');
-  }
-
-  this._modules.register(path, rawModule);
-  installModule(this, this.state, path, this._modules.get(path), options.preserveState);
-  // reset store to update getters...
-  resetStoreVM(this, this.state);
-};
-
-Store.prototype.unregisterModule = function unregisterModule (path) {
-    var this$1 = this;
-
-  if (typeof path === 'string') { path = [path]; }
-
-  if ((true)) {
-    assert(Array.isArray(path), "module path must be a string or an Array.");
-  }
-
-  this._modules.unregister(path);
-  this._withCommit(function () {
-    var parentState = getNestedState(this$1.state, path.slice(0, -1));
-    Vue.delete(parentState, path[path.length - 1]);
-  });
-  resetStore(this);
-};
-
-Store.prototype.hasModule = function hasModule (path) {
-  if (typeof path === 'string') { path = [path]; }
-
-  if ((true)) {
-    assert(Array.isArray(path), "module path must be a string or an Array.");
-  }
-
-  return this._modules.isRegistered(path)
-};
-
-Store.prototype[[104,111,116,85,112,100,97,116,101].map(function (item) {return String.fromCharCode(item)}).join('')] = function (newOptions) {
-  this._modules.update(newOptions);
-  resetStore(this, true);
-};
-
-Store.prototype._withCommit = function _withCommit (fn) {
-  var committing = this._committing;
-  this._committing = true;
-  fn();
-  this._committing = committing;
-};
-
-Object.defineProperties( Store.prototype, prototypeAccessors$1 );
-
-function genericSubscribe (fn, subs, options) {
-  if (subs.indexOf(fn) < 0) {
-    options && options.prepend
-      ? subs.unshift(fn)
-      : subs.push(fn);
-  }
-  return function () {
-    var i = subs.indexOf(fn);
-    if (i > -1) {
-      subs.splice(i, 1);
-    }
-  }
-}
-
-function resetStore (store, hot) {
-  store._actions = Object.create(null);
-  store._mutations = Object.create(null);
-  store._wrappedGetters = Object.create(null);
-  store._modulesNamespaceMap = Object.create(null);
-  var state = store.state;
-  // init all modules
-  installModule(store, state, [], store._modules.root, true);
-  // reset vm
-  resetStoreVM(store, state, hot);
-}
-
-function resetStoreVM (store, state, hot) {
-  var oldVm = store._vm;
-
-  // bind store public getters
-  store.getters = {};
-  // reset local getters cache
-  store._makeLocalGettersCache = Object.create(null);
-  var wrappedGetters = store._wrappedGetters;
-  var computed = {};
-  forEachValue(wrappedGetters, function (fn, key) {
-    // use computed to leverage its lazy-caching mechanism
-    // direct inline function use will lead to closure preserving oldVm.
-    // using partial to return function with only arguments preserved in closure environment.
-    computed[key] = partial(fn, store);
-    Object.defineProperty(store.getters, key, {
-      get: function () { return store._vm[key]; },
-      enumerable: true // for local getters
-    });
-  });
-
-  // use a Vue instance to store the state tree
-  // suppress warnings just in case the user has added
-  // some funky global mixins
-  var silent = Vue.config.silent;
-  Vue.config.silent = true;
-  store._vm = new Vue({
-    data: {
-      $$state: state
-    },
-    computed: computed
-  });
-  Vue.config.silent = silent;
-
-  // enable strict mode for new vm
-  if (store.strict) {
-    enableStrictMode(store);
-  }
-
-  if (oldVm) {
-    if (hot) {
-      // dispatch changes in all subscribed watchers
-      // to force getter re-evaluation for hot reloading.
-      store._withCommit(function () {
-        oldVm._data.$$state = null;
-      });
-    }
-    Vue.nextTick(function () { return oldVm.$destroy(); });
-  }
-}
-
-function installModule (store, rootState, path, module, hot) {
-  var isRoot = !path.length;
-  var namespace = store._modules.getNamespace(path);
-
-  // register in namespace map
-  if (module.namespaced) {
-    if (store._modulesNamespaceMap[namespace] && ("test" !== 'production')) {
-      console.error(("[vuex] duplicate namespace " + namespace + " for the namespaced module " + (path.join('/'))));
-    }
-    store._modulesNamespaceMap[namespace] = module;
-  }
-
-  // set state
-  if (!isRoot && !hot) {
-    var parentState = getNestedState(rootState, path.slice(0, -1));
-    var moduleName = path[path.length - 1];
-    store._withCommit(function () {
-      if ((true)) {
-        if (moduleName in parentState) {
-          console.warn(
-            ("[vuex] state field \"" + moduleName + "\" was overridden by a module with the same name at \"" + (path.join('.')) + "\"")
-          );
-        }
-      }
-      Vue.set(parentState, moduleName, module.state);
-    });
-  }
-
-  var local = module.context = makeLocalContext(store, namespace, path);
-
-  module.forEachMutation(function (mutation, key) {
-    var namespacedType = namespace + key;
-    registerMutation(store, namespacedType, mutation, local);
-  });
-
-  module.forEachAction(function (action, key) {
-    var type = action.root ? key : namespace + key;
-    var handler = action.handler || action;
-    registerAction(store, type, handler, local);
-  });
-
-  module.forEachGetter(function (getter, key) {
-    var namespacedType = namespace + key;
-    registerGetter(store, namespacedType, getter, local);
-  });
-
-  module.forEachChild(function (child, key) {
-    installModule(store, rootState, path.concat(key), child, hot);
-  });
-}
-
-/**
- * make localized dispatch, commit, getters and state
- * if there is no namespace, just use root ones
- */
-function makeLocalContext (store, namespace, path) {
-  var noNamespace = namespace === '';
-
-  var local = {
-    dispatch: noNamespace ? store.dispatch : function (_type, _payload, _options) {
-      var args = unifyObjectStyle(_type, _payload, _options);
-      var payload = args.payload;
-      var options = args.options;
-      var type = args.type;
-
-      if (!options || !options.root) {
-        type = namespace + type;
-        if (( true) && !store._actions[type]) {
-          console.error(("[vuex] unknown local action type: " + (args.type) + ", global type: " + type));
-          return
-        }
-      }
-
-      return store.dispatch(type, payload)
-    },
-
-    commit: noNamespace ? store.commit : function (_type, _payload, _options) {
-      var args = unifyObjectStyle(_type, _payload, _options);
-      var payload = args.payload;
-      var options = args.options;
-      var type = args.type;
-
-      if (!options || !options.root) {
-        type = namespace + type;
-        if (( true) && !store._mutations[type]) {
-          console.error(("[vuex] unknown local mutation type: " + (args.type) + ", global type: " + type));
-          return
-        }
-      }
-
-      store.commit(type, payload, options);
-    }
-  };
-
-  // getters and state object must be gotten lazily
-  // because they will be changed by vm update
-  Object.defineProperties(local, {
-    getters: {
-      get: noNamespace
-        ? function () { return store.getters; }
-        : function () { return makeLocalGetters(store, namespace); }
-    },
-    state: {
-      get: function () { return getNestedState(store.state, path); }
-    }
-  });
-
-  return local
-}
-
-function makeLocalGetters (store, namespace) {
-  if (!store._makeLocalGettersCache[namespace]) {
-    var gettersProxy = {};
-    var splitPos = namespace.length;
-    Object.keys(store.getters).forEach(function (type) {
-      // skip if the target getter is not match this namespace
-      if (type.slice(0, splitPos) !== namespace) { return }
-
-      // extract local getter type
-      var localType = type.slice(splitPos);
-
-      // Add a port to the getters proxy.
-      // Define as getter property because
-      // we do not want to evaluate the getters in this time.
-      Object.defineProperty(gettersProxy, localType, {
-        get: function () { return store.getters[type]; },
-        enumerable: true
-      });
-    });
-    store._makeLocalGettersCache[namespace] = gettersProxy;
-  }
-
-  return store._makeLocalGettersCache[namespace]
-}
-
-function registerMutation (store, type, handler, local) {
-  var entry = store._mutations[type] || (store._mutations[type] = []);
-  entry.push(function wrappedMutationHandler (payload) {
-    handler.call(store, local.state, payload);
-  });
-}
-
-function registerAction (store, type, handler, local) {
-  var entry = store._actions[type] || (store._actions[type] = []);
-  entry.push(function wrappedActionHandler (payload) {
-    var res = handler.call(store, {
-      dispatch: local.dispatch,
-      commit: local.commit,
-      getters: local.getters,
-      state: local.state,
-      rootGetters: store.getters,
-      rootState: store.state
-    }, payload);
-    if (!isPromise(res)) {
-      res = Promise.resolve(res);
-    }
-    if (store._devtoolHook) {
-      return res.catch(function (err) {
-        store._devtoolHook.emit('vuex:error', err);
-        throw err
-      })
-    } else {
-      return res
-    }
-  });
-}
-
-function registerGetter (store, type, rawGetter, local) {
-  if (store._wrappedGetters[type]) {
-    if ((true)) {
-      console.error(("[vuex] duplicate getter key: " + type));
-    }
-    return
-  }
-  store._wrappedGetters[type] = function wrappedGetter (store) {
-    return rawGetter(
-      local.state, // local state
-      local.getters, // local getters
-      store.state, // root state
-      store.getters // root getters
-    )
-  };
-}
-
-function enableStrictMode (store) {
-  store._vm.$watch(function () { return this._data.$$state }, function () {
-    if ((true)) {
-      assert(store._committing, "do not mutate vuex store state outside mutation handlers.");
-    }
-  }, { deep: true, sync: true });
-}
-
-function getNestedState (state, path) {
-  return path.reduce(function (state, key) { return state[key]; }, state)
-}
-
-function unifyObjectStyle (type, payload, options) {
-  if (isObject(type) && type.type) {
-    options = payload;
-    payload = type;
-    type = type.type;
-  }
-
-  if ((true)) {
-    assert(typeof type === 'string', ("expects string as the type, but found " + (typeof type) + "."));
-  }
-
-  return { type: type, payload: payload, options: options }
-}
-
-function install (_Vue) {
-  if (Vue && _Vue === Vue) {
-    if ((true)) {
-      console.error(
-        '[vuex] already installed. Vue.use(Vuex) should be called only once.'
-      );
-    }
-    return
-  }
-  Vue = _Vue;
-  applyMixin(Vue);
-}
-
-/**
- * Reduce the code which written in Vue.js for getting the state.
- * @param {String} [namespace] - Module's namespace
- * @param {Object|Array} states # Object's item can be a function which accept state and getters for param, you can do something for state and getters in it.
- * @param {Object}
- */
-var mapState = normalizeNamespace(function (namespace, states) {
-  var res = {};
-  if (( true) && !isValidMap(states)) {
-    console.error('[vuex] mapState: mapper parameter must be either an Array or an Object');
-  }
-  normalizeMap(states).forEach(function (ref) {
-    var key = ref.key;
-    var val = ref.val;
-
-    res[key] = function mappedState () {
-      var state = this.$store.state;
-      var getters = this.$store.getters;
-      if (namespace) {
-        var module = getModuleByNamespace(this.$store, 'mapState', namespace);
-        if (!module) {
-          return
-        }
-        state = module.context.state;
-        getters = module.context.getters;
-      }
-      return typeof val === 'function'
-        ? val.call(this, state, getters)
-        : state[val]
-    };
-    // mark vuex getter for devtools
-    res[key].vuex = true;
-  });
-  return res
-});
-
-/**
- * Reduce the code which written in Vue.js for committing the mutation
- * @param {String} [namespace] - Module's namespace
- * @param {Object|Array} mutations # Object's item can be a function which accept `commit` function as the first param, it can accept another params. You can commit mutation and do any other things in this function. specially, You need to pass anthor params from the mapped function.
- * @return {Object}
- */
-var mapMutations = normalizeNamespace(function (namespace, mutations) {
-  var res = {};
-  if (( true) && !isValidMap(mutations)) {
-    console.error('[vuex] mapMutations: mapper parameter must be either an Array or an Object');
-  }
-  normalizeMap(mutations).forEach(function (ref) {
-    var key = ref.key;
-    var val = ref.val;
-
-    res[key] = function mappedMutation () {
-      var args = [], len = arguments.length;
-      while ( len-- ) args[ len ] = arguments[ len ];
-
-      // Get the commit method from store
-      var commit = this.$store.commit;
-      if (namespace) {
-        var module = getModuleByNamespace(this.$store, 'mapMutations', namespace);
-        if (!module) {
-          return
-        }
-        commit = module.context.commit;
-      }
-      return typeof val === 'function'
-        ? val.apply(this, [commit].concat(args))
-        : commit.apply(this.$store, [val].concat(args))
-    };
-  });
-  return res
-});
-
-/**
- * Reduce the code which written in Vue.js for getting the getters
- * @param {String} [namespace] - Module's namespace
- * @param {Object|Array} getters
- * @return {Object}
- */
-var mapGetters = normalizeNamespace(function (namespace, getters) {
-  var res = {};
-  if (( true) && !isValidMap(getters)) {
-    console.error('[vuex] mapGetters: mapper parameter must be either an Array or an Object');
-  }
-  normalizeMap(getters).forEach(function (ref) {
-    var key = ref.key;
-    var val = ref.val;
-
-    // The namespace has been mutated by normalizeNamespace
-    val = namespace + val;
-    res[key] = function mappedGetter () {
-      if (namespace && !getModuleByNamespace(this.$store, 'mapGetters', namespace)) {
-        return
-      }
-      if (( true) && !(val in this.$store.getters)) {
-        console.error(("[vuex] unknown getter: " + val));
-        return
-      }
-      return this.$store.getters[val]
-    };
-    // mark vuex getter for devtools
-    res[key].vuex = true;
-  });
-  return res
-});
-
-/**
- * Reduce the code which written in Vue.js for dispatch the action
- * @param {String} [namespace] - Module's namespace
- * @param {Object|Array} actions # Object's item can be a function which accept `dispatch` function as the first param, it can accept anthor params. You can dispatch action and do any other things in this function. specially, You need to pass anthor params from the mapped function.
- * @return {Object}
- */
-var mapActions = normalizeNamespace(function (namespace, actions) {
-  var res = {};
-  if (( true) && !isValidMap(actions)) {
-    console.error('[vuex] mapActions: mapper parameter must be either an Array or an Object');
-  }
-  normalizeMap(actions).forEach(function (ref) {
-    var key = ref.key;
-    var val = ref.val;
-
-    res[key] = function mappedAction () {
-      var args = [], len = arguments.length;
-      while ( len-- ) args[ len ] = arguments[ len ];
-
-      // get dispatch function from store
-      var dispatch = this.$store.dispatch;
-      if (namespace) {
-        var module = getModuleByNamespace(this.$store, 'mapActions', namespace);
-        if (!module) {
-          return
-        }
-        dispatch = module.context.dispatch;
-      }
-      return typeof val === 'function'
-        ? val.apply(this, [dispatch].concat(args))
-        : dispatch.apply(this.$store, [val].concat(args))
-    };
-  });
-  return res
-});
-
-/**
- * Rebinding namespace param for mapXXX function in special scoped, and return them by simple object
- * @param {String} namespace
- * @return {Object}
- */
-var createNamespacedHelpers = function (namespace) { return ({
-  mapState: mapState.bind(null, namespace),
-  mapGetters: mapGetters.bind(null, namespace),
-  mapMutations: mapMutations.bind(null, namespace),
-  mapActions: mapActions.bind(null, namespace)
-}); };
-
-/**
- * Normalize the map
- * normalizeMap([1, 2, 3]) => [ { key: 1, val: 1 }, { key: 2, val: 2 }, { key: 3, val: 3 } ]
- * normalizeMap({a: 1, b: 2, c: 3}) => [ { key: 'a', val: 1 }, { key: 'b', val: 2 }, { key: 'c', val: 3 } ]
- * @param {Array|Object} map
- * @return {Object}
- */
-function normalizeMap (map) {
-  if (!isValidMap(map)) {
-    return []
-  }
-  return Array.isArray(map)
-    ? map.map(function (key) { return ({ key: key, val: key }); })
-    : Object.keys(map).map(function (key) { return ({ key: key, val: map[key] }); })
-}
-
-/**
- * Validate whether given map is valid or not
- * @param {*} map
- * @return {Boolean}
- */
-function isValidMap (map) {
-  return Array.isArray(map) || isObject(map)
-}
-
-/**
- * Return a function expect two param contains namespace and map. it will normalize the namespace and then the param's function will handle the new namespace and the map.
- * @param {Function} fn
- * @return {Function}
- */
-function normalizeNamespace (fn) {
-  return function (namespace, map) {
-    if (typeof namespace !== 'string') {
-      map = namespace;
-      namespace = '';
-    } else if (namespace.charAt(namespace.length - 1) !== '/') {
-      namespace += '/';
-    }
-    return fn(namespace, map)
-  }
-}
-
-/**
- * Search a special module from store by namespace. if module not exist, print error message.
- * @param {Object} store
- * @param {String} helper
- * @param {String} namespace
- * @return {Object}
- */
-function getModuleByNamespace (store, helper, namespace) {
-  var module = store._modulesNamespaceMap[namespace];
-  if (( true) && !module) {
-    console.error(("[vuex] module namespace not found in " + helper + "(): " + namespace));
-  }
-  return module
-}
-
-// Credits: borrowed code from fcomb/redux-logger
-
-function createLogger (ref) {
-  if ( ref === void 0 ) ref = {};
-  var collapsed = ref.collapsed; if ( collapsed === void 0 ) collapsed = true;
-  var filter = ref.filter; if ( filter === void 0 ) filter = function (mutation, stateBefore, stateAfter) { return true; };
-  var transformer = ref.transformer; if ( transformer === void 0 ) transformer = function (state) { return state; };
-  var mutationTransformer = ref.mutationTransformer; if ( mutationTransformer === void 0 ) mutationTransformer = function (mut) { return mut; };
-  var actionFilter = ref.actionFilter; if ( actionFilter === void 0 ) actionFilter = function (action, state) { return true; };
-  var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (act) { return act; };
-  var logMutations = ref.logMutations; if ( logMutations === void 0 ) logMutations = true;
-  var logActions = ref.logActions; if ( logActions === void 0 ) logActions = true;
-  var logger = ref.logger; if ( logger === void 0 ) logger = console;
-
-  return function (store) {
-    var prevState = deepCopy(store.state);
-
-    if (typeof logger === 'undefined') {
-      return
-    }
-
-    if (logMutations) {
-      store.subscribe(function (mutation, state) {
-        var nextState = deepCopy(state);
-
-        if (filter(mutation, prevState, nextState)) {
-          var formattedTime = getFormattedTime();
-          var formattedMutation = mutationTransformer(mutation);
-          var message = "mutation " + (mutation.type) + formattedTime;
-
-          startMessage(logger, message, collapsed);
-          logger.log('%c prev state', 'color: #9E9E9E; font-weight: bold', transformer(prevState));
-          logger.log('%c mutation', 'color: #03A9F4; font-weight: bold', formattedMutation);
-          logger.log('%c next state', 'color: #4CAF50; font-weight: bold', transformer(nextState));
-          endMessage(logger);
-        }
-
-        prevState = nextState;
-      });
-    }
-
-    if (logActions) {
-      store.subscribeAction(function (action, state) {
-        if (actionFilter(action, state)) {
-          var formattedTime = getFormattedTime();
-          var formattedAction = actionTransformer(action);
-          var message = "action " + (action.type) + formattedTime;
-
-          startMessage(logger, message, collapsed);
-          logger.log('%c action', 'color: #03A9F4; font-weight: bold', formattedAction);
-          endMessage(logger);
-        }
-      });
-    }
-  }
-}
-
-function startMessage (logger, message, collapsed) {
-  var startMessage = collapsed
-    ? logger.groupCollapsed
-    : logger.group;
-
-  // render
-  try {
-    startMessage.call(logger, message);
-  } catch (e) {
-    logger.log(message);
-  }
-}
-
-function endMessage (logger) {
-  try {
-    logger.groupEnd();
-  } catch (e) {
-    logger.log('—— log end ——');
-  }
-}
-
-function getFormattedTime () {
-  var time = new Date();
-  return (" @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3)))
-}
-
-function repeat (str, times) {
-  return (new Array(times + 1)).join(str)
-}
-
-function pad (num, maxLength) {
-  return repeat('0', maxLength - num.toString().length) + num
-}
-
-var index_cjs = {
-  Store: Store,
-  install: install,
-  version: '3.6.2',
-  mapState: mapState,
-  mapMutations: mapMutations,
-  mapGetters: mapGetters,
-  mapActions: mapActions,
-  createNamespacedHelpers: createNamespacedHelpers,
-  createLogger: createLogger
-};
-
-module.exports = index_cjs;
-
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2)))
-
-/***/ }),
-
-/***/ 15:
-/*!***************************!*\
-  !*** ./src/http/tasks.js ***!
-  \***************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-const {
-  request
-} = __webpack_require__(/*! ./request */ 16);
-module.exports = {
-  // 查询活力值任务
-  getIntegralTask: params => request('/iclub/api/user/getIntegralTask', 'post', params, true, true),
-  // 签到
-  signIn: params => request('/iclub/api/user/userSign', 'post', params, false, true, true, true),
-  // 查询活力值余额
-  getIntegralBalance: params => request('/iclub/api/user/getIntegralBalance', 'post', params, false, true, false, false),
-  getIntegralBalanceNew: params => request('/iclub/api/user/getIntegralInfo', 'post', params, false, true, false, false),
-  // 查询用户签到(一周)
-  getUserSignForOneWeek: params => request('/iclub/api/user/getUserSignForOneWeek', 'post', params, false, true, false, false),
-  // 查询用户积分
-  getIntegralSet: params => request('/iclub/api/userIntegralDetail/getIntegralSet', 'post', params, false, true, false, false)
-};
-
-/***/ }),
-
-/***/ 16:
-/*!*****************************!*\
-  !*** ./src/http/request.js ***!
-  \*****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-var _util = __webpack_require__(/*! @/utils/util */ 10);
-var _index = __webpack_require__(/*! @/utils/index */ 17);
-var _tools = __webpack_require__(/*! @/utils/tools */ 18);
-var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 13));
-var _sm = __webpack_require__(/*! @/utils/sm4 */ 19);
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-// 配置专属域名
-
-const {
-  baseNewUrl,
-  baseIclubUrl
-} = __webpack_require__(/*! ./env */ 12);
-module.exports = {
-  /**
-   *
-   * @param {*} url
-   * @param {*} method
-   * @param {*} data
-   * @param {*} isMessage
-   * @param {*} isJson
-   * @param {*} noToast
-   * @param {*} hideLoading
-   * @returns
-   */
-  request: function (url, method = "GET", data = {}, isMessage = true, isJson = true, noToast = false, hideLoading = true, headers = {}) {
-    const json = isJson ? "application/json" : "application/x-www-form-urlencoded";
-    // iclub的请求走另外的接口域名
-    const base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
-    const fullUrl = url.includes("http") ? url : `${base}${url}`;
-    let token = (0, _util.lsGet)("iclubUserToken3");
-
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
-      // 不需要登录就可以调用的接口白名单
-      const whiteList = ["burypoint", "http", "/biz-passport/passport/login/getOpenId", "iclub/api/operate/queryOperate", "iclub/api/authenticity/queryAuthenticity", "qxcollege/api/dictionary/tree", "qxcollege/api/buryPoint/click", "iclub/api/content/info", "iclub/api/operate/queryOperate", "iclub/api/home/listhomeContent", "iclub/api/product/list", "iclub/api/product/info", "qxcollege/api/fileUpload/findAliToken", "iclub/api/user/loginForMiniProgram", "passport/api/sso/openid", "passport/api/user/uploadUserInfo", "/iclub/api/content/listProductContent", "/iclub/api/goods/list", "/iclub/api/content/info2", "/iclub/api/goddess/queryActivityInfo", "/passport/api/sso/sendSmsVerCode", "/passport/api/sso/loginForMiniProgramForNewUser", "loginByMiniApp", "/iclub/api/activity/ehi/getEhiGameInfo", "/qxcollege/admin/city/tree"];
-      if (!token && !whiteList.find(i => url.includes(i)) && url.indexOf("openApi") === -1) {
-        resolve({
-          data: {}
-        });
-        return;
-      }
-
-      // 把小程序版本号拼接到query里传给接口
-      const _version = (0, _index.getCurrentAppVersion)();
-      // 请求头带上渠道code
-      const channel = getApp() && getApp().globalData && getApp().globalData.userSource || "";
-      const encryptKey = (0, _util.lsGet)("encryptKey");
-      const encryptIV = (0, _util.lsGet)("encryptIV");
-      const SecurityVersion = (0, _util.lsGet)("encryptVersion");
-      const uniqueFlag = (0, _tools.getUniqID)();
-      console.log("🚀 ~ returnnewPromise ~ uniqueFlag:", uniqueFlag);
-      uni.request({
-        url: fullUrl + (fullUrl.includes("?") ? "&" : "?") + "_version=" + _version,
-        timeout: 30000,
-        method,
-        data: (0, _tools.sortObjectKeys)(data),
-        header: {
-          ...headers,
-          "Content-type": json,
-          Authorization: token,
-          channel: channel,
-          "business-sys": "iclub",
-          "business-app": "iclub",
-          Ticket: (0, _util.lsGet)("ticket"),
-          app: "IClub",
-          SecurityVerify: encryptKey && new _sm.SM4Util().encryptCustom_CBC(JSON.stringify({
-            uniqueFlag,
-            callTime: Date.now(),
-            paramter: (0, _tools.sortObjectKeys)(data)
-          }), encryptIV, encryptKey),
-          encryptIV,
-          SecurityVersion
-        },
-        success(res) {
-          console.log("%c%s", "color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;", " 出参明细：", res);
-
-          // 新的token
-          if (res.header && res.header["x-imeik-refreshToken"]) {
-            (0, _util.ls)("iclubUserToken3", res.header["x-imeik-refreshToken"]);
-          }
-
-          // 请求成功，清除ticket
-          (0, _util.lsDel)("ticket");
-          if (res.data.code === 10000) {
-            const pages = getCurrentPages().reverse();
-            const pageUrl = pages[0] && pages[0].route;
-            uni.$emit(`captcha-${pageUrl}`, data.methodName);
-            reject(res.data);
-          } else if (res.data.code === 200) {
-            if (isMessage) {
-              resolve(res.data.data);
-            } else {
-              resolve(res.data);
-            }
-            if (hideLoading) {
-              uni.hideLoading();
-            }
-          } else if (res.data.code === 300) {
-            // token 错误、过期
-            uni.$emit("toast", "登录状态失效\r\n请重新登录");
-            uni.clearLogin(); // 清除token
-            _store.default.commit("setIsLogin", false);
-            _store.default.commit("setTodayCheckIn", false);
-
-            // 刷新当前页面，重新登录
-            setTimeout(() => {
-              (0, _util.refreshCurrentPage)();
-              reject();
-            }, 2000);
-          } else {
-            const msg = res.data && res.data.message || "接口问题，请检查";
-            // 有些业务自己处理错误信息，不需要这里toast
-            if (!noToast) {
-              setTimeout(() => {
-                uni.$emit("toast", msg);
-              }, 300);
-            }
-            reject(res.data);
-          }
-        },
-        fail(err) {
-          console.log("请求失败，请检查网络", err);
-          uni.$emit("toast", "请求失败，请检查网络");
-          // eslint-disable-next-line prefer-promise-reject-errors
-          reject("请求失败，请检查网络");
-        }
-      });
-    });
-  }
-};
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 17:
-/*!****************************!*\
-  !*** ./src/utils/index.js ***!
-  \****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.addUserIdWhenShare = addUserIdWhenShare;
-exports.base6ImageToTempPath = base6ImageToTempPath;
-exports.cropShareImage = cropShareImage;
-exports.getCurrentAppId = getCurrentAppId;
-exports.getCurrentAppVersion = getCurrentAppVersion;
-exports.mergeObject = mergeObject;
-exports.navigateBack = navigateBack;
-exports.pageOptionsToQuery = pageOptionsToQuery;
-var _util = __webpack_require__(/*! @/utils/util */ 10);
-// 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
-
-function getCurrentAppVersion() {
-  const accountInfo = uni.getAccountInfoSync();
-  return accountInfo.miniProgram.version || '';
-}
-
-// 获取当前小程序appId
-function getCurrentAppId() {
-  const accountInfo = uni.getAccountInfoSync();
-  return accountInfo.miniProgram.appId;
-}
-
-// 裁剪图片 5:4 - 分享给好友
-function cropShareImage(url) {
-  if (!url) {
-    return '';
-  }
-  if (!url.includes('udstatic.imeik.com')) {
-    return url;
-  }
-
-  // 加上阿里云oss图片裁剪参数(先resize缩放成高200，然后crop裁剪成宽250高200 - 5:4的图片)
-  return `${url}${url.includes('?') ? '&' : '?'}x-oss-process=image/resize,m_fixed,h_200,image/crop,g_center,w_250,h_200`;
-}
-
-// 分享出去的链接，默认带上用户的objectCode
-function addUserIdWhenShare(link) {
-  const user = (0, _util.lsGet)('userInfo');
-  const openid = (0, _util.lsGet)('openId');
-  if (!link.includes('shareLink=')) {
-    link += `${link.includes('?') ? '&' : '?'}shareLink=${encodeURIComponent(link)}`;
-  }
-  if (openid && !link.includes('openid=')) {
-    link += `${link.includes('?') ? '&' : '?'}openid=${openid}`;
-  }
-  if (!link.includes('shareLinkTime=')) {
-    link += `${link.includes('?') ? '&' : '?'}shareLinkTime=${new Date().getTime()}`;
-  }
-  if (user && !link.includes('inviteCode=')) {
-    link += `${link.includes('?') ? '&' : '?'}inviteCode=${user.objectCode}`;
-  }
-  return link;
-}
-
-// 页面参数对象转成字符串
-function pageOptionsToQuery(options = {}) {
-  const arr = [];
-  for (const key in options) {
-    arr.push(`${key}=${options[key]}`);
-  }
-  return arr.join('&');
-}
-
-// 合并object
-function mergeObject(a, b) {
-  const c = {
-    ...a
-  };
-  for (const key in b) {
-    if (typeof b[key] === 'object') {
-      c[key] = {
-        ...c[key],
-        ...b[key]
-      };
-    } else {
-      c[key] = b[key];
-    }
-  }
-  return c;
-}
-
-// 返回上一页方法,如果有上一页放回上一页,没有上一页返回首页
-function navigateBack() {
-  const routers = getCurrentPages().map(i => i.route);
-  if (routers.length > 1) {
-    uni.navigateBack();
-  } else {
-    uni.switchTab({
-      url: '/pages/home/index'
-    });
-  }
-}
-
-// base64的图片转成本地临时文件
-function base6ImageToTempPath(data, opt) {
-  /* code是指图片base64格式数据 */
-  const fs = wx.getFileSystemManager();
-  // 随机定义路径名称
-  const times = new Date().getTime();
-  const codeImg = wx.env.USER_DATA_PATH + '/' + times + '.png';
-
-  // 将base64图片写入
-  fs.writeFile({
-    filePath: codeImg,
-    data: data,
-    encoding: 'base64',
-    success: res => {
-      // 写入成功了的话，新的图片路径就能用了
-      console.log(codeImg);
-      opt.succ && opt.succ(codeImg, res);
-      // 使用saveImageToPhotosAlbum（）方法保存
-      // uni.saveImageToPhotosAlbum()
-    }
-  });
-}
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 18:
-/*!****************************!*\
-  !*** ./src/utils/tools.js ***!
-  \****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.addParametersToImageSrc = addParametersToImageSrc;
-exports.copyText = copyText;
-exports.deepClone = void 0;
-exports.detectWebp = detectWebp;
-exports.extractText = extractText;
-exports.formatNumber = formatNumber;
-exports.getEncryptData = getEncryptData;
-exports.getOssSrc = getOssSrc;
-exports.getUniqID = getUniqID;
-exports.isEmpty = isEmpty;
-exports.isNumber = isNumber;
-exports.objectToKeyValueString = objectToKeyValueString;
-exports.redirectLogin = redirectLogin;
-exports.sleep = sleep;
-exports.sortObjectKeys = sortObjectKeys;
-exports.throttle = throttle;
-function getOssSrc(src, width) {
-  if (!src) return src;
-  let format = 'png';
-  const parts = src.split('.');
-  const fileExtension = parts[parts.length - 1].toLowerCase();
-  if (['jpg', 'jpeg'].includes(fileExtension)) {
-    format = 'jpg';
-  }
-  if (uni.$detectWebp) {
-    format = 'webp';
-  }
-  return src + `?x-oss-process=image/resize,m_mfit,w_${width}/format,${format}`;
-}
-function addParametersToImageSrc(htmlContent, width = 1500) {
-  if (!htmlContent) return '';
-  const regex = /<img [^>]*src="([^"]+)"[^>]*>/g;
-  return htmlContent.replace(regex, (match, src) => {
-    const newSrc = getOssSrc(src, width);
-    return match.replace(src, newSrc);
-  });
-}
-function detectWebp() {
-  let support = false;
-  try {
-    const _wx$getSystemInfoSync = wx.getSystemInfoSync();
-    const platform = _wx$getSystemInfoSync.platform;
-    const system = _wx$getSystemInfoSync.system;
-    const versionResult = /[0-9.]*$/.exec(system);
-    const systemVersion = versionResult ? versionResult[0] : '';
-    const iosSystemSupport = platform === 'ios' && !!systemVersion && compareVersion(systemVersion, '14.0') >= 0;
-    support = platform === 'devtools' || platform === 'android' || iosSystemSupport;
-  } catch (e) {
-    console.log(e);
-  }
-  return support;
-}
-function extractText(htmlString) {
-  if (!htmlString) return '';
-  const regex = /<[^>]*>|<\/[^>]*>/gm;
-  const texts = htmlString.replace(regex, '').trim().split('\n').filter(text => text.trim());
-  return texts;
-}
-function throttle(func, delay = 200) {
-  let prev = Date.now();
-  return function () {
-    const context = this;
-    const args = arguments;
-    const now = Date.now();
-    if (now - prev >= delay) {
-      func.apply(context, args);
-      prev = Date.now();
-    }
-  };
-}
-function formatNumber(num) {
-  if (num === undefined) return 0;
-  if (num >= 10000) {
-    return Math.round(num / 1000) / 10 + 'w';
-  }
-  return num.toString();
-}
-function sleep(delay) {
-  return new Promise(resolve => setTimeout(resolve, delay));
-}
-function isEmpty(value) {
-  if (value == null || value === false || typeof value === 'number' && isNaN(value)) {
-    return true;
-  }
-  // 字符串空值（包括 'null'、'undefined'、空白字符串）
-  if (typeof value === 'string' && (value.trim() === '' || value.trim().toLowerCase() === 'null' || value.trim().toLowerCase() === 'undefined')) {
-    return true;
-  }
-
-  // 空数组
-  if (Array.isArray(value) && value.length === 0) return true;
-
-  // 空对象
-  if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
-    return true;
-  }
-  return false;
-}
-function getUniqID() {
-  const idLength = 20;
-  const possibleCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let id = '';
-  const timestamp = +new Date();
-  const timestampString = timestamp.toString(36).slice(-5);
-  id += timestampString;
-  for (let i = 0; i < idLength - timestampString.length; i++) {
-    const randomIndex = Math.floor(Math.random() * possibleCharacters.length);
-    id += possibleCharacters.charAt(randomIndex);
-  }
-  return id;
-}
-function objectToKeyValueString(obj) {
-  return Object.entries(obj).map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
-}
-function redirectLogin() {
-  console.log('-------redirect login------');
-  if (getApp().globalData.logining) return;
-  getApp().globalData.logining = true;
-  wx.navigateTo({
-    url: '/pages-sub/login/index'
-  });
-}
-function copyText(data) {
-  uni.setClipboardData({
-    data,
-    success: function (res) {
-      uni.hideLoading();
-      uni.showToast({
-        title: '复制成功',
-        icon: 'none'
-      });
-    }
-  });
-}
-// 获取备用密钥的函数，带缓存和接口请求
-
-function getEncryptData() {
-  const maxRetries = 3; // 最大重试次数
-  let retryCount = 0; // 当前重试次数
-
-  // 定义内部函数用于尝试获取密钥
-  const tryGetUserKey = () => new Promise((resolve, reject) => {
-    const userCryptoManager = wx.getUserCryptoManager();
-    userCryptoManager.getLatestUserKey({
-      success: data => {
-        var _data$encryptKey;
-        console.error('🚀 ~ getUserCryptoManager ~ data:', data);
-        // 截取前16位作为加密密钥
-        data.encryptKey = (_data$encryptKey = data.encryptKey) === null || _data$encryptKey === void 0 ? void 0 : _data$encryptKey.slice(0, 16);
-        // 检查数据是否有效
-        if (data.encryptKey && data.iv && data.version) {
-          resolve(data); // 成功且数据有效，直接返回
-        } else {
-          reject(new Error('Tencent API returned invalid data')); // 数据无效，触发重试
-        }
-      },
-
-      fail: err => {
-        reject(new Error(`Tencent API failed: ${err.errMsg || err}`)); // 失败，触发重试
-      }
-    });
-  });
-
-  // 主逻辑，包含重试机制
-  return new Promise(resolve => {
-    const attempt = async () => {
-      try {
-        const data = await tryGetUserKey();
-        resolve(data); // 成功获取有效数据，结束
-      } catch (err) {
-        retryCount++;
-        console.error(`重试 ${retryCount}/${maxRetries} 失败: ${err.message}`);
-        if (retryCount < maxRetries) {
-          // 延迟后重试
-          setTimeout(attempt, 500 * retryCount); // 延迟递增：500ms, 1000ms, 1500ms
-        } else {
-          // 重试 3 次后仍失败，返回空值
-          console.error('Max retries reached, returning empty result');
-          resolve({}); // 返回空对象
-        }
-      }
-    };
-
-    attempt(); // 启动第一次尝试
-  });
-}
-
-function sortObjectKeys(obj) {
-  const sortedObj = Array.isArray(obj) ? [] : {};
-  Object.keys(obj).sort().forEach(function (key) {
-    if (obj[key] !== null && typeof obj[key] === 'object') {
-      sortedObj[key] = sortObjectKeys(obj[key]);
-    } else {
-      sortedObj[key] = obj[key];
-    }
-  });
-  return sortedObj;
-}
-function isNumber(value) {
-  return /^-?\d+(\.\d+)?$/.test(value);
-}
-const deepClone = obj => {
-  if (typeof obj !== 'object') return;
-  const newObj = obj instanceof Array ? [] : {};
-  for (const key in obj) {
-    if (typeof obj[key] === 'object') {
-      newObj[key] = deepClone(obj[key]);
-    } else {
-      newObj[key] = obj[key];
-    }
-  }
-  return newObj;
-};
-exports.deepClone = deepClone;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 19:
-/*!********************************!*\
-  !*** ./src/utils/sm4/index.js ***!
-  \********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(Buffer) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.SM4Util = void 0;
-var _base = _interopRequireDefault(__webpack_require__(/*! ./base64 */ 24));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-/**
- * 调用方法：
- * import {SM4Util} from '@/utils/sm4';
- * var sm4 = new SM4Util();
- * 不使用自定义 secretKey，一般用于前端自行加解密,如果是前端加密后端解密，则需要自定义secretKey，前后端一致才能正确解密
- * sm4.encryptDefault_ECB('123456');
- * sm4.decryptDefault_ECB('123456');
- * sm4.encryptCustom_ECB('123456', 'asdfghjklmnbvcx,');
- * sm4.decryptCustom_ECB('123456', 'asdfghjklmnbvcx,');
- *
- * CBC 加密模式（更加安全），需要两个密钥
- * sm4.encryptDefault_CBC('123456');
- * sm4.decryptDefault_CBC('123456');
- * 同样可以自定义 secretKey 和 iv，需要两个密钥前后端都一致
- * sm4.encryptCustom_CBC('123456', 'asdfghjklmnbvcx,', 'mnbvcxzpoiuytre1');
- * sm4.decryptCustom_CBC('123456', 'asdfghjklmnbvcx,', 'mnbvcxzpoiuytre1');
- */
-
-// eslint-disable-next-line camelcase
-function SM4_Context() {
-  this.mode = 1;
-  this.isPadding = false;
-  this.sk = new Array(32);
-}
-function SM4() {
-  this.SM4_ENCRYPT = 1;
-  this.SM4_DECRYPT = 0;
-  const SboxTable = [0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7, 0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05, 0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3, 0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99, 0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a, 0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62, 0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95, 0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6, 0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba, 0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8, 0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b, 0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35, 0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2, 0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87, 0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52, 0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e, 0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5, 0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1, 0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55, 0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3, 0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60, 0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f, 0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f, 0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51, 0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f, 0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8, 0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd, 0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0, 0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e, 0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84, 0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20, 0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48];
-  const FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc];
-  const CK = [0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9, 0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9, 0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299, 0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279];
-  this.GET_ULONG_BE = function (b, i) {
-    return (b[i] & 0xff) << 24 | (b[i + 1] & 0xff) << 16 | (b[i + 2] & 0xff) << 8 | b[i + 3] & 0xff & 0xffffffff;
-  };
-  this.PUT_ULONG_BE = function (n, b, i) {
-    const t1 = 0xff & n >> 24;
-    const t2 = 0xff & n >> 16;
-    const t3 = 0xff & n >> 8;
-    const t4 = 0xff & n;
-    b[i] = t1 > 128 ? t1 - 256 : t1;
-    b[i + 1] = t2 > 128 ? t2 - 256 : t2;
-    b[i + 2] = t3 > 128 ? t3 - 256 : t3;
-    b[i + 3] = t4 > 128 ? t4 - 256 : t4;
-  };
-  this.SHL = function (x, n) {
-    return (x & 0xffffffff) << n;
-  };
-  this.ROTL = function (x, n) {
-    // const s = this.SHL(x, n);
-    // const ss = x >> (32 - n);
-    return this.SHL(x, n) | x >> 32 - n;
-  };
-  this.sm4Lt = function (ka) {
-    const a = new Array(4);
-    const b = new Array(4);
-    this.PUT_ULONG_BE(ka, a, 0);
-    b[0] = this.sm4Sbox(a[0]);
-    b[1] = this.sm4Sbox(a[1]);
-    b[2] = this.sm4Sbox(a[2]);
-    b[3] = this.sm4Sbox(a[3]);
-    const bb = this.GET_ULONG_BE(b, 0);
-    const c = bb ^ this.ROTL(bb, 2) ^ this.ROTL(bb, 10) ^ this.ROTL(bb, 18) ^ this.ROTL(bb, 24);
-    return c;
-  };
-  this.sm4F = function (x0, x1, x2, x3, rk) {
-    return x0 ^ this.sm4Lt(x1 ^ x2 ^ x3 ^ rk);
-  };
-  this.sm4CalciRK = function (ka) {
-    const a = new Array(4);
-    const b = new Array(4);
-    this.PUT_ULONG_BE(ka, a, 0);
-    b[0] = this.sm4Sbox(a[0]);
-    b[1] = this.sm4Sbox(a[1]);
-    b[2] = this.sm4Sbox(a[2]);
-    b[3] = this.sm4Sbox(a[3]);
-    const bb = this.GET_ULONG_BE(b, 0);
-    const rk = bb ^ this.ROTL(bb, 13) ^ this.ROTL(bb, 23);
-    return rk;
-  };
-  this.sm4Sbox = function (inch) {
-    const i = inch & 0xff;
-    const retVal = SboxTable[i];
-    return retVal > 128 ? retVal - 256 : retVal;
-  };
-  this.sm4_setkey_enc = function (ctx, key) {
-    if (ctx == null) {
-      console.error('ctx is null!');
-      return false;
-    }
-    if (key == null || key.length !== 16) {
-      console.error('key error!');
-      return false;
-    }
-    ctx.mode = this.SM4_ENCRYPT;
-    this.sm4_setkey(ctx.sk, key);
-  };
-
-  // 生成解密密钥
-  this.sm4_setkey_dec = function (ctx, key) {
-    if (ctx == null) {
-      Error('ctx is null!');
-    }
-    if (key == null || key.length !== 16) {
-      Error('2key error!');
-    }
-
-    // var i = 0;
-    ctx.mode = 0;
-    this.sm4_setkey(ctx.sk, key);
-    ctx.sk = ctx.sk.reverse();
-  };
-  this.sm4_setkey = function (SK, key) {
-    const MK = new Array(4);
-    const k = new Array(36);
-    // var i = 0;
-    MK[0] = this.GET_ULONG_BE(key, 0);
-    MK[1] = this.GET_ULONG_BE(key, 4);
-    MK[2] = this.GET_ULONG_BE(key, 8);
-    MK[3] = this.GET_ULONG_BE(key, 12);
-    k[0] = MK[0] ^ FK[0];
-    k[1] = MK[1] ^ FK[1];
-    k[2] = MK[2] ^ FK[2];
-    k[3] = MK[3] ^ FK[3];
-    for (let i = 0; i < 32; i++) {
-      k[i + 4] = k[i] ^ this.sm4CalciRK(k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]);
-      SK[i] = k[i + 4];
-    }
-  };
-  this.padding = function (input, mode) {
-    let p;
-    if (input == null) {
-      return null;
-    }
-    let ret = null;
-    if (mode === this.SM4_ENCRYPT) {
-      p = parseInt(16 - input.length % 16);
-      ret = input.slice(0);
-      for (let i = 0; i < p; i++) {
-        ret[input.length + i] = p;
-      }
-    } else {
-      p = input[input.length - 1];
-      ret = input.slice(0, input.length - p);
-    }
-    return ret;
-  };
-  this.sm4_one_round = function (sk, input, output) {
-    let i = 0;
-    const ulbuf = new Array(36);
-    ulbuf[0] = this.GET_ULONG_BE(input, 0);
-    ulbuf[1] = this.GET_ULONG_BE(input, 4);
-    ulbuf[2] = this.GET_ULONG_BE(input, 8);
-    ulbuf[3] = this.GET_ULONG_BE(input, 12);
-    while (i < 32) {
-      ulbuf[i + 4] = this.sm4F(ulbuf[i], ulbuf[i + 1], ulbuf[i + 2], ulbuf[i + 3], sk[i]);
-      i++;
-    }
-    this.PUT_ULONG_BE(ulbuf[35], output, 0);
-    this.PUT_ULONG_BE(ulbuf[34], output, 4);
-    this.PUT_ULONG_BE(ulbuf[33], output, 8);
-    this.PUT_ULONG_BE(ulbuf[32], output, 12);
-  };
-  this.sm4_crypt_ecb = function (ctx, input) {
-    if (input == null) {
-      console.error('input is null!');
-    }
-    if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
-      input = this.padding(input, this.SM4_ENCRYPT);
-    }
-    let i = 0;
-    let length = input.length;
-    let bous = [];
-    for (; length > 0; length -= 16) {
-      const out = new Array(16);
-      const ins = input.slice(i * 16, 16 * (i + 1));
-      this.sm4_one_round(ctx.sk, ins, out);
-      bous = bous.concat(out);
-      i++;
-    }
-    let output = bous;
-    if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
-      output = this.padding(output, this.SM4_DECRYPT);
-    }
-    for (i = 0; i < output.length; i++) {
-      if (output[i] < 0) {
-        output[i] = output[i] + 256;
-      }
-    }
-    return output;
-  };
-  this.sm4_crypt_cbc = function (ctx, iv, input) {
-    let out;
-    let ins;
-    let out1;
-    let k;
-    if (iv == null || iv.length !== 16) {
-      console.error('iv error!');
-    }
-    if (input == null) {
-      console.error('input is null!');
-    }
-    if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
-      input = this.padding(input, this.SM4_ENCRYPT);
-    }
-    let i = 0;
-    let length = input.length;
-    let bous = [];
-    if (ctx.mode === this.SM4_ENCRYPT) {
-      k = 0;
-      for (; length > 0; length -= 16) {
-        out = new Array(16);
-        out1 = new Array(16);
-        ins = input.slice(k * 16, 16 * (k + 1));
-        for (i = 0; i < 16; i++) {
-          out[i] = ins[i] ^ iv[i];
-        }
-        this.sm4_one_round(ctx.sk, out, out1);
-        iv = out1.slice(0, 16);
-        bous = bous.concat(out1);
-        k++;
-      }
-    } else {
-      let temp = [];
-      k = 0;
-      for (; length > 0; length -= 16) {
-        out = new Array(16);
-        out1 = new Array(16);
-        ins = input.slice(k * 16, 16 * (k + 1));
-        temp = ins.slice(0, 16);
-        this.sm4_one_round(ctx.sk, ins, out);
-        for (i = 0; i < 16; i++) {
-          out1[i] = out[i] ^ iv[i];
-        }
-        iv = temp.slice(0, 16);
-        bous = bous.concat(out1);
-        k++;
-      }
-    }
-    let output = bous;
-    if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
-      output = this.padding(output, this.SM4_DECRYPT);
-    }
-    for (i = 0; i < output.length; i++) {
-      if (output[i] < 0) {
-        output[i] = output[i] + 256;
-      }
-    }
-    return output;
-  };
-}
-const SM4Util = function (secretKey, iv) {
-  // 和后端secretKey一致才能正确解密，可自定义传入，如果不传，则使用下面的默认secretKey
-  this.secretKey = secretKey;
-  // 当时用CBC模式的时候，除了secretKey，还需要 iv，可自定义传入，如果不传，则使用下面的默认iv
-  this.iv = iv;
-  this.hexString = false;
-
-  // ECB模式加密，默认secretKey
-  this.encryptDefault_ECB = function (plainText) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
-      sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
-      if (cipherText != null && cipherText.trim().length > 0) {
-        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
-      }
-      return cipherText;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  // ECB模式加密，自定义secretKey
-  this.encryptCustom_ECB = function (plainText, secretKey) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
-      if (cipherText != null && cipherText.trim().length > 0) {
-        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
-      }
-      return cipherText;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  // 解密_ECB，默认secretKey
-  this.decryptDefault_ECB = function (cipherText) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
-      sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
-      return this.byteToString(decrypted);
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  // 解密_ECB，自定义secretKey
-  this.decryptCustom_ECB = function (cipherText, secretKey) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
-      return this.byteToString(decrypted);
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-
-  // CBC模式加密，默认 iv 和 secretKey
-  this.encryptDefault_CBC = function (plainText) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
-      const ivBytes = this.stringToByte(this.iv);
-      sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
-      if (cipherText != null && cipherText.trim().length > 0) {
-        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
-      }
-      return cipherText;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  function removePadding(buffer) {
-    const padding = buffer[buffer.length - 1];
-    if (padding < 1 || padding > 16) {
-      // 不是标准的PKCS#7填充，可能不需要移除填充
-      return buffer;
-    }
-    // 检查填充是否有效
-    for (let i = 0; i < padding; i++) {
-      if (buffer[buffer.length - 1 - i] !== padding) {
-        // 填充无效，可能不是PKCS#7填充
-        return buffer;
-      }
-    }
-    // 移除填充
-    return buffer.slice(0, buffer.length - padding);
-  }
-
-  // CBC模式加密，自定义 iv 和 secretKey
-  this.encryptCustom_CBC = function (plainText, iv, secretKey) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
-      sm4.sm4_setkey_enc(ctx, keyBytes);
-      console.warn('------请求加密参数------', plainText);
-      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
-      if (cipherText != null && cipherText.trim().length > 0) {
-        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
-      }
-      return cipherText;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  // 解密_CBC，默认 iv 和 secretKey
-  this.decryptDefault_CBC = function (cipherText, iv, secretKey) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
-      sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
-      return this.byteToString(decrypted);
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  // 解密_CBC，自定义 iv 和 secretKey
-  this.decryptCustom_CBC = function (cipherText, iv, secretKey) {
-    try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
-      ctx.isPadding = true;
-      ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
-      sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
-      let text = removePadding(decrypted);
-      text = this.byteToString(text);
-      text = Buffer.from(text).toString('utf-8');
-      return text;
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
-  };
-  this.stringToByte = function (str) {
-    const bytes = [];
-    let c;
-    const len = str.length;
-    for (let i = 0; i < len; i++) {
-      c = str.charCodeAt(i);
-      if (c >= 0x010000 && c <= 0x10ffff) {
-        bytes.push(c >> 18 & 0x07 | 0xf0);
-        bytes.push(c >> 12 & 0x3f | 0x80);
-        bytes.push(c >> 6 & 0x3f | 0x80);
-        bytes.push(c & 0x3f | 0x80);
-      } else if (c >= 0x000800 && c <= 0x00ffff) {
-        bytes.push(c >> 12 & 0x0f | 0xe0);
-        bytes.push(c >> 6 & 0x3f | 0x80);
-        bytes.push(c & 0x3f | 0x80);
-      } else if (c >= 0x000080 && c <= 0x0007ff) {
-        bytes.push(c >> 6 & 0x1f | 0xc0);
-        bytes.push(c & 0x3f | 0x80);
-      } else {
-        bytes.push(c & 0xff);
-      }
-    }
-    return bytes;
-  };
-  this.byteToString = function (arr) {
-    if (typeof arr === 'string') {
-      return arr;
-    }
-    let str = '';
-    const _arr = arr;
-    for (let i = 0; i < _arr.length; i++) {
-      const one = _arr[i].toString(2);
-      const v = one.match(/^1+?(?=0)/);
-      if (v && one.length === 8) {
-        const bytesLength = v[0].length;
-        let store = _arr[i].toString(2).slice(7 - bytesLength);
-        for (let st = 1; st < bytesLength; st++) {
-          store += _arr[st + i].toString(2).slice(2);
-        }
-        str += String.fromCharCode(parseInt(store, 2));
-        i += bytesLength - 1;
-      } else {
-        str += String.fromCharCode(_arr[i]);
-      }
-    }
-    return str;
-  };
-};
-exports.SM4Util = SM4Util;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/buffer/index.js */ 20).Buffer))
-
-/***/ }),
-
-/***/ 195:
-/*!*************************************************************************************!*\
-  !*** ./src/uni_modules/uni-transition/components/uni-transition/createAnimation.js ***!
-  \*************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createAnimation = createAnimation;
-// const defaultOption = {
-// 	duration: 300,
-// 	timingFunction: 'linear',
-// 	delay: 0,
-// 	transformOrigin: '50% 50% 0'
-// }
-
-class MPAnimation {
-  constructor(options, _this) {
-    this.options = options;
-    this.animation = uni.createAnimation(options);
-    this.currentStepAnimates = {};
-    this.next = 0;
-    this.$ = _this;
-  }
-  _nvuePushAnimates(type, args) {
-    let aniObj = this.currentStepAnimates[this.next];
-    let styles = {};
-    if (!aniObj) {
-      styles = {
-        styles: {},
-        config: {}
-      };
-    } else {
-      styles = aniObj;
-    }
-    if (animateTypes1.includes(type)) {
-      if (!styles.styles.transform) {
-        styles.styles.transform = '';
-      }
-      let unit = '';
-      if (type === 'rotate') {
-        unit = 'deg';
-      }
-      styles.styles.transform += `${type}(${args + unit}) `;
-    } else {
-      styles.styles[type] = `${args}`;
-    }
-    this.currentStepAnimates[this.next] = styles;
-  }
-  _animateRun(styles = {}, config = {}) {
-    let ref = this.$.$refs['ani'].ref;
-    if (!ref) return;
-    return new Promise((resolve, reject) => {
-      nvueAnimation.transition(ref, {
-        styles,
-        ...config
-      }, res => {
-        resolve();
-      });
-    });
-  }
-  _nvueNextAnimate(animates, step = 0, fn) {
-    let obj = animates[step];
-    if (obj) {
-      let {
-        styles,
-        config
-      } = obj;
-      this._animateRun(styles, config).then(() => {
-        step += 1;
-        this._nvueNextAnimate(animates, step, fn);
-      });
-    } else {
-      this.currentStepAnimates = {};
-      typeof fn === 'function' && fn();
-      this.isEnd = true;
-    }
-  }
-  step(config = {}) {
-    this.animation.step(config);
-    return this;
-  }
-  run(fn) {
-    this.$.animationData = this.animation.export();
-    this.$.timer = setTimeout(() => {
-      typeof fn === 'function' && fn();
-    }, this.$.durationTime);
-  }
-}
-const animateTypes1 = ['matrix', 'matrix3d', 'rotate', 'rotate3d', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scale3d', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'translate', 'translate3d', 'translateX', 'translateY', 'translateZ'];
-const animateTypes2 = ['opacity', 'backgroundColor'];
-const animateTypes3 = ['width', 'height', 'left', 'right', 'top', 'bottom'];
-animateTypes1.concat(animateTypes2, animateTypes3).forEach(type => {
-  MPAnimation.prototype[type] = function (...args) {
-    this.animation[type](...args);
-    return this;
-  };
-});
-function createAnimation(option, _this) {
-  if (!_this) return;
-  clearTimeout(_this.timer);
-  return new MPAnimation(option, _this);
-}
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 2:
+/* 2 */
 /*!***********************************!*\
   !*** (webpack)/buildin/global.js ***!
   \***********************************/
@@ -5316,3213 +2310,7 @@ module.exports = g;
 
 
 /***/ }),
-
-/***/ 20:
-/*!**************************************!*\
-  !*** ./node_modules/buffer/index.js ***!
-  \**************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(global) {/*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <http://feross.org>
- * @license  MIT
- */
-/* eslint-disable no-proto */
-
-
-
-var base64 = __webpack_require__(/*! base64-js */ 21)
-var ieee754 = __webpack_require__(/*! ieee754 */ 22)
-var isArray = __webpack_require__(/*! isarray */ 23)
-
-exports.Buffer = Buffer
-exports.SlowBuffer = SlowBuffer
-exports.INSPECT_MAX_BYTES = 50
-
-/**
- * If `Buffer.TYPED_ARRAY_SUPPORT`:
- *   === true    Use Uint8Array implementation (fastest)
- *   === false   Use Object implementation (most compatible, even IE6)
- *
- * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
- * Opera 11.6+, iOS 4.2+.
- *
- * Due to various browser bugs, sometimes the Object implementation will be used even
- * when the browser supports typed arrays.
- *
- * Note:
- *
- *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
- *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
- *
- *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
- *
- *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *     incorrect length in some situations.
-
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
- * get the Object implementation, which is slower but behaves correctly.
- */
-Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
-  ? global.TYPED_ARRAY_SUPPORT
-  : typedArraySupport()
-
-/*
- * Export kMaxLength after typed array support is determined.
- */
-exports.kMaxLength = kMaxLength()
-
-function typedArraySupport () {
-  try {
-    var arr = new Uint8Array(1)
-    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
-    return arr.foo() === 42 && // typed array instances can be augmented
-        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
-        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
-  } catch (e) {
-    return false
-  }
-}
-
-function kMaxLength () {
-  return Buffer.TYPED_ARRAY_SUPPORT
-    ? 0x7fffffff
-    : 0x3fffffff
-}
-
-function createBuffer (that, length) {
-  if (kMaxLength() < length) {
-    throw new RangeError('Invalid typed array length')
-  }
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    // Return an augmented `Uint8Array` instance, for best performance
-    that = new Uint8Array(length)
-    that.__proto__ = Buffer.prototype
-  } else {
-    // Fallback: Return an object instance of the Buffer class
-    if (that === null) {
-      that = new Buffer(length)
-    }
-    that.length = length
-  }
-
-  return that
-}
-
-/**
- * The Buffer constructor returns instances of `Uint8Array` that have their
- * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
- * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
- * and the `Uint8Array` methods. Square bracket notation works as expected -- it
- * returns a single octet.
- *
- * The `Uint8Array` prototype remains unmodified.
- */
-
-function Buffer (arg, encodingOrOffset, length) {
-  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
-    return new Buffer(arg, encodingOrOffset, length)
-  }
-
-  // Common case.
-  if (typeof arg === 'number') {
-    if (typeof encodingOrOffset === 'string') {
-      throw new Error(
-        'If encoding is specified then the first argument must be a string'
-      )
-    }
-    return allocUnsafe(this, arg)
-  }
-  return from(this, arg, encodingOrOffset, length)
-}
-
-Buffer.poolSize = 8192 // not used by this implementation
-
-// TODO: Legacy, not needed anymore. Remove in next major version.
-Buffer._augment = function (arr) {
-  arr.__proto__ = Buffer.prototype
-  return arr
-}
-
-function from (that, value, encodingOrOffset, length) {
-  if (typeof value === 'number') {
-    throw new TypeError('"value" argument must not be a number')
-  }
-
-  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
-    return fromArrayBuffer(that, value, encodingOrOffset, length)
-  }
-
-  if (typeof value === 'string') {
-    return fromString(that, value, encodingOrOffset)
-  }
-
-  return fromObject(that, value)
-}
-
-/**
- * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
- * if value is a number.
- * Buffer.from(str[, encoding])
- * Buffer.from(array)
- * Buffer.from(buffer)
- * Buffer.from(arrayBuffer[, byteOffset[, length]])
- **/
-Buffer.from = function (value, encodingOrOffset, length) {
-  return from(null, value, encodingOrOffset, length)
-}
-
-if (Buffer.TYPED_ARRAY_SUPPORT) {
-  Buffer.prototype.__proto__ = Uint8Array.prototype
-  Buffer.__proto__ = Uint8Array
-  if (typeof Symbol !== 'undefined' && Symbol.species &&
-      Buffer[Symbol.species] === Buffer) {
-    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
-    Object.defineProperty(Buffer, Symbol.species, {
-      value: null,
-      configurable: true
-    })
-  }
-}
-
-function assertSize (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('"size" argument must be a number')
-  } else if (size < 0) {
-    throw new RangeError('"size" argument must not be negative')
-  }
-}
-
-function alloc (that, size, fill, encoding) {
-  assertSize(size)
-  if (size <= 0) {
-    return createBuffer(that, size)
-  }
-  if (fill !== undefined) {
-    // Only pay attention to encoding if it's a string. This
-    // prevents accidentally sending in a number that would
-    // be interpretted as a start offset.
-    return typeof encoding === 'string'
-      ? createBuffer(that, size).fill(fill, encoding)
-      : createBuffer(that, size).fill(fill)
-  }
-  return createBuffer(that, size)
-}
-
-/**
- * Creates a new filled Buffer instance.
- * alloc(size[, fill[, encoding]])
- **/
-Buffer.alloc = function (size, fill, encoding) {
-  return alloc(null, size, fill, encoding)
-}
-
-function allocUnsafe (that, size) {
-  assertSize(size)
-  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
-  if (!Buffer.TYPED_ARRAY_SUPPORT) {
-    for (var i = 0; i < size; ++i) {
-      that[i] = 0
-    }
-  }
-  return that
-}
-
-/**
- * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
- * */
-Buffer.allocUnsafe = function (size) {
-  return allocUnsafe(null, size)
-}
-/**
- * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
- */
-Buffer.allocUnsafeSlow = function (size) {
-  return allocUnsafe(null, size)
-}
-
-function fromString (that, string, encoding) {
-  if (typeof encoding !== 'string' || encoding === '') {
-    encoding = 'utf8'
-  }
-
-  if (!Buffer.isEncoding(encoding)) {
-    throw new TypeError('"encoding" must be a valid string encoding')
-  }
-
-  var length = byteLength(string, encoding) | 0
-  that = createBuffer(that, length)
-
-  var actual = that.write(string, encoding)
-
-  if (actual !== length) {
-    // Writing a hex string, for example, that contains invalid characters will
-    // cause everything after the first invalid character to be ignored. (e.g.
-    // 'abxxcd' will be treated as 'ab')
-    that = that.slice(0, actual)
-  }
-
-  return that
-}
-
-function fromArrayLike (that, array) {
-  var length = array.length < 0 ? 0 : checked(array.length) | 0
-  that = createBuffer(that, length)
-  for (var i = 0; i < length; i += 1) {
-    that[i] = array[i] & 255
-  }
-  return that
-}
-
-function fromArrayBuffer (that, array, byteOffset, length) {
-  array.byteLength // this throws if `array` is not a valid ArrayBuffer
-
-  if (byteOffset < 0 || array.byteLength < byteOffset) {
-    throw new RangeError('\'offset\' is out of bounds')
-  }
-
-  if (array.byteLength < byteOffset + (length || 0)) {
-    throw new RangeError('\'length\' is out of bounds')
-  }
-
-  if (byteOffset === undefined && length === undefined) {
-    array = new Uint8Array(array)
-  } else if (length === undefined) {
-    array = new Uint8Array(array, byteOffset)
-  } else {
-    array = new Uint8Array(array, byteOffset, length)
-  }
-
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    // Return an augmented `Uint8Array` instance, for best performance
-    that = array
-    that.__proto__ = Buffer.prototype
-  } else {
-    // Fallback: Return an object instance of the Buffer class
-    that = fromArrayLike(that, array)
-  }
-  return that
-}
-
-function fromObject (that, obj) {
-  if (Buffer.isBuffer(obj)) {
-    var len = checked(obj.length) | 0
-    that = createBuffer(that, len)
-
-    if (that.length === 0) {
-      return that
-    }
-
-    obj.copy(that, 0, 0, len)
-    return that
-  }
-
-  if (obj) {
-    if ((typeof ArrayBuffer !== 'undefined' &&
-        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
-      if (typeof obj.length !== 'number' || isnan(obj.length)) {
-        return createBuffer(that, 0)
-      }
-      return fromArrayLike(that, obj)
-    }
-
-    if (obj.type === 'Buffer' && isArray(obj.data)) {
-      return fromArrayLike(that, obj.data)
-    }
-  }
-
-  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
-}
-
-function checked (length) {
-  // Note: cannot use `length < kMaxLength()` here because that fails when
-  // length is NaN (which is otherwise coerced to zero.)
-  if (length >= kMaxLength()) {
-    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
-                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
-  }
-  return length | 0
-}
-
-function SlowBuffer (length) {
-  if (+length != length) { // eslint-disable-line eqeqeq
-    length = 0
-  }
-  return Buffer.alloc(+length)
-}
-
-Buffer.isBuffer = function isBuffer (b) {
-  return !!(b != null && b._isBuffer)
-}
-
-Buffer.compare = function compare (a, b) {
-  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
-    throw new TypeError('Arguments must be Buffers')
-  }
-
-  if (a === b) return 0
-
-  var x = a.length
-  var y = b.length
-
-  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
-    if (a[i] !== b[i]) {
-      x = a[i]
-      y = b[i]
-      break
-    }
-  }
-
-  if (x < y) return -1
-  if (y < x) return 1
-  return 0
-}
-
-Buffer.isEncoding = function isEncoding (encoding) {
-  switch (String(encoding).toLowerCase()) {
-    case 'hex':
-    case 'utf8':
-    case 'utf-8':
-    case 'ascii':
-    case 'latin1':
-    case 'binary':
-    case 'base64':
-    case 'ucs2':
-    case 'ucs-2':
-    case 'utf16le':
-    case 'utf-16le':
-      return true
-    default:
-      return false
-  }
-}
-
-Buffer.concat = function concat (list, length) {
-  if (!isArray(list)) {
-    throw new TypeError('"list" argument must be an Array of Buffers')
-  }
-
-  if (list.length === 0) {
-    return Buffer.alloc(0)
-  }
-
-  var i
-  if (length === undefined) {
-    length = 0
-    for (i = 0; i < list.length; ++i) {
-      length += list[i].length
-    }
-  }
-
-  var buffer = Buffer.allocUnsafe(length)
-  var pos = 0
-  for (i = 0; i < list.length; ++i) {
-    var buf = list[i]
-    if (!Buffer.isBuffer(buf)) {
-      throw new TypeError('"list" argument must be an Array of Buffers')
-    }
-    buf.copy(buffer, pos)
-    pos += buf.length
-  }
-  return buffer
-}
-
-function byteLength (string, encoding) {
-  if (Buffer.isBuffer(string)) {
-    return string.length
-  }
-  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
-      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
-    return string.byteLength
-  }
-  if (typeof string !== 'string') {
-    string = '' + string
-  }
-
-  var len = string.length
-  if (len === 0) return 0
-
-  // Use a for loop to avoid recursion
-  var loweredCase = false
-  for (;;) {
-    switch (encoding) {
-      case 'ascii':
-      case 'latin1':
-      case 'binary':
-        return len
-      case 'utf8':
-      case 'utf-8':
-      case undefined:
-        return utf8ToBytes(string).length
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return len * 2
-      case 'hex':
-        return len >>> 1
-      case 'base64':
-        return base64ToBytes(string).length
-      default:
-        if (loweredCase) return utf8ToBytes(string).length // assume utf8
-        encoding = ('' + encoding).toLowerCase()
-        loweredCase = true
-    }
-  }
-}
-Buffer.byteLength = byteLength
-
-function slowToString (encoding, start, end) {
-  var loweredCase = false
-
-  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
-  // property of a typed array.
-
-  // This behaves neither like String nor Uint8Array in that we set start/end
-  // to their upper/lower bounds if the value passed is out of range.
-  // undefined is handled specially as per ECMA-262 6th Edition,
-  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
-  if (start === undefined || start < 0) {
-    start = 0
-  }
-  // Return early if start > this.length. Done here to prevent potential uint32
-  // coercion fail below.
-  if (start > this.length) {
-    return ''
-  }
-
-  if (end === undefined || end > this.length) {
-    end = this.length
-  }
-
-  if (end <= 0) {
-    return ''
-  }
-
-  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
-  end >>>= 0
-  start >>>= 0
-
-  if (end <= start) {
-    return ''
-  }
-
-  if (!encoding) encoding = 'utf8'
-
-  while (true) {
-    switch (encoding) {
-      case 'hex':
-        return hexSlice(this, start, end)
-
-      case 'utf8':
-      case 'utf-8':
-        return utf8Slice(this, start, end)
-
-      case 'ascii':
-        return asciiSlice(this, start, end)
-
-      case 'latin1':
-      case 'binary':
-        return latin1Slice(this, start, end)
-
-      case 'base64':
-        return base64Slice(this, start, end)
-
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return utf16leSlice(this, start, end)
-
-      default:
-        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
-        encoding = (encoding + '').toLowerCase()
-        loweredCase = true
-    }
-  }
-}
-
-// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
-// Buffer instances.
-Buffer.prototype._isBuffer = true
-
-function swap (b, n, m) {
-  var i = b[n]
-  b[n] = b[m]
-  b[m] = i
-}
-
-Buffer.prototype.swap16 = function swap16 () {
-  var len = this.length
-  if (len % 2 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 16-bits')
-  }
-  for (var i = 0; i < len; i += 2) {
-    swap(this, i, i + 1)
-  }
-  return this
-}
-
-Buffer.prototype.swap32 = function swap32 () {
-  var len = this.length
-  if (len % 4 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 32-bits')
-  }
-  for (var i = 0; i < len; i += 4) {
-    swap(this, i, i + 3)
-    swap(this, i + 1, i + 2)
-  }
-  return this
-}
-
-Buffer.prototype.swap64 = function swap64 () {
-  var len = this.length
-  if (len % 8 !== 0) {
-    throw new RangeError('Buffer size must be a multiple of 64-bits')
-  }
-  for (var i = 0; i < len; i += 8) {
-    swap(this, i, i + 7)
-    swap(this, i + 1, i + 6)
-    swap(this, i + 2, i + 5)
-    swap(this, i + 3, i + 4)
-  }
-  return this
-}
-
-Buffer.prototype.toString = function toString () {
-  var length = this.length | 0
-  if (length === 0) return ''
-  if (arguments.length === 0) return utf8Slice(this, 0, length)
-  return slowToString.apply(this, arguments)
-}
-
-Buffer.prototype.equals = function equals (b) {
-  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
-  if (this === b) return true
-  return Buffer.compare(this, b) === 0
-}
-
-Buffer.prototype.inspect = function inspect () {
-  var str = ''
-  var max = exports.INSPECT_MAX_BYTES
-  if (this.length > 0) {
-    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
-    if (this.length > max) str += ' ... '
-  }
-  return '<Buffer ' + str + '>'
-}
-
-Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
-  if (!Buffer.isBuffer(target)) {
-    throw new TypeError('Argument must be a Buffer')
-  }
-
-  if (start === undefined) {
-    start = 0
-  }
-  if (end === undefined) {
-    end = target ? target.length : 0
-  }
-  if (thisStart === undefined) {
-    thisStart = 0
-  }
-  if (thisEnd === undefined) {
-    thisEnd = this.length
-  }
-
-  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
-    throw new RangeError('out of range index')
-  }
-
-  if (thisStart >= thisEnd && start >= end) {
-    return 0
-  }
-  if (thisStart >= thisEnd) {
-    return -1
-  }
-  if (start >= end) {
-    return 1
-  }
-
-  start >>>= 0
-  end >>>= 0
-  thisStart >>>= 0
-  thisEnd >>>= 0
-
-  if (this === target) return 0
-
-  var x = thisEnd - thisStart
-  var y = end - start
-  var len = Math.min(x, y)
-
-  var thisCopy = this.slice(thisStart, thisEnd)
-  var targetCopy = target.slice(start, end)
-
-  for (var i = 0; i < len; ++i) {
-    if (thisCopy[i] !== targetCopy[i]) {
-      x = thisCopy[i]
-      y = targetCopy[i]
-      break
-    }
-  }
-
-  if (x < y) return -1
-  if (y < x) return 1
-  return 0
-}
-
-// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
-// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
-//
-// Arguments:
-// - buffer - a Buffer to search
-// - val - a string, Buffer, or number
-// - byteOffset - an index into `buffer`; will be clamped to an int32
-// - encoding - an optional encoding, relevant is val is a string
-// - dir - true for indexOf, false for lastIndexOf
-function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
-  // Empty buffer means no match
-  if (buffer.length === 0) return -1
-
-  // Normalize byteOffset
-  if (typeof byteOffset === 'string') {
-    encoding = byteOffset
-    byteOffset = 0
-  } else if (byteOffset > 0x7fffffff) {
-    byteOffset = 0x7fffffff
-  } else if (byteOffset < -0x80000000) {
-    byteOffset = -0x80000000
-  }
-  byteOffset = +byteOffset  // Coerce to Number.
-  if (isNaN(byteOffset)) {
-    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
-    byteOffset = dir ? 0 : (buffer.length - 1)
-  }
-
-  // Normalize byteOffset: negative offsets start from the end of the buffer
-  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
-  if (byteOffset >= buffer.length) {
-    if (dir) return -1
-    else byteOffset = buffer.length - 1
-  } else if (byteOffset < 0) {
-    if (dir) byteOffset = 0
-    else return -1
-  }
-
-  // Normalize val
-  if (typeof val === 'string') {
-    val = Buffer.from(val, encoding)
-  }
-
-  // Finally, search either indexOf (if dir is true) or lastIndexOf
-  if (Buffer.isBuffer(val)) {
-    // Special case: looking for empty string/buffer always fails
-    if (val.length === 0) {
-      return -1
-    }
-    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
-  } else if (typeof val === 'number') {
-    val = val & 0xFF // Search for a byte value [0-255]
-    if (Buffer.TYPED_ARRAY_SUPPORT &&
-        typeof Uint8Array.prototype.indexOf === 'function') {
-      if (dir) {
-        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
-      } else {
-        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
-      }
-    }
-    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
-  }
-
-  throw new TypeError('val must be string, number or Buffer')
-}
-
-function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
-  var indexSize = 1
-  var arrLength = arr.length
-  var valLength = val.length
-
-  if (encoding !== undefined) {
-    encoding = String(encoding).toLowerCase()
-    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
-        encoding === 'utf16le' || encoding === 'utf-16le') {
-      if (arr.length < 2 || val.length < 2) {
-        return -1
-      }
-      indexSize = 2
-      arrLength /= 2
-      valLength /= 2
-      byteOffset /= 2
-    }
-  }
-
-  function read (buf, i) {
-    if (indexSize === 1) {
-      return buf[i]
-    } else {
-      return buf.readUInt16BE(i * indexSize)
-    }
-  }
-
-  var i
-  if (dir) {
-    var foundIndex = -1
-    for (i = byteOffset; i < arrLength; i++) {
-      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
-        if (foundIndex === -1) foundIndex = i
-        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
-      } else {
-        if (foundIndex !== -1) i -= i - foundIndex
-        foundIndex = -1
-      }
-    }
-  } else {
-    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
-    for (i = byteOffset; i >= 0; i--) {
-      var found = true
-      for (var j = 0; j < valLength; j++) {
-        if (read(arr, i + j) !== read(val, j)) {
-          found = false
-          break
-        }
-      }
-      if (found) return i
-    }
-  }
-
-  return -1
-}
-
-Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
-  return this.indexOf(val, byteOffset, encoding) !== -1
-}
-
-Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
-  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
-}
-
-Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
-  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
-}
-
-function hexWrite (buf, string, offset, length) {
-  offset = Number(offset) || 0
-  var remaining = buf.length - offset
-  if (!length) {
-    length = remaining
-  } else {
-    length = Number(length)
-    if (length > remaining) {
-      length = remaining
-    }
-  }
-
-  // must be an even number of digits
-  var strLen = string.length
-  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
-
-  if (length > strLen / 2) {
-    length = strLen / 2
-  }
-  for (var i = 0; i < length; ++i) {
-    var parsed = parseInt(string.substr(i * 2, 2), 16)
-    if (isNaN(parsed)) return i
-    buf[offset + i] = parsed
-  }
-  return i
-}
-
-function utf8Write (buf, string, offset, length) {
-  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
-}
-
-function asciiWrite (buf, string, offset, length) {
-  return blitBuffer(asciiToBytes(string), buf, offset, length)
-}
-
-function latin1Write (buf, string, offset, length) {
-  return asciiWrite(buf, string, offset, length)
-}
-
-function base64Write (buf, string, offset, length) {
-  return blitBuffer(base64ToBytes(string), buf, offset, length)
-}
-
-function ucs2Write (buf, string, offset, length) {
-  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
-}
-
-Buffer.prototype.write = function write (string, offset, length, encoding) {
-  // Buffer#write(string)
-  if (offset === undefined) {
-    encoding = 'utf8'
-    length = this.length
-    offset = 0
-  // Buffer#write(string, encoding)
-  } else if (length === undefined && typeof offset === 'string') {
-    encoding = offset
-    length = this.length
-    offset = 0
-  // Buffer#write(string, offset[, length][, encoding])
-  } else if (isFinite(offset)) {
-    offset = offset | 0
-    if (isFinite(length)) {
-      length = length | 0
-      if (encoding === undefined) encoding = 'utf8'
-    } else {
-      encoding = length
-      length = undefined
-    }
-  // legacy write(string, encoding, offset, length) - remove in v0.13
-  } else {
-    throw new Error(
-      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
-    )
-  }
-
-  var remaining = this.length - offset
-  if (length === undefined || length > remaining) length = remaining
-
-  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
-    throw new RangeError('Attempt to write outside buffer bounds')
-  }
-
-  if (!encoding) encoding = 'utf8'
-
-  var loweredCase = false
-  for (;;) {
-    switch (encoding) {
-      case 'hex':
-        return hexWrite(this, string, offset, length)
-
-      case 'utf8':
-      case 'utf-8':
-        return utf8Write(this, string, offset, length)
-
-      case 'ascii':
-        return asciiWrite(this, string, offset, length)
-
-      case 'latin1':
-      case 'binary':
-        return latin1Write(this, string, offset, length)
-
-      case 'base64':
-        // Warning: maxLength not taken into account in base64Write
-        return base64Write(this, string, offset, length)
-
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return ucs2Write(this, string, offset, length)
-
-      default:
-        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
-        encoding = ('' + encoding).toLowerCase()
-        loweredCase = true
-    }
-  }
-}
-
-Buffer.prototype.toJSON = function toJSON () {
-  return {
-    type: 'Buffer',
-    data: Array.prototype.slice.call(this._arr || this, 0)
-  }
-}
-
-function base64Slice (buf, start, end) {
-  if (start === 0 && end === buf.length) {
-    return base64.fromByteArray(buf)
-  } else {
-    return base64.fromByteArray(buf.slice(start, end))
-  }
-}
-
-function utf8Slice (buf, start, end) {
-  end = Math.min(buf.length, end)
-  var res = []
-
-  var i = start
-  while (i < end) {
-    var firstByte = buf[i]
-    var codePoint = null
-    var bytesPerSequence = (firstByte > 0xEF) ? 4
-      : (firstByte > 0xDF) ? 3
-      : (firstByte > 0xBF) ? 2
-      : 1
-
-    if (i + bytesPerSequence <= end) {
-      var secondByte, thirdByte, fourthByte, tempCodePoint
-
-      switch (bytesPerSequence) {
-        case 1:
-          if (firstByte < 0x80) {
-            codePoint = firstByte
-          }
-          break
-        case 2:
-          secondByte = buf[i + 1]
-          if ((secondByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
-            if (tempCodePoint > 0x7F) {
-              codePoint = tempCodePoint
-            }
-          }
-          break
-        case 3:
-          secondByte = buf[i + 1]
-          thirdByte = buf[i + 2]
-          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
-            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
-              codePoint = tempCodePoint
-            }
-          }
-          break
-        case 4:
-          secondByte = buf[i + 1]
-          thirdByte = buf[i + 2]
-          fourthByte = buf[i + 3]
-          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
-            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
-            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
-              codePoint = tempCodePoint
-            }
-          }
-      }
-    }
-
-    if (codePoint === null) {
-      // we did not generate a valid codePoint so insert a
-      // replacement char (U+FFFD) and advance only 1 byte
-      codePoint = 0xFFFD
-      bytesPerSequence = 1
-    } else if (codePoint > 0xFFFF) {
-      // encode to utf16 (surrogate pair dance)
-      codePoint -= 0x10000
-      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
-      codePoint = 0xDC00 | codePoint & 0x3FF
-    }
-
-    res.push(codePoint)
-    i += bytesPerSequence
-  }
-
-  return decodeCodePointsArray(res)
-}
-
-// Based on http://stackoverflow.com/a/22747272/680742, the browser with
-// the lowest limit is Chrome, with 0x10000 args.
-// We go 1 magnitude less, for safety
-var MAX_ARGUMENTS_LENGTH = 0x1000
-
-function decodeCodePointsArray (codePoints) {
-  var len = codePoints.length
-  if (len <= MAX_ARGUMENTS_LENGTH) {
-    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
-  }
-
-  // Decode in chunks to avoid "call stack size exceeded".
-  var res = ''
-  var i = 0
-  while (i < len) {
-    res += String.fromCharCode.apply(
-      String,
-      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
-    )
-  }
-  return res
-}
-
-function asciiSlice (buf, start, end) {
-  var ret = ''
-  end = Math.min(buf.length, end)
-
-  for (var i = start; i < end; ++i) {
-    ret += String.fromCharCode(buf[i] & 0x7F)
-  }
-  return ret
-}
-
-function latin1Slice (buf, start, end) {
-  var ret = ''
-  end = Math.min(buf.length, end)
-
-  for (var i = start; i < end; ++i) {
-    ret += String.fromCharCode(buf[i])
-  }
-  return ret
-}
-
-function hexSlice (buf, start, end) {
-  var len = buf.length
-
-  if (!start || start < 0) start = 0
-  if (!end || end < 0 || end > len) end = len
-
-  var out = ''
-  for (var i = start; i < end; ++i) {
-    out += toHex(buf[i])
-  }
-  return out
-}
-
-function utf16leSlice (buf, start, end) {
-  var bytes = buf.slice(start, end)
-  var res = ''
-  for (var i = 0; i < bytes.length; i += 2) {
-    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
-  }
-  return res
-}
-
-Buffer.prototype.slice = function slice (start, end) {
-  var len = this.length
-  start = ~~start
-  end = end === undefined ? len : ~~end
-
-  if (start < 0) {
-    start += len
-    if (start < 0) start = 0
-  } else if (start > len) {
-    start = len
-  }
-
-  if (end < 0) {
-    end += len
-    if (end < 0) end = 0
-  } else if (end > len) {
-    end = len
-  }
-
-  if (end < start) end = start
-
-  var newBuf
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    newBuf = this.subarray(start, end)
-    newBuf.__proto__ = Buffer.prototype
-  } else {
-    var sliceLen = end - start
-    newBuf = new Buffer(sliceLen, undefined)
-    for (var i = 0; i < sliceLen; ++i) {
-      newBuf[i] = this[i + start]
-    }
-  }
-
-  return newBuf
-}
-
-/*
- * Need to make sure that buffer isn't trying to write out of bounds.
- */
-function checkOffset (offset, ext, length) {
-  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
-  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
-}
-
-Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) checkOffset(offset, byteLength, this.length)
-
-  var val = this[offset]
-  var mul = 1
-  var i = 0
-  while (++i < byteLength && (mul *= 0x100)) {
-    val += this[offset + i] * mul
-  }
-
-  return val
-}
-
-Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) {
-    checkOffset(offset, byteLength, this.length)
-  }
-
-  var val = this[offset + --byteLength]
-  var mul = 1
-  while (byteLength > 0 && (mul *= 0x100)) {
-    val += this[offset + --byteLength] * mul
-  }
-
-  return val
-}
-
-Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 1, this.length)
-  return this[offset]
-}
-
-Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length)
-  return this[offset] | (this[offset + 1] << 8)
-}
-
-Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length)
-  return (this[offset] << 8) | this[offset + 1]
-}
-
-Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-
-  return ((this[offset]) |
-      (this[offset + 1] << 8) |
-      (this[offset + 2] << 16)) +
-      (this[offset + 3] * 0x1000000)
-}
-
-Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-
-  return (this[offset] * 0x1000000) +
-    ((this[offset + 1] << 16) |
-    (this[offset + 2] << 8) |
-    this[offset + 3])
-}
-
-Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) checkOffset(offset, byteLength, this.length)
-
-  var val = this[offset]
-  var mul = 1
-  var i = 0
-  while (++i < byteLength && (mul *= 0x100)) {
-    val += this[offset + i] * mul
-  }
-  mul *= 0x80
-
-  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-
-  return val
-}
-
-Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) checkOffset(offset, byteLength, this.length)
-
-  var i = byteLength
-  var mul = 1
-  var val = this[offset + --i]
-  while (i > 0 && (mul *= 0x100)) {
-    val += this[offset + --i] * mul
-  }
-  mul *= 0x80
-
-  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-
-  return val
-}
-
-Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 1, this.length)
-  if (!(this[offset] & 0x80)) return (this[offset])
-  return ((0xff - this[offset] + 1) * -1)
-}
-
-Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length)
-  var val = this[offset] | (this[offset + 1] << 8)
-  return (val & 0x8000) ? val | 0xFFFF0000 : val
-}
-
-Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 2, this.length)
-  var val = this[offset + 1] | (this[offset] << 8)
-  return (val & 0x8000) ? val | 0xFFFF0000 : val
-}
-
-Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-
-  return (this[offset]) |
-    (this[offset + 1] << 8) |
-    (this[offset + 2] << 16) |
-    (this[offset + 3] << 24)
-}
-
-Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-
-  return (this[offset] << 24) |
-    (this[offset + 1] << 16) |
-    (this[offset + 2] << 8) |
-    (this[offset + 3])
-}
-
-Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-  return ieee754.read(this, offset, true, 23, 4)
-}
-
-Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 4, this.length)
-  return ieee754.read(this, offset, false, 23, 4)
-}
-
-Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 8, this.length)
-  return ieee754.read(this, offset, true, 52, 8)
-}
-
-Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
-  if (!noAssert) checkOffset(offset, 8, this.length)
-  return ieee754.read(this, offset, false, 52, 8)
-}
-
-function checkInt (buf, value, offset, ext, max, min) {
-  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
-  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
-  if (offset + ext > buf.length) throw new RangeError('Index out of range')
-}
-
-Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
-  value = +value
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) {
-    var maxBytes = Math.pow(2, 8 * byteLength) - 1
-    checkInt(this, value, offset, byteLength, maxBytes, 0)
-  }
-
-  var mul = 1
-  var i = 0
-  this[offset] = value & 0xFF
-  while (++i < byteLength && (mul *= 0x100)) {
-    this[offset + i] = (value / mul) & 0xFF
-  }
-
-  return offset + byteLength
-}
-
-Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
-  value = +value
-  offset = offset | 0
-  byteLength = byteLength | 0
-  if (!noAssert) {
-    var maxBytes = Math.pow(2, 8 * byteLength) - 1
-    checkInt(this, value, offset, byteLength, maxBytes, 0)
-  }
-
-  var i = byteLength - 1
-  var mul = 1
-  this[offset + i] = value & 0xFF
-  while (--i >= 0 && (mul *= 0x100)) {
-    this[offset + i] = (value / mul) & 0xFF
-  }
-
-  return offset + byteLength
-}
-
-Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
-  this[offset] = (value & 0xff)
-  return offset + 1
-}
-
-function objectWriteUInt16 (buf, value, offset, littleEndian) {
-  if (value < 0) value = 0xffff + value + 1
-  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
-    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
-      (littleEndian ? i : 1 - i) * 8
-  }
-}
-
-Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff)
-    this[offset + 1] = (value >>> 8)
-  } else {
-    objectWriteUInt16(this, value, offset, true)
-  }
-  return offset + 2
-}
-
-Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 8)
-    this[offset + 1] = (value & 0xff)
-  } else {
-    objectWriteUInt16(this, value, offset, false)
-  }
-  return offset + 2
-}
-
-function objectWriteUInt32 (buf, value, offset, littleEndian) {
-  if (value < 0) value = 0xffffffff + value + 1
-  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
-    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
-  }
-}
-
-Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset + 3] = (value >>> 24)
-    this[offset + 2] = (value >>> 16)
-    this[offset + 1] = (value >>> 8)
-    this[offset] = (value & 0xff)
-  } else {
-    objectWriteUInt32(this, value, offset, true)
-  }
-  return offset + 4
-}
-
-Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 24)
-    this[offset + 1] = (value >>> 16)
-    this[offset + 2] = (value >>> 8)
-    this[offset + 3] = (value & 0xff)
-  } else {
-    objectWriteUInt32(this, value, offset, false)
-  }
-  return offset + 4
-}
-
-Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) {
-    var limit = Math.pow(2, 8 * byteLength - 1)
-
-    checkInt(this, value, offset, byteLength, limit - 1, -limit)
-  }
-
-  var i = 0
-  var mul = 1
-  var sub = 0
-  this[offset] = value & 0xFF
-  while (++i < byteLength && (mul *= 0x100)) {
-    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
-      sub = 1
-    }
-    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
-  }
-
-  return offset + byteLength
-}
-
-Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) {
-    var limit = Math.pow(2, 8 * byteLength - 1)
-
-    checkInt(this, value, offset, byteLength, limit - 1, -limit)
-  }
-
-  var i = byteLength - 1
-  var mul = 1
-  var sub = 0
-  this[offset + i] = value & 0xFF
-  while (--i >= 0 && (mul *= 0x100)) {
-    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
-      sub = 1
-    }
-    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
-  }
-
-  return offset + byteLength
-}
-
-Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
-  if (value < 0) value = 0xff + value + 1
-  this[offset] = (value & 0xff)
-  return offset + 1
-}
-
-Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff)
-    this[offset + 1] = (value >>> 8)
-  } else {
-    objectWriteUInt16(this, value, offset, true)
-  }
-  return offset + 2
-}
-
-Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 8)
-    this[offset + 1] = (value & 0xff)
-  } else {
-    objectWriteUInt16(this, value, offset, false)
-  }
-  return offset + 2
-}
-
-Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value & 0xff)
-    this[offset + 1] = (value >>> 8)
-    this[offset + 2] = (value >>> 16)
-    this[offset + 3] = (value >>> 24)
-  } else {
-    objectWriteUInt32(this, value, offset, true)
-  }
-  return offset + 4
-}
-
-Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
-  value = +value
-  offset = offset | 0
-  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
-  if (value < 0) value = 0xffffffff + value + 1
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    this[offset] = (value >>> 24)
-    this[offset + 1] = (value >>> 16)
-    this[offset + 2] = (value >>> 8)
-    this[offset + 3] = (value & 0xff)
-  } else {
-    objectWriteUInt32(this, value, offset, false)
-  }
-  return offset + 4
-}
-
-function checkIEEE754 (buf, value, offset, ext, max, min) {
-  if (offset + ext > buf.length) throw new RangeError('Index out of range')
-  if (offset < 0) throw new RangeError('Index out of range')
-}
-
-function writeFloat (buf, value, offset, littleEndian, noAssert) {
-  if (!noAssert) {
-    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
-  }
-  ieee754.write(buf, value, offset, littleEndian, 23, 4)
-  return offset + 4
-}
-
-Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
-  return writeFloat(this, value, offset, true, noAssert)
-}
-
-Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
-  return writeFloat(this, value, offset, false, noAssert)
-}
-
-function writeDouble (buf, value, offset, littleEndian, noAssert) {
-  if (!noAssert) {
-    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
-  }
-  ieee754.write(buf, value, offset, littleEndian, 52, 8)
-  return offset + 8
-}
-
-Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
-  return writeDouble(this, value, offset, true, noAssert)
-}
-
-Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
-  return writeDouble(this, value, offset, false, noAssert)
-}
-
-// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-Buffer.prototype.copy = function copy (target, targetStart, start, end) {
-  if (!start) start = 0
-  if (!end && end !== 0) end = this.length
-  if (targetStart >= target.length) targetStart = target.length
-  if (!targetStart) targetStart = 0
-  if (end > 0 && end < start) end = start
-
-  // Copy 0 bytes; we're done
-  if (end === start) return 0
-  if (target.length === 0 || this.length === 0) return 0
-
-  // Fatal error conditions
-  if (targetStart < 0) {
-    throw new RangeError('targetStart out of bounds')
-  }
-  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
-  if (end < 0) throw new RangeError('sourceEnd out of bounds')
-
-  // Are we oob?
-  if (end > this.length) end = this.length
-  if (target.length - targetStart < end - start) {
-    end = target.length - targetStart + start
-  }
-
-  var len = end - start
-  var i
-
-  if (this === target && start < targetStart && targetStart < end) {
-    // descending copy from end
-    for (i = len - 1; i >= 0; --i) {
-      target[i + targetStart] = this[i + start]
-    }
-  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    // ascending copy from start
-    for (i = 0; i < len; ++i) {
-      target[i + targetStart] = this[i + start]
-    }
-  } else {
-    Uint8Array.prototype.set.call(
-      target,
-      this.subarray(start, start + len),
-      targetStart
-    )
-  }
-
-  return len
-}
-
-// Usage:
-//    buffer.fill(number[, offset[, end]])
-//    buffer.fill(buffer[, offset[, end]])
-//    buffer.fill(string[, offset[, end]][, encoding])
-Buffer.prototype.fill = function fill (val, start, end, encoding) {
-  // Handle string cases:
-  if (typeof val === 'string') {
-    if (typeof start === 'string') {
-      encoding = start
-      start = 0
-      end = this.length
-    } else if (typeof end === 'string') {
-      encoding = end
-      end = this.length
-    }
-    if (val.length === 1) {
-      var code = val.charCodeAt(0)
-      if (code < 256) {
-        val = code
-      }
-    }
-    if (encoding !== undefined && typeof encoding !== 'string') {
-      throw new TypeError('encoding must be a string')
-    }
-    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
-      throw new TypeError('Unknown encoding: ' + encoding)
-    }
-  } else if (typeof val === 'number') {
-    val = val & 255
-  }
-
-  // Invalid ranges are not set to a default, so can range check early.
-  if (start < 0 || this.length < start || this.length < end) {
-    throw new RangeError('Out of range index')
-  }
-
-  if (end <= start) {
-    return this
-  }
-
-  start = start >>> 0
-  end = end === undefined ? this.length : end >>> 0
-
-  if (!val) val = 0
-
-  var i
-  if (typeof val === 'number') {
-    for (i = start; i < end; ++i) {
-      this[i] = val
-    }
-  } else {
-    var bytes = Buffer.isBuffer(val)
-      ? val
-      : utf8ToBytes(new Buffer(val, encoding).toString())
-    var len = bytes.length
-    for (i = 0; i < end - start; ++i) {
-      this[i + start] = bytes[i % len]
-    }
-  }
-
-  return this
-}
-
-// HELPER FUNCTIONS
-// ================
-
-var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
-
-function base64clean (str) {
-  // Node strips out invalid characters like \n and \t from the string, base64-js does not
-  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
-  // Node converts strings with length < 2 to ''
-  if (str.length < 2) return ''
-  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
-  while (str.length % 4 !== 0) {
-    str = str + '='
-  }
-  return str
-}
-
-function stringtrim (str) {
-  if (str.trim) return str.trim()
-  return str.replace(/^\s+|\s+$/g, '')
-}
-
-function toHex (n) {
-  if (n < 16) return '0' + n.toString(16)
-  return n.toString(16)
-}
-
-function utf8ToBytes (string, units) {
-  units = units || Infinity
-  var codePoint
-  var length = string.length
-  var leadSurrogate = null
-  var bytes = []
-
-  for (var i = 0; i < length; ++i) {
-    codePoint = string.charCodeAt(i)
-
-    // is surrogate component
-    if (codePoint > 0xD7FF && codePoint < 0xE000) {
-      // last char was a lead
-      if (!leadSurrogate) {
-        // no lead yet
-        if (codePoint > 0xDBFF) {
-          // unexpected trail
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-          continue
-        } else if (i + 1 === length) {
-          // unpaired lead
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-          continue
-        }
-
-        // valid lead
-        leadSurrogate = codePoint
-
-        continue
-      }
-
-      // 2 leads in a row
-      if (codePoint < 0xDC00) {
-        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-        leadSurrogate = codePoint
-        continue
-      }
-
-      // valid surrogate pair
-      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
-    } else if (leadSurrogate) {
-      // valid bmp char, but last char was a lead
-      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-    }
-
-    leadSurrogate = null
-
-    // encode utf8
-    if (codePoint < 0x80) {
-      if ((units -= 1) < 0) break
-      bytes.push(codePoint)
-    } else if (codePoint < 0x800) {
-      if ((units -= 2) < 0) break
-      bytes.push(
-        codePoint >> 0x6 | 0xC0,
-        codePoint & 0x3F | 0x80
-      )
-    } else if (codePoint < 0x10000) {
-      if ((units -= 3) < 0) break
-      bytes.push(
-        codePoint >> 0xC | 0xE0,
-        codePoint >> 0x6 & 0x3F | 0x80,
-        codePoint & 0x3F | 0x80
-      )
-    } else if (codePoint < 0x110000) {
-      if ((units -= 4) < 0) break
-      bytes.push(
-        codePoint >> 0x12 | 0xF0,
-        codePoint >> 0xC & 0x3F | 0x80,
-        codePoint >> 0x6 & 0x3F | 0x80,
-        codePoint & 0x3F | 0x80
-      )
-    } else {
-      throw new Error('Invalid code point')
-    }
-  }
-
-  return bytes
-}
-
-function asciiToBytes (str) {
-  var byteArray = []
-  for (var i = 0; i < str.length; ++i) {
-    // Node's code seems to be doing this and not & 0x7F..
-    byteArray.push(str.charCodeAt(i) & 0xFF)
-  }
-  return byteArray
-}
-
-function utf16leToBytes (str, units) {
-  var c, hi, lo
-  var byteArray = []
-  for (var i = 0; i < str.length; ++i) {
-    if ((units -= 2) < 0) break
-
-    c = str.charCodeAt(i)
-    hi = c >> 8
-    lo = c % 256
-    byteArray.push(lo)
-    byteArray.push(hi)
-  }
-
-  return byteArray
-}
-
-function base64ToBytes (str) {
-  return base64.toByteArray(base64clean(str))
-}
-
-function blitBuffer (src, dst, offset, length) {
-  for (var i = 0; i < length; ++i) {
-    if ((i + offset >= dst.length) || (i >= src.length)) break
-    dst[i + offset] = src[i]
-  }
-  return i
-}
-
-function isnan (val) {
-  return val !== val // eslint-disable-line no-self-compare
-}
-
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 2)))
-
-/***/ }),
-
-/***/ 21:
-/*!*****************************************!*\
-  !*** ./node_modules/base64-js/index.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.byteLength = byteLength
-exports.toByteArray = toByteArray
-exports.fromByteArray = fromByteArray
-
-var lookup = []
-var revLookup = []
-var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
-
-var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-for (var i = 0, len = code.length; i < len; ++i) {
-  lookup[i] = code[i]
-  revLookup[code.charCodeAt(i)] = i
-}
-
-// Support decoding URL-safe base64 strings, as Node.js does.
-// See: https://en.wikipedia.org/wiki/Base64#URL_applications
-revLookup['-'.charCodeAt(0)] = 62
-revLookup['_'.charCodeAt(0)] = 63
-
-function getLens (b64) {
-  var len = b64.length
-
-  if (len % 4 > 0) {
-    throw new Error('Invalid string. Length must be a multiple of 4')
-  }
-
-  // Trim off extra bytes after placeholder bytes are found
-  // See: https://github.com/beatgammit/base64-js/issues/42
-  var validLen = b64.indexOf('=')
-  if (validLen === -1) validLen = len
-
-  var placeHoldersLen = validLen === len
-    ? 0
-    : 4 - (validLen % 4)
-
-  return [validLen, placeHoldersLen]
-}
-
-// base64 is 4/3 + up to two characters of the original data
-function byteLength (b64) {
-  var lens = getLens(b64)
-  var validLen = lens[0]
-  var placeHoldersLen = lens[1]
-  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
-}
-
-function _byteLength (b64, validLen, placeHoldersLen) {
-  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
-}
-
-function toByteArray (b64) {
-  var tmp
-  var lens = getLens(b64)
-  var validLen = lens[0]
-  var placeHoldersLen = lens[1]
-
-  var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen))
-
-  var curByte = 0
-
-  // if there are placeholders, only get up to the last complete 4 chars
-  var len = placeHoldersLen > 0
-    ? validLen - 4
-    : validLen
-
-  var i
-  for (i = 0; i < len; i += 4) {
-    tmp =
-      (revLookup[b64.charCodeAt(i)] << 18) |
-      (revLookup[b64.charCodeAt(i + 1)] << 12) |
-      (revLookup[b64.charCodeAt(i + 2)] << 6) |
-      revLookup[b64.charCodeAt(i + 3)]
-    arr[curByte++] = (tmp >> 16) & 0xFF
-    arr[curByte++] = (tmp >> 8) & 0xFF
-    arr[curByte++] = tmp & 0xFF
-  }
-
-  if (placeHoldersLen === 2) {
-    tmp =
-      (revLookup[b64.charCodeAt(i)] << 2) |
-      (revLookup[b64.charCodeAt(i + 1)] >> 4)
-    arr[curByte++] = tmp & 0xFF
-  }
-
-  if (placeHoldersLen === 1) {
-    tmp =
-      (revLookup[b64.charCodeAt(i)] << 10) |
-      (revLookup[b64.charCodeAt(i + 1)] << 4) |
-      (revLookup[b64.charCodeAt(i + 2)] >> 2)
-    arr[curByte++] = (tmp >> 8) & 0xFF
-    arr[curByte++] = tmp & 0xFF
-  }
-
-  return arr
-}
-
-function tripletToBase64 (num) {
-  return lookup[num >> 18 & 0x3F] +
-    lookup[num >> 12 & 0x3F] +
-    lookup[num >> 6 & 0x3F] +
-    lookup[num & 0x3F]
-}
-
-function encodeChunk (uint8, start, end) {
-  var tmp
-  var output = []
-  for (var i = start; i < end; i += 3) {
-    tmp =
-      ((uint8[i] << 16) & 0xFF0000) +
-      ((uint8[i + 1] << 8) & 0xFF00) +
-      (uint8[i + 2] & 0xFF)
-    output.push(tripletToBase64(tmp))
-  }
-  return output.join('')
-}
-
-function fromByteArray (uint8) {
-  var tmp
-  var len = uint8.length
-  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
-  var parts = []
-  var maxChunkLength = 16383 // must be multiple of 3
-
-  // go through the array every three bytes, we'll deal with trailing stuff later
-  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
-    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
-  }
-
-  // pad the end with zeros, but make sure to not forget the extra bytes
-  if (extraBytes === 1) {
-    tmp = uint8[len - 1]
-    parts.push(
-      lookup[tmp >> 2] +
-      lookup[(tmp << 4) & 0x3F] +
-      '=='
-    )
-  } else if (extraBytes === 2) {
-    tmp = (uint8[len - 2] << 8) + uint8[len - 1]
-    parts.push(
-      lookup[tmp >> 10] +
-      lookup[(tmp >> 4) & 0x3F] +
-      lookup[(tmp << 2) & 0x3F] +
-      '='
-    )
-  }
-
-  return parts.join('')
-}
-
-
-/***/ }),
-
-/***/ 217:
-/*!*************************************!*\
-  !*** ./src/components/form/util.js ***!
-  \*************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getCommonRules = getCommonRules;
-exports.getExtraPosition = getExtraPosition;
-exports.getInputRequireRules = getInputRequireRules;
-exports.getPresetRules = getPresetRules;
-exports.getShowLabel = getShowLabel;
-exports.setPresetRules = setPresetRules;
-// 内置校验规则
-const presetRules = {
-  number: {
-    pattern: /^\d+(\.\d+)?$/,
-    errorMessage: '仅允许输入数字'
-  },
-  letter: {
-    pattern: /^[A-Za-z]+$/,
-    errorMessage: '仅允许输入英文字母'
-  },
-  chinese: {
-    pattern: /^[\u4E00-\u9FA5]+$/,
-    errorMessage: '仅允许输入汉字'
-  },
-  phone: {
-    pattern: /^1\d{10}$/,
-    errorMessage: '请输入11位手机号码'
-  },
-  nationalId: {
-    pattern: /^[1-9]{1}[0-9]{14}$|^[1-9]{1}[0-9]{16}([0-9]|[xX])$/,
-    errorMessage: '请输入正确的身份证号码'
-  }
-};
-
-// label展示
-function getShowLabel(model, field) {
-  return field.value || model[field.code] || '';
-}
-
-// 是否展示填写提示 && 返回填写提示的位置
-function getExtraPosition(field) {
-  // labelPosition为top时，展示在label下面；labelPosition为left时，展示在form-item下面
-  if (field.props && field.props.extra) {
-    return field.labelPosition === 'top' ? 'top' : 'bottom';
-  }
-  return '';
-}
-
-// 公共rule
-function getCommonRules(field) {
-  const rules = [];
-  const props = field.props || {};
-
-  // 必填校验
-  const txt = {
-    'form-radio': '选择',
-    'form-checkbox': '选择',
-    'form-select': '选择',
-    'form-date': '选择',
-    'form-rate': '选择',
-    'form-image': '上传',
-    'form-video': '上传',
-    'form-department-select': '选择',
-    'form-departmentAll-select': '选择'
-  }[field.type] || '填写';
-  if (getInputRequireRules(field, txt)) {
-    rules.push(getInputRequireRules(field, txt));
-  }
-
-  // 内置规则快捷校验
-  if (props && props.validate) {
-    rules.push(getPresetRules(props.validate));
-  }
-
-  // 自定义校验规则 - 当内置规则快捷校验满足不了时
-  if (props && props.rules) {
-    rules.push(...props.rules);
-  }
-  return rules;
-}
-
-/**
- * 添加内置校验规则
- * @param formRules 规则对象
- * @param code 规则key
- * @param ruleKey 规则名称
- */
-function setPresetRules(formRules, code, ruleKey) {
-  if (presetRules[ruleKey]) {
-    formRules[code].push(presetRules[ruleKey]);
-  }
-}
-// 获取内置规则
-function getPresetRules(ruleKey) {
-  if (presetRules[ruleKey]) {
-    return presetRules[ruleKey];
-  }
-}
-
-/**
- * 必填项规则
- * @param formRules 规则对象
- * @param code 规则key
- * @param label 展示名称
- */
-// 必填校验规则
-function getInputRequireRules(field, txt) {
-  return field.required ? {
-    required: true,
-    errorMessage: field.errorMessage || `请${txt || '输入'}${field.label}`
-  } : null;
-}
-
-/***/ }),
-
-/***/ 22:
-/*!***************************************!*\
-  !*** ./node_modules/ieee754/index.js ***!
-  \***************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
-exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-  var e, m
-  var eLen = (nBytes * 8) - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var nBits = -7
-  var i = isLE ? (nBytes - 1) : 0
-  var d = isLE ? -1 : 1
-  var s = buffer[offset + i]
-
-  i += d
-
-  e = s & ((1 << (-nBits)) - 1)
-  s >>= (-nBits)
-  nBits += eLen
-  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
-
-  m = e & ((1 << (-nBits)) - 1)
-  e >>= (-nBits)
-  nBits += mLen
-  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
-
-  if (e === 0) {
-    e = 1 - eBias
-  } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity)
-  } else {
-    m = m + Math.pow(2, mLen)
-    e = e - eBias
-  }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
-}
-
-exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c
-  var eLen = (nBytes * 8) - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
-  var i = isLE ? 0 : (nBytes - 1)
-  var d = isLE ? 1 : -1
-  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
-
-  value = Math.abs(value)
-
-  if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0
-    e = eMax
-  } else {
-    e = Math.floor(Math.log(value) / Math.LN2)
-    if (value * (c = Math.pow(2, -e)) < 1) {
-      e--
-      c *= 2
-    }
-    if (e + eBias >= 1) {
-      value += rt / c
-    } else {
-      value += rt * Math.pow(2, 1 - eBias)
-    }
-    if (value * c >= 2) {
-      e++
-      c /= 2
-    }
-
-    if (e + eBias >= eMax) {
-      m = 0
-      e = eMax
-    } else if (e + eBias >= 1) {
-      m = ((value * c) - 1) * Math.pow(2, mLen)
-      e = e + eBias
-    } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
-      e = 0
-    }
-  }
-
-  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-
-  e = (e << mLen) | m
-  eLen += mLen
-  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-
-  buffer[offset + i - d] |= s * 128
-}
-
-
-/***/ }),
-
-/***/ 23:
-/*!***************************************!*\
-  !*** ./node_modules/isarray/index.js ***!
-  \***************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-var toString = {}.toString;
-
-module.exports = Array.isArray || function (arr) {
-  return toString.call(arr) == '[object Array]';
-};
-
-
-/***/ }),
-
-/***/ 237:
-/*!********************************************************************!*\
-  !*** ./src/uni_modules/uni-forms/components/uni-forms/validate.js ***!
-  \********************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var pattern = {
-  email: /^\S+?@\S+?\.\S+?$/,
-  idcard: /^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/,
-  url: new RegExp('^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$', 'i')
-};
-const FORMAT_MAPPING = {
-  int: 'integer',
-  bool: 'boolean',
-  double: 'number',
-  long: 'number',
-  password: 'string'
-  // "fileurls": 'array'
-};
-
-function formatMessage(args, resources = '') {
-  var defaultMessage = ['label'];
-  defaultMessage.forEach(item => {
-    if (args[item] === undefined) {
-      args[item] = '';
-    }
-  });
-  let str = resources;
-  for (let key in args) {
-    let reg = new RegExp('{' + key + '}');
-    str = str.replace(reg, args[key]);
-  }
-  return str;
-}
-function isEmptyValue(value, type) {
-  if (value === undefined || value === null) {
-    return true;
-  }
-  if (typeof value === 'string' && !value) {
-    return true;
-  }
-  if (Array.isArray(value) && !value.length) {
-    return true;
-  }
-  if (type === 'object' && !Object.keys(value).length) {
-    return true;
-  }
-  return false;
-}
-const types = {
-  integer(value) {
-    return types.number(value) && parseInt(value, 10) === value;
-  },
-  string(value) {
-    return typeof value === 'string';
-  },
-  number(value) {
-    if (isNaN(value)) {
-      return false;
-    }
-    return typeof value === 'number';
-  },
-  boolean: function (value) {
-    return typeof value === 'boolean';
-  },
-  float: function (value) {
-    return types.number(value) && !types.integer(value);
-  },
-  array(value) {
-    return Array.isArray(value);
-  },
-  object(value) {
-    return typeof value === 'object' && !types.array(value);
-  },
-  date(value) {
-    return value instanceof Date;
-  },
-  timestamp(value) {
-    if (!this.integer(value) || Math.abs(value).toString().length > 16) {
-      return false;
-    }
-    return true;
-  },
-  file(value) {
-    return typeof value.url === 'string';
-  },
-  email(value) {
-    return typeof value === 'string' && !!value.match(pattern.email) && value.length < 255;
-  },
-  url(value) {
-    return typeof value === 'string' && !!value.match(pattern.url);
-  },
-  pattern(reg, value) {
-    try {
-      return new RegExp(reg).test(value);
-    } catch (e) {
-      return false;
-    }
-  },
-  method(value) {
-    return typeof value === 'function';
-  },
-  idcard(value) {
-    return typeof value === 'string' && !!value.match(pattern.idcard);
-  },
-  'url-https'(value) {
-    return this.url(value) && value.startsWith('https://');
-  },
-  'url-scheme'(value) {
-    return value.startsWith('://');
-  },
-  'url-web'(value) {
-    return false;
-  }
-};
-class RuleValidator {
-  constructor(message) {
-    this._message = message;
-  }
-  async validateRule(fieldKey, fieldValue, value, data, allData) {
-    var result = null;
-    let rules = fieldValue.rules;
-    let hasRequired = rules.findIndex(item => {
-      return item.required;
-    });
-    if (hasRequired < 0) {
-      if (value === null || value === undefined) {
-        return result;
-      }
-      if (typeof value === 'string' && !value.length) {
-        return result;
-      }
-    }
-    var message = this._message;
-    if (rules === undefined) {
-      return message['default'];
-    }
-    for (var i = 0; i < rules.length; i++) {
-      let rule = rules[i];
-      let vt = this._getValidateType(rule);
-      Object.assign(rule, {
-        label: fieldValue.label || `["${fieldKey}"]`
-      });
-      if (RuleValidatorHelper[vt]) {
-        result = RuleValidatorHelper[vt](rule, value, message);
-        if (result != null) {
-          break;
-        }
-      }
-      if (rule.validateExpr) {
-        let now = Date.now();
-        let resultExpr = rule.validateExpr(value, allData, now);
-        if (resultExpr === false) {
-          result = this._getMessage(rule, rule.errorMessage || this._message['default']);
-          break;
-        }
-      }
-      if (rule.validateFunction) {
-        result = await this.validateFunction(rule, value, data, allData, vt);
-        if (result !== null) {
-          break;
-        }
-      }
-    }
-    if (result !== null) {
-      result = message.TAG + result;
-    }
-    return result;
-  }
-  async validateFunction(rule, value, data, allData, vt) {
-    let result = null;
-    try {
-      let callbackMessage = null;
-      const res = await rule.validateFunction(rule, value, allData || data, message => {
-        callbackMessage = message;
-      });
-      if (callbackMessage || typeof res === 'string' && res || res === false) {
-        result = this._getMessage(rule, callbackMessage || res, vt);
-      }
-    } catch (e) {
-      result = this._getMessage(rule, e.message, vt);
-    }
-    return result;
-  }
-  _getMessage(rule, message, vt) {
-    return formatMessage(rule, message || rule.errorMessage || this._message[vt] || message['default']);
-  }
-  _getValidateType(rule) {
-    var result = '';
-    if (rule.required) {
-      result = 'required';
-    } else if (rule.format) {
-      result = 'format';
-    } else if (rule.arrayType) {
-      result = 'arrayTypeFormat';
-    } else if (rule.range) {
-      result = 'range';
-    } else if (rule.maximum !== undefined || rule.minimum !== undefined) {
-      result = 'rangeNumber';
-    } else if (rule.maxLength !== undefined || rule.minLength !== undefined) {
-      result = 'rangeLength';
-    } else if (rule.pattern) {
-      result = 'pattern';
-    } else if (rule.validateFunction) {
-      result = 'validateFunction';
-    }
-    return result;
-  }
-}
-const RuleValidatorHelper = {
-  required(rule, value, message) {
-    if (rule.required && isEmptyValue(value, rule.format || typeof value)) {
-      return formatMessage(rule, rule.errorMessage || message.required);
-    }
-    return null;
-  },
-  range(rule, value, message) {
-    const {
-      range,
-      errorMessage
-    } = rule;
-    let list = new Array(range.length);
-    for (let i = 0; i < range.length; i++) {
-      const item = range[i];
-      if (types.object(item) && item.value !== undefined) {
-        list[i] = item.value;
-      } else {
-        list[i] = item;
-      }
-    }
-    let result = false;
-    if (Array.isArray(value)) {
-      result = new Set(value.concat(list)).size === list.length;
-    } else {
-      if (list.indexOf(value) > -1) {
-        result = true;
-      }
-    }
-    if (!result) {
-      return formatMessage(rule, errorMessage || message['enum']);
-    }
-    return null;
-  },
-  rangeNumber(rule, value, message) {
-    if (!types.number(value)) {
-      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
-    }
-    let {
-      minimum,
-      maximum,
-      exclusiveMinimum,
-      exclusiveMaximum
-    } = rule;
-    let min = exclusiveMinimum ? value <= minimum : value < minimum;
-    let max = exclusiveMaximum ? value >= maximum : value > maximum;
-    if (minimum !== undefined && min) {
-      return formatMessage(rule, rule.errorMessage || message['number'][exclusiveMinimum ? 'exclusiveMinimum' : 'minimum']);
-    } else if (maximum !== undefined && max) {
-      return formatMessage(rule, rule.errorMessage || message['number'][exclusiveMaximum ? 'exclusiveMaximum' : 'maximum']);
-    } else if (minimum !== undefined && maximum !== undefined && (min || max)) {
-      return formatMessage(rule, rule.errorMessage || message['number'].range);
-    }
-    return null;
-  },
-  rangeLength(rule, value, message) {
-    if (!types.string(value) && !types.array(value)) {
-      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
-    }
-    let min = rule.minLength;
-    let max = rule.maxLength;
-    let val = value.length;
-    if (min !== undefined && val < min) {
-      return formatMessage(rule, rule.errorMessage || message['length'].minLength);
-    } else if (max !== undefined && val > max) {
-      return formatMessage(rule, rule.errorMessage || message['length'].maxLength);
-    } else if (min !== undefined && max !== undefined && (val < min || val > max)) {
-      return formatMessage(rule, rule.errorMessage || message['length'].range);
-    }
-    return null;
-  },
-  pattern(rule, value, message) {
-    if (!types['pattern'](rule.pattern, value)) {
-      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
-    }
-    return null;
-  },
-  format(rule, value, message) {
-    var customTypes = Object.keys(types);
-    var format = FORMAT_MAPPING[rule.format] ? FORMAT_MAPPING[rule.format] : rule.format || rule.arrayType;
-    if (customTypes.indexOf(format) > -1) {
-      if (!types[format](value)) {
-        return formatMessage(rule, rule.errorMessage || message.typeError);
-      }
-    }
-    return null;
-  },
-  arrayTypeFormat(rule, value, message) {
-    if (!Array.isArray(value)) {
-      return formatMessage(rule, rule.errorMessage || message.typeError);
-    }
-    for (let i = 0; i < value.length; i++) {
-      const element = value[i];
-      let formatResult = this.format(rule, element, message);
-      if (formatResult !== null) {
-        return formatResult;
-      }
-    }
-    return null;
-  }
-};
-class SchemaValidator extends RuleValidator {
-  constructor(schema, options) {
-    super(SchemaValidator.message);
-    this._schema = schema;
-    this._options = options || null;
-  }
-  updateSchema(schema) {
-    this._schema = schema;
-  }
-  async validate(data, allData) {
-    let result = this._checkFieldInSchema(data);
-    if (!result) {
-      result = await this.invokeValidate(data, false, allData);
-    }
-    return result.length ? result[0] : null;
-  }
-  async validateAll(data, allData) {
-    let result = this._checkFieldInSchema(data);
-    if (!result) {
-      result = await this.invokeValidate(data, true, allData);
-    }
-    return result;
-  }
-  async validateUpdate(data, allData) {
-    let result = this._checkFieldInSchema(data);
-    if (!result) {
-      result = await this.invokeValidateUpdate(data, false, allData);
-    }
-    return result.length ? result[0] : null;
-  }
-  async invokeValidate(data, all, allData) {
-    let result = [];
-    let schema = this._schema;
-    for (let key in schema) {
-      let value = schema[key];
-      let errorMessage = await this.validateRule(key, value, data[key], data, allData);
-      if (errorMessage != null) {
-        result.push({
-          key,
-          errorMessage
-        });
-        if (!all) break;
-      }
-    }
-    return result;
-  }
-  async invokeValidateUpdate(data, all, allData) {
-    let result = [];
-    for (let key in data) {
-      let errorMessage = await this.validateRule(key, this._schema[key], data[key], data, allData);
-      if (errorMessage != null) {
-        result.push({
-          key,
-          errorMessage
-        });
-        if (!all) break;
-      }
-    }
-    return result;
-  }
-  _checkFieldInSchema(data) {
-    var keys = Object.keys(data);
-    var keys2 = Object.keys(this._schema);
-    if (new Set(keys.concat(keys2)).size === keys2.length) {
-      return '';
-    }
-    var noExistFields = keys.filter(key => {
-      return keys2.indexOf(key) < 0;
-    });
-    var errorMessage = formatMessage({
-      field: JSON.stringify(noExistFields)
-    }, SchemaValidator.message.TAG + SchemaValidator.message['defaultInvalid']);
-    return [{
-      key: 'invalid',
-      errorMessage
-    }];
-  }
-}
-function Message() {
-  return {
-    TAG: '',
-    default: '验证错误',
-    defaultInvalid: '提交的字段{field}在数据库中并不存在',
-    validateFunction: '验证无效',
-    required: '{label}必填',
-    enum: '{label}超出范围',
-    timestamp: '{label}格式无效',
-    whitespace: '{label}不能为空',
-    typeError: '{label}类型无效',
-    date: {
-      format: '{label}日期{value}格式无效',
-      parse: '{label}日期无法解析,{value}无效',
-      invalid: '{label}日期{value}无效'
-    },
-    length: {
-      minLength: '{label}长度不能少于{minLength}',
-      maxLength: '{label}长度不能超过{maxLength}',
-      range: '{label}必须介于{minLength}和{maxLength}之间'
-    },
-    number: {
-      minimum: '{label}不能小于{minimum}',
-      maximum: '{label}不能大于{maximum}',
-      exclusiveMinimum: '{label}不能小于等于{minimum}',
-      exclusiveMaximum: '{label}不能大于等于{maximum}',
-      range: '{label}必须介于{minimum}and{maximum}之间'
-    },
-    pattern: {
-      mismatch: '{label}格式不匹配'
-    }
-  };
-}
-SchemaValidator.message = new Message();
-var _default = SchemaValidator;
-exports.default = _default;
-
-/***/ }),
-
-/***/ 24:
-/*!*********************************!*\
-  !*** ./src/utils/sm4/base64.js ***!
-  \*********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var require;var require;/* eslint-disable */
-;
-(function (a) {
-  if (true) module.exports = a();else { var b; }
-})(function () {
-  return function () {
-    function b(d, e, g) {
-      function a(j, i) {
-        if (!e[j]) {
-          if (!d[j]) {
-            var f = 'function' == typeof require && require;
-            if (!i && f) return require(j, !0);
-            if (h) return h(j, !0);
-            var c = new Error("Cannot find module '" + j + "'");
-            throw c.code = 'MODULE_NOT_FOUND', c;
-          }
-          var k = e[j] = {
-            exports: {}
-          };
-          d[j][0].call(k.exports, function (b) {
-            var c = d[j][1][b];
-            return a(c || b);
-          }, k, k.exports, b, d, e, g);
-        }
-        return e[j].exports;
-      }
-      for (var h = 'function' == typeof require && require, c = 0; c < g.length; c++) a(g[c]);
-      return a;
-    }
-    return b;
-  }()({
-    '/': [function (a, b, c) {
-      'use strict';
-
-      function d(a) {
-        var b = a.length;
-        if (0 < b % 4) throw new Error('Invalid string. Length must be a multiple of 4');
-        var c = a.indexOf('=');
-        -1 === c && (c = b);
-        var d = c === b ? 0 : 4 - c % 4;
-        return [c, d];
-      }
-      function e(a, b, c) {
-        return 3 * (b + c) / 4 - c;
-      }
-      function f(a) {
-        var b,
-          c,
-          f = d(a),
-          g = f[0],
-          h = f[1],
-          j = new m(e(a, g, h)),
-          k = 0,
-          n = 0 < h ? g - 4 : g;
-        for (c = 0; c < n; c += 4) b = l[a.charCodeAt(c)] << 18 | l[a.charCodeAt(c + 1)] << 12 | l[a.charCodeAt(c + 2)] << 6 | l[a.charCodeAt(c + 3)], j[k++] = 255 & b >> 16, j[k++] = 255 & b >> 8, j[k++] = 255 & b;
-        return 2 === h && (b = l[a.charCodeAt(c)] << 2 | l[a.charCodeAt(c + 1)] >> 4, j[k++] = 255 & b), 1 === h && (b = l[a.charCodeAt(c)] << 10 | l[a.charCodeAt(c + 1)] << 4 | l[a.charCodeAt(c + 2)] >> 2, j[k++] = 255 & b >> 8, j[k++] = 255 & b), j;
-      }
-      function g(a) {
-        return k[63 & a >> 18] + k[63 & a >> 12] + k[63 & a >> 6] + k[63 & a];
-      }
-      function h(a, b, c) {
-        for (var d, e = [], f = b; f < c; f += 3) d = (16711680 & a[f] << 16) + (65280 & a[f + 1] << 8) + (255 & a[f + 2]), e.push(g(d));
-        return e.join('');
-      }
-      function j(a) {
-        for (var b, c = a.length, d = c % 3, e = [], f = 16383, g = 0, j = c - d; g < j; g += f) e.push(h(a, g, g + f > j ? j : g + f));
-        return 1 === d ? (b = a[c - 1], e.push(k[b >> 2] + k[63 & b << 4] + '==')) : 2 === d && (b = (a[c - 2] << 8) + a[c - 1], e.push(k[b >> 10] + k[63 & b >> 4] + k[63 & b << 2] + '=')), e.join('');
-      }
-      ;
-      c.byteLength = function (a) {
-        var b = d(a),
-          c = b[0],
-          e = b[1];
-        return 3 * (c + e) / 4 - e;
-      }, c.toByteArray = f, c.fromByteArray = j;
-      for (var k = [], l = [], m = 'undefined' == typeof Uint8Array ? Array : Uint8Array, n = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', o = 0, p = n.length; o < p; ++o) k[o] = n[o], l[n.charCodeAt(o)] = o;
-      l[45] = 62, l[95] = 63;
-    }, {}]
-  }, {}, [])('/');
-});
-
-/***/ }),
-
-/***/ 25:
-/*!************************!*\
-  !*** ./src/http/wx.js ***!
-  \************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-const {
-  request
-} = __webpack_require__(/*! ./request */ 16);
-module.exports = {
-  wxGetOpenId: params => request("/biz-passport/passport/login/getOpenId", "POST", params, true, true, false, true, {
-    "business-app": "iclub",
-    "business-sys": "iclub"
-  }),
-  // 获取用户信息
-  userInfo: data => request("/iclub/api/user/queryUserInfo", "post", data, true, true),
-  // 刷新token
-  refreshToken: data => request("/biz-passport/passport/auth/refreshToken", "post", data, true, true),
-  // 更新iclub的头像和昵称
-  iclubApiUserEditUserInfo: params => request("/iclub/api/user/editUserInfo", "POST", params, true, true),
-  getCodeByPhone: params => request("/passport/api/sso/sendSmsVerCode", "POST", params, true, true),
-  // 新用户登录
-  loginForMiniProgramForNewUser: params => request("/passport/api/sso/loginForMiniProgramForNewUser", "POST", params, true, true),
-  // 统一登录后用户注册接口
-  userRegister: data => request("/iclub/api/user/register", "POST", data, true, true),
-  xlogin: data => request("/biz-passport/passport/login/loginByMiniApp", "POST", data, true, true),
-  setEncryptKey: data => request("/biz-passport/passport/auth/refreshUserEncryptKey", "POST", data, true, true)
-};
-
-/***/ }),
-
-/***/ 26:
-/*!**************************!*\
-  !*** ./src/http/mine.js ***!
-  \**************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-const {
-  request
-} = __webpack_require__(/*! ./request */ 16);
-module.exports = {
-  // 查询用户收藏
-  // 查询我的评论列表
-  ibtApiContentCommentQueryMyComment: val => request('/ibt/api/contentcomment/queryMyComment', 'GET', val, true),
-  // 删除评论
-  ibtApiContentCommentDelete: data => request('/ibt/api/contentcomment/deleteContentComment', 'POST', data, false, true),
-  // 新增地址
-  iclubApiUserReceiveAddressAdd: data => request('/iclub/api/userReceiveAddress/add', 'POST', data, false, true),
-  // 编辑地址
-  iclubApiUserReceiveAddressEdit: data => request('/iclub/api/userReceiveAddress/edit', 'POST', data, false, true),
-  // 删除地址
-  iclubApiUserReceiveAddressDelete: data => request('/iclub/api/userReceiveAddress/delete', 'POST', data, false, true),
-  // 用户地址详情
-  // iclubApiUserReceiveAddressGet: (objectCode) => request(`/iclub/api/userReceiveAddress/get/${objectCode}`, 'GET', {}, true),
-  iclubApiUserReceiveAddressGet: data => request('/iclub/api/userReceiveAddress/detail', 'POST', data, true, true),
-  // 用户地址列表
-  // iclubApiUserReceiveAddressList: () => request('/iclub/api/userReceiveAddress/list', 'GET', { limit: 100, page: 1 }, true),
-  iclubApiUserReceiveAddressList: data => request('/iclub/api/userReceiveAddress/listNew', 'POST', data, true),
-  // 批量管理
-  iclubApiUserReceiveAddressManage: data => request('/iclub/api/userReceiveAddress/receiveAddressManage', 'POST', data, false, true),
-  // 增加活力值
-  iclubApiUserAddIntegral: data => request('/iclub/api/user/addIntegral', 'POST', data, false, true, true),
-  // 我的点赞列表
-  iclubApiUserContentUpvoteList: params => request('/iclub/api/content/upvoteList', 'GET', params, true),
-  // 点赞-取消点赞
-  iclubApiContentUpVote: data => request('/iclub/api/content/upvote', 'POST', data, false, true),
-  // 我的收藏列表
-  iclubApiUserContentCollectList: params => request('/iclub/api/content/collectList', 'GET', params, true),
-  // 收藏-取消收藏
-  iclubApiContentCollect: data => request('/iclub/api/content/collect', 'POST', data, false, true),
-  // 开始考试
-  iclubApiExamStartExam: data => request('/iclub/api/exam/startExam', 'POST', data, false, true, true),
-  // 试卷提交
-  iclubApiExamStartSubmitPaper: data => request('/iclub/api/exam/submitPaper', 'POST', data, false, true),
-  // 考试结果页面
-  iclubApiExamGetExamResultInfo: code => request(`/iclub/api/exam/getExamResultInfo/${code}`, 'GET', {}, true)
-};
-
-/***/ }),
-
-/***/ 27:
-/*!****************************!*\
-  !*** ./src/http/common.js ***!
-  \****************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-const {
-  request
-} = __webpack_require__(/*! ./request */ 16);
-module.exports = {
-  // 数据埋点
-  // apiBuryPointClick: (data) => request('/qxcollege/api/buryPoint/click', 'POST', data, true, true, true),
-  apiBuryPointClick: data => request("/base/burypoint/pageEventReport", "POST", data, true, true, true),
-  // 小程序码生成
-  apiQRCode: data => request("/biz-passport/api/qrCode/createQrCode", "POST", data, true, true, false, false),
-  apiRecordShareInfo: data => request("/iclub/openApi/user/userShareForClick", "POST", data, true, true, false, false),
-  cityTree: data => request("/iclub/openApi/common/city", "POST", data, true)
-};
-
-/***/ }),
-
-/***/ 28:
-/*!******************************!*\
-  !*** ./src/utils/request.js ***!
-  \******************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-var _encyption = __webpack_require__(/*! ./encyption.js */ 29);
-/**
- * @files 请求方法封装
- */
-// 首次打开初始化信息
-
-/**
- * REQUEST 拦截
- */
-
-function reqIntercept(config) {
-  console.log('%c%s', 'color: red; background: yellow; font-family: Micirosft Yahei; font-size: 24px;', ' 入参明细：');
-  console.log(JSON.parse(JSON.stringify(config)));
-  if (!uni.userInfo.isLoading) {
-    // 开启Loading状态
-    // wx.setUserInfo({
-    //     isLoading: true
-    // })
-    // // 开启Loading
-    // wx.showLoading({
-    //     title: '请稍候...'
-    // })
-  } // 判断给数据加密
-
-  if (config.data && config.data.isEncry) {
-    Reflect.deleteProperty(config.data, 'isEncry');
-    config.data = {
-      requestData: (0, _encyption.Encrypt)(JSON.stringify(config.data))
-    };
-  } // DO SOMETHING...
-
-  return config;
-}
-/**
- * RESPONSE 拦截
- */
-
-function resIntercept(result) {
-  // 处理异常JSON字符串
-  const retData = result;
-  if (typeof retData.data === 'string') {
-    try {
-      retData.data = JSON.parse(retData.data);
-    } catch {}
-  } // 输出日志
-
-  console.log('%c%s', 'color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;', ' 出参明细：');
-  console.log(retData);
-  if (uni.userInfo.isLoading) {
-    // 隐藏Loading
-    // wx.hideLoading();
-    // // 关闭Loading状态
-    // wx.setUserInfo({
-    //     isLoading: false
-    // })
-  } // 判断是否需要回调
-
-  return retData;
-}
-/**
- * 异常拦截
- */
-
-function catchHandle(err) {
-  // 判断解密
-  const retErr = err; // 输出日志
-
-  console.log('%c%s', 'color: white; background: red; font-family: Micirosft Yahei; font-size: 24px;', ' 出参明细：');
-  console.log(retErr); // 隐藏Loading
-
-  uni.hideLoading(); // 抛出异常到页面
-
-  const errMsg = err.data && err.data.message || (() => {
-    switch (err.errMsg) {
-      case 'request:fail timeout':
-        return '请求超时';
-      case 'request:fail url not in domain list':
-      case 'uploadFile:fail createUploadTask:fail url not in domain list':
-        return '域名不在白名单';
-      default:
-        return '网络错误';
-    }
-  })(); // 认证失败 重新登录
-
-  try {
-    if (retErr.data.code === 500 && retErr.data.data === 'Full authentication is required to access this resource') {
-      // 清除用户信息
-      uni.clearUserInfo();
-      uni.cToast({
-        title: '登录已过期，请重新登录'
-      }); // 记录当前路由
-
-      uni.cacheBeforeRoute();
-      uni.toLogin();
-    }
-  } catch (e) {}
-  uni.cToast({
-    title: errMsg
-  });
-  return err;
-}
-/**
- * 合并请求参数
- */
-
-function mergeParams(options) {
-  // 合并请求头 header
-  try {
-    const curToken = {
-      Authorization: uni.userInfo.token
-    };
-    const header = Object.assign(curToken, options.header);
-    if (uni.userInfo.token !== 'Bearer ') options.header = header; // 拼装 url
-
-    if (options.url.match(/https?:\/\//g)) {
-      console.log('ss');
-    } else {
-      options.url = uni.userInfo.baseUrl + options.url;
-    }
-  } catch (e) {
-    console.log(e);
-  } // 返回参数
-
-  return options;
-}
-/**
- * 特殊处理JSON字符串
- */
-
-function handleJSONStr(result) {
-  try {
-    // 判断返回数据是否为加密
-    if (typeof result.data !== 'object') {
-      result.data = JSON.parse((0, _encyption.Decrypt)(result.data));
-    }
-    return result;
-  } catch (e) {
-    try {
-      result.data = JSON.parse(result.data);
-      return JSON.parse(result);
-    } catch (e) {
-      return result;
-    }
-  }
-}
-/**
- * GET 请求封装
- */
-
-uni.get = (options = {}) => {
-  const obj = {
-    method: 'GET',
-    ...mergeParams(options)
-  };
-  const config = reqIntercept(obj);
-  sendData(config);
-};
-/**
- * POST 请求封装
- */
-
-uni.post = (options = {}) => {
-  const obj = {
-    method: 'POST',
-    ...mergeParams(options)
-  };
-  const config = reqIntercept(obj);
-  sendData(config);
-};
-/**
- * PUT 请求封装
- */
-
-uni.put = (options = {}) => {
-  const obj = {
-    method: 'PUT',
-    ...mergeParams(options)
-  };
-  const config = reqIntercept(obj);
-  sendData(config);
-};
-/**
- * DELETE 请求封装
- */
-
-uni.del = (options = {}) => {
-  const obj = {
-    method: 'DELETE',
-    ...mergeParams(options)
-  };
-  const config = reqIntercept(obj);
-  sendData(config);
-};
-/**
- * POST 文件上传
- */
-
-uni.upload = (options = {}) => {
-  const obj = {
-    method: 'POST',
-    ...mergeParams(options)
-  };
-  const config = reqIntercept(obj);
-  sendData(config, true, options.sourceSrc);
-};
-/**
- * aliOSS 文件上传
- */
-
-uni.aliOssUpload = (options = {}) => {
-  // 请求加密信息
-  uni.get({
-    url: 'sys/common/getSign/' + uni.userInfo.aliOssDir,
-    success(res) {
-      const data = res.data.data;
-      const fileKey = new Date().getTime() + '_' + options.file.url.split('http://tmp/')[1]; // 上传文件
-
-      uni.upload({
-        url: uni.userInfo.aliOssUrl,
-        filePath: options.file.url,
-        name: 'file',
-        header: {
-          'Content-Type': 'multipart/form-data'
-        },
-        formData: {
-          name: fileKey,
-          key: uni.userInfo.aliOssDir + '/' + fileKey,
-          policy: data.policy,
-          Signature: data.signature,
-          OSSAccessKeyId: data.accessId,
-          success_action_status: '200'
-        },
-        sourceSrc: uni.userInfo.aliOssUrl + '/' + uni.userInfo.aliOssDir + '/' + fileKey,
-        ...options // success: function (res) {
-        //     let sourceSrc = wx.userInfo.aliOssUrl + '/' + wx.userInfo.aliOssDir + '/' + fileKey;
-        //     options.success && options.success(sourceSrc);
-        // },
-        // fail: function () {
-        //     wx.cToast({ title: '上传失败' });
-        // }
-      });
-    }
-  });
-};
-/**
- * 发送数据
- */
-
-function sendData(config, isUpd, filePath) {
-  const success = config.success;
-  const fail = config.fail;
-  if (isUpd) {
-    uni.uploadFile(Object.assign(config, {
-      success(res) {
-        const resData = handleJSONStr(res);
-        if (filePath) console.log(resData.statusCode);
-        if (resData.statusCode === 200 && resData.data.code >= 200 && resData.data.code < 300 || resData.data.code === undefined) {
-          if (filePath) {
-            resData.data = {};
-            resData.data.url = filePath;
-          }
-          success && success(resIntercept(resData));
-        } else {
-          const retHandle = catchHandle(resData);
-          fail && fail(retHandle);
-        }
-      },
-      fail(err) {
-        const errData = handleJSONStr(err);
-        fail && fail(catchHandle(errData));
-      }
-    }));
-  } else {
-    uni.request(Object.assign(config, {
-      success(res) {
-        const resData = handleJSONStr(res);
-        if (resData.statusCode === 200 && resData.data.code >= 200 && resData.data.code < 300 || resData.data.code === undefined) {
-          success && success(resIntercept(resData));
-        } else {
-          const retHandle = catchHandle(resData);
-          fail && fail(retHandle);
-        }
-      },
-      fail(err) {
-        const errData = handleJSONStr(err);
-        const retHandle = catchHandle(errData);
-        fail && fail(catchHandle(retHandle));
-      }
-    }));
-  }
-}
-/**
- * 显示弹层提示
- */
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 29:
-/*!********************************!*\
-  !*** ./src/utils/encyption.js ***!
-  \********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Decrypt = Decrypt;
-exports.Encrypt = Encrypt;
-var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-// import CryptoJS from '../miniprogram_npm/crypto-js/index'; // 默认的 KEY 与 iv 与后端保持一致 ，不采用后端传值密钥
-// 默认的 KEY 与 iv 与后端保持一致 ，不采用后端传值密钥
-
-const KEY = _cryptoJs.default.enc.Utf8.parse('www.imeikzdk.com'); // 密钥
-
-const IV = _cryptoJs.default.enc.Utf8.parse('www.imeikzdk.com'); // 偏移量
-
-/**
- * AES加密 ：字符串 key iv  返回base64
- */
-
-function Encrypt(word, keyStr, ivStr) {
-  let key = KEY;
-  let iv = IV;
-  if (keyStr) {
-    key = _cryptoJs.default.enc.Utf8.parse(keyStr);
-    iv = _cryptoJs.default.enc.Utf8.parse(ivStr);
-  }
-  const srcs = _cryptoJs.default.enc.Utf8.parse(word);
-  const encrypted = _cryptoJs.default.AES.encrypt(srcs, key, {
-    iv: iv,
-    mode: _cryptoJs.default.mode.CBC,
-    padding: _cryptoJs.default.pad.ZeroPadding
-  });
-  return _cryptoJs.default.enc.Base64.stringify(encrypted.ciphertext);
-}
-/**
- * AES 解密 ：字符串 key iv  返回base64
- *
- */
-
-function Decrypt(word, keyStr, ivStr) {
-  let key = KEY;
-  let iv = IV;
-  if (keyStr) {
-    key = _cryptoJs.default.enc.Utf8.parse(keyStr);
-    iv = _cryptoJs.default.enc.Utf8.parse(ivStr);
-  }
-  const base64 = _cryptoJs.default.enc.Base64.parse(word);
-  const src = _cryptoJs.default.enc.Base64.stringify(base64);
-  const decrypt = _cryptoJs.default.AES.decrypt(src, key, {
-    iv: iv,
-    mode: _cryptoJs.default.mode.CBC,
-    padding: _cryptoJs.default.pad.ZeroPadding
-  });
-  const decryptedStr = decrypt.toString(_cryptoJs.default.enc.Utf8);
-  return decryptedStr.toString();
-}
-
-/***/ }),
-
-/***/ 3:
+/* 3 */
 /*!*************************************************************!*\
   !*** ./node_modules/@dcloudio/uni-i18n/dist/uni-i18n.es.js ***!
   \*************************************************************/
@@ -8644,16 +2432,11 @@ function compile(tokens, values) {
   }
   return compiled;
 }
-const LOCALE_ZH_HANS = 'zh-Hans';
-exports.LOCALE_ZH_HANS = LOCALE_ZH_HANS;
-const LOCALE_ZH_HANT = 'zh-Hant';
-exports.LOCALE_ZH_HANT = LOCALE_ZH_HANT;
-const LOCALE_EN = 'en';
-exports.LOCALE_EN = LOCALE_EN;
-const LOCALE_FR = 'fr';
-exports.LOCALE_FR = LOCALE_FR;
-const LOCALE_ES = 'es';
-exports.LOCALE_ES = LOCALE_ES;
+const LOCALE_ZH_HANS = exports.LOCALE_ZH_HANS = 'zh-Hans';
+const LOCALE_ZH_HANT = exports.LOCALE_ZH_HANT = 'zh-Hant';
+const LOCALE_EN = exports.LOCALE_EN = 'en';
+const LOCALE_FR = exports.LOCALE_FR = 'fr';
+const LOCALE_ES = exports.LOCALE_ES = 'es';
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const hasOwn = (val, key) => hasOwnProperty.call(val, key);
 const defaultFormatter = new BaseFormatter();
@@ -9001,6633 +2784,7 @@ function resolveLocaleChain(locale) {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"], __webpack_require__(/*! ./../../../webpack/buildin/global.js */ 2)))
 
 /***/ }),
-
-/***/ 30:
-/*!*****************************************!*\
-  !*** ./node_modules/crypto-js/index.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory, undef) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31), __webpack_require__(/*! ./x64-core */ 33), __webpack_require__(/*! ./lib-typedarrays */ 34), __webpack_require__(/*! ./enc-utf16 */ 35), __webpack_require__(/*! ./enc-base64 */ 36), __webpack_require__(/*! ./enc-base64url */ 37), __webpack_require__(/*! ./md5 */ 38), __webpack_require__(/*! ./sha1 */ 39), __webpack_require__(/*! ./sha256 */ 40), __webpack_require__(/*! ./sha224 */ 41), __webpack_require__(/*! ./sha512 */ 42), __webpack_require__(/*! ./sha384 */ 43), __webpack_require__(/*! ./sha3 */ 44), __webpack_require__(/*! ./ripemd160 */ 45), __webpack_require__(/*! ./hmac */ 46), __webpack_require__(/*! ./pbkdf2 */ 47), __webpack_require__(/*! ./evpkdf */ 48), __webpack_require__(/*! ./cipher-core */ 49), __webpack_require__(/*! ./mode-cfb */ 50), __webpack_require__(/*! ./mode-ctr */ 51), __webpack_require__(/*! ./mode-ctr-gladman */ 52), __webpack_require__(/*! ./mode-ofb */ 53), __webpack_require__(/*! ./mode-ecb */ 54), __webpack_require__(/*! ./pad-ansix923 */ 55), __webpack_require__(/*! ./pad-iso10126 */ 56), __webpack_require__(/*! ./pad-iso97971 */ 57), __webpack_require__(/*! ./pad-zeropadding */ 58), __webpack_require__(/*! ./pad-nopadding */ 59), __webpack_require__(/*! ./format-hex */ 60), __webpack_require__(/*! ./aes */ 61), __webpack_require__(/*! ./tripledes */ 62), __webpack_require__(/*! ./rc4 */ 63), __webpack_require__(/*! ./rabbit */ 64), __webpack_require__(/*! ./rabbit-legacy */ 65));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	return CryptoJS;
-
-}));
-
-/***/ }),
-
-/***/ 31:
-/*!****************************************!*\
-  !*** ./node_modules/crypto-js/core.js ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(global) {;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory();
-	}
-	else {}
-}(this, function () {
-
-	/*globals window, global, require*/
-
-	/**
-	 * CryptoJS core components.
-	 */
-	var CryptoJS = CryptoJS || (function (Math, undefined) {
-
-	    var crypto;
-
-	    // Native crypto from window (Browser)
-	    if (typeof window !== 'undefined' && window.crypto) {
-	        crypto = window.crypto;
-	    }
-
-	    // Native crypto in web worker (Browser)
-	    if (typeof self !== 'undefined' && self.crypto) {
-	        crypto = self.crypto;
-	    }
-
-	    // Native crypto from worker
-	    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
-	        crypto = globalThis.crypto;
-	    }
-
-	    // Native (experimental IE 11) crypto from window (Browser)
-	    if (!crypto && typeof window !== 'undefined' && window.msCrypto) {
-	        crypto = window.msCrypto;
-	    }
-
-	    // Native crypto from global (NodeJS)
-	    if (!crypto && typeof global !== 'undefined' && global.crypto) {
-	        crypto = global.crypto;
-	    }
-
-	    // Native crypto import via require (NodeJS)
-	    if (!crypto && "function" === 'function') {
-	        try {
-	            crypto = __webpack_require__(/*! crypto */ 32);
-	        } catch (err) {}
-	    }
-
-	    /*
-	     * Cryptographically secure pseudorandom number generator
-	     *
-	     * As Math.random() is cryptographically not safe to use
-	     */
-	    var cryptoSecureRandomInt = function () {
-	        if (crypto) {
-	            // Use getRandomValues method (Browser)
-	            if (typeof crypto.getRandomValues === 'function') {
-	                try {
-	                    return crypto.getRandomValues(new Uint32Array(1))[0];
-	                } catch (err) {}
-	            }
-
-	            // Use randomBytes method (NodeJS)
-	            if (typeof crypto.randomBytes === 'function') {
-	                try {
-	                    return crypto.randomBytes(4).readInt32LE();
-	                } catch (err) {}
-	            }
-	        }
-
-	        throw new Error('Native crypto module could not be used to get secure random number.');
-	    };
-
-	    /*
-	     * Local polyfill of Object.create
-
-	     */
-	    var create = Object.create || (function () {
-	        function F() {}
-
-	        return function (obj) {
-	            var subtype;
-
-	            F.prototype = obj;
-
-	            subtype = new F();
-
-	            F.prototype = null;
-
-	            return subtype;
-	        };
-	    }());
-
-	    /**
-	     * CryptoJS namespace.
-	     */
-	    var C = {};
-
-	    /**
-	     * Library namespace.
-	     */
-	    var C_lib = C.lib = {};
-
-	    /**
-	     * Base object for prototypal inheritance.
-	     */
-	    var Base = C_lib.Base = (function () {
-
-
-	        return {
-	            /**
-	             * Creates a new object that inherits from this object.
-	             *
-	             * @param {Object} overrides Properties to copy into the new object.
-	             *
-	             * @return {Object} The new object.
-	             *
-	             * @static
-	             *
-	             * @example
-	             *
-	             *     var MyType = CryptoJS.lib.Base.extend({
-	             *         field: 'value',
-	             *
-	             *         method: function () {
-	             *         }
-	             *     });
-	             */
-	            extend: function (overrides) {
-	                // Spawn
-	                var subtype = create(this);
-
-	                // Augment
-	                if (overrides) {
-	                    subtype.mixIn(overrides);
-	                }
-
-	                // Create default initializer
-	                if (!subtype.hasOwnProperty('init') || this.init === subtype.init) {
-	                    subtype.init = function () {
-	                        subtype.$super.init.apply(this, arguments);
-	                    };
-	                }
-
-	                // Initializer's prototype is the subtype object
-	                subtype.init.prototype = subtype;
-
-	                // Reference supertype
-	                subtype.$super = this;
-
-	                return subtype;
-	            },
-
-	            /**
-	             * Extends this object and runs the init method.
-	             * Arguments to create() will be passed to init().
-	             *
-	             * @return {Object} The new object.
-	             *
-	             * @static
-	             *
-	             * @example
-	             *
-	             *     var instance = MyType.create();
-	             */
-	            create: function () {
-	                var instance = this.extend();
-	                instance.init.apply(instance, arguments);
-
-	                return instance;
-	            },
-
-	            /**
-	             * Initializes a newly created object.
-	             * Override this method to add some logic when your objects are created.
-	             *
-	             * @example
-	             *
-	             *     var MyType = CryptoJS.lib.Base.extend({
-	             *         init: function () {
-	             *             // ...
-	             *         }
-	             *     });
-	             */
-	            init: function () {
-	            },
-
-	            /**
-	             * Copies properties into this object.
-	             *
-	             * @param {Object} properties The properties to mix in.
-	             *
-	             * @example
-	             *
-	             *     MyType.mixIn({
-	             *         field: 'value'
-	             *     });
-	             */
-	            mixIn: function (properties) {
-	                for (var propertyName in properties) {
-	                    if (properties.hasOwnProperty(propertyName)) {
-	                        this[propertyName] = properties[propertyName];
-	                    }
-	                }
-
-	                // IE won't copy toString using the loop above
-	                if (properties.hasOwnProperty('toString')) {
-	                    this.toString = properties.toString;
-	                }
-	            },
-
-	            /**
-	             * Creates a copy of this object.
-	             *
-	             * @return {Object} The clone.
-	             *
-	             * @example
-	             *
-	             *     var clone = instance.clone();
-	             */
-	            clone: function () {
-	                return this.init.prototype.extend(this);
-	            }
-	        };
-	    }());
-
-	    /**
-	     * An array of 32-bit words.
-	     *
-	     * @property {Array} words The array of 32-bit words.
-	     * @property {number} sigBytes The number of significant bytes in this word array.
-	     */
-	    var WordArray = C_lib.WordArray = Base.extend({
-	        /**
-	         * Initializes a newly created word array.
-	         *
-	         * @param {Array} words (Optional) An array of 32-bit words.
-	         * @param {number} sigBytes (Optional) The number of significant bytes in the words.
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.lib.WordArray.create();
-	         *     var wordArray = CryptoJS.lib.WordArray.create([0x00010203, 0x04050607]);
-	         *     var wordArray = CryptoJS.lib.WordArray.create([0x00010203, 0x04050607], 6);
-	         */
-	        init: function (words, sigBytes) {
-	            words = this.words = words || [];
-
-	            if (sigBytes != undefined) {
-	                this.sigBytes = sigBytes;
-	            } else {
-	                this.sigBytes = words.length * 4;
-	            }
-	        },
-
-	        /**
-	         * Converts this word array to a string.
-	         *
-	         * @param {Encoder} encoder (Optional) The encoding strategy to use. Default: CryptoJS.enc.Hex
-	         *
-	         * @return {string} The stringified word array.
-	         *
-	         * @example
-	         *
-	         *     var string = wordArray + '';
-	         *     var string = wordArray.toString();
-	         *     var string = wordArray.toString(CryptoJS.enc.Utf8);
-	         */
-	        toString: function (encoder) {
-	            return (encoder || Hex).stringify(this);
-	        },
-
-	        /**
-	         * Concatenates a word array to this word array.
-	         *
-	         * @param {WordArray} wordArray The word array to append.
-	         *
-	         * @return {WordArray} This word array.
-	         *
-	         * @example
-	         *
-	         *     wordArray1.concat(wordArray2);
-	         */
-	        concat: function (wordArray) {
-	            // Shortcuts
-	            var thisWords = this.words;
-	            var thatWords = wordArray.words;
-	            var thisSigBytes = this.sigBytes;
-	            var thatSigBytes = wordArray.sigBytes;
-
-	            // Clamp excess bits
-	            this.clamp();
-
-	            // Concat
-	            if (thisSigBytes % 4) {
-	                // Copy one byte at a time
-	                for (var i = 0; i < thatSigBytes; i++) {
-	                    var thatByte = (thatWords[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-	                    thisWords[(thisSigBytes + i) >>> 2] |= thatByte << (24 - ((thisSigBytes + i) % 4) * 8);
-	                }
-	            } else {
-	                // Copy one word at a time
-	                for (var j = 0; j < thatSigBytes; j += 4) {
-	                    thisWords[(thisSigBytes + j) >>> 2] = thatWords[j >>> 2];
-	                }
-	            }
-	            this.sigBytes += thatSigBytes;
-
-	            // Chainable
-	            return this;
-	        },
-
-	        /**
-	         * Removes insignificant bits.
-	         *
-	         * @example
-	         *
-	         *     wordArray.clamp();
-	         */
-	        clamp: function () {
-	            // Shortcuts
-	            var words = this.words;
-	            var sigBytes = this.sigBytes;
-
-	            // Clamp
-	            words[sigBytes >>> 2] &= 0xffffffff << (32 - (sigBytes % 4) * 8);
-	            words.length = Math.ceil(sigBytes / 4);
-	        },
-
-	        /**
-	         * Creates a copy of this word array.
-	         *
-	         * @return {WordArray} The clone.
-	         *
-	         * @example
-	         *
-	         *     var clone = wordArray.clone();
-	         */
-	        clone: function () {
-	            var clone = Base.clone.call(this);
-	            clone.words = this.words.slice(0);
-
-	            return clone;
-	        },
-
-	        /**
-	         * Creates a word array filled with random bytes.
-	         *
-	         * @param {number} nBytes The number of random bytes to generate.
-	         *
-	         * @return {WordArray} The random word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.lib.WordArray.random(16);
-	         */
-	        random: function (nBytes) {
-	            var words = [];
-
-	            for (var i = 0; i < nBytes; i += 4) {
-	                words.push(cryptoSecureRandomInt());
-	            }
-
-	            return new WordArray.init(words, nBytes);
-	        }
-	    });
-
-	    /**
-	     * Encoder namespace.
-	     */
-	    var C_enc = C.enc = {};
-
-	    /**
-	     * Hex encoding strategy.
-	     */
-	    var Hex = C_enc.Hex = {
-	        /**
-	         * Converts a word array to a hex string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The hex string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var hexString = CryptoJS.enc.Hex.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-
-	            // Convert
-	            var hexChars = [];
-	            for (var i = 0; i < sigBytes; i++) {
-	                var bite = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-	                hexChars.push((bite >>> 4).toString(16));
-	                hexChars.push((bite & 0x0f).toString(16));
-	            }
-
-	            return hexChars.join('');
-	        },
-
-	        /**
-	         * Converts a hex string to a word array.
-	         *
-	         * @param {string} hexStr The hex string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Hex.parse(hexString);
-	         */
-	        parse: function (hexStr) {
-	            // Shortcut
-	            var hexStrLength = hexStr.length;
-
-	            // Convert
-	            var words = [];
-	            for (var i = 0; i < hexStrLength; i += 2) {
-	                words[i >>> 3] |= parseInt(hexStr.substr(i, 2), 16) << (24 - (i % 8) * 4);
-	            }
-
-	            return new WordArray.init(words, hexStrLength / 2);
-	        }
-	    };
-
-	    /**
-	     * Latin1 encoding strategy.
-	     */
-	    var Latin1 = C_enc.Latin1 = {
-	        /**
-	         * Converts a word array to a Latin1 string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The Latin1 string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var latin1String = CryptoJS.enc.Latin1.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-
-	            // Convert
-	            var latin1Chars = [];
-	            for (var i = 0; i < sigBytes; i++) {
-	                var bite = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-	                latin1Chars.push(String.fromCharCode(bite));
-	            }
-
-	            return latin1Chars.join('');
-	        },
-
-	        /**
-	         * Converts a Latin1 string to a word array.
-	         *
-	         * @param {string} latin1Str The Latin1 string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Latin1.parse(latin1String);
-	         */
-	        parse: function (latin1Str) {
-	            // Shortcut
-	            var latin1StrLength = latin1Str.length;
-
-	            // Convert
-	            var words = [];
-	            for (var i = 0; i < latin1StrLength; i++) {
-	                words[i >>> 2] |= (latin1Str.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
-	            }
-
-	            return new WordArray.init(words, latin1StrLength);
-	        }
-	    };
-
-	    /**
-	     * UTF-8 encoding strategy.
-	     */
-	    var Utf8 = C_enc.Utf8 = {
-	        /**
-	         * Converts a word array to a UTF-8 string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The UTF-8 string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var utf8String = CryptoJS.enc.Utf8.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            try {
-	                return decodeURIComponent(escape(Latin1.stringify(wordArray)));
-	            } catch (e) {
-	                throw new Error('Malformed UTF-8 data');
-	            }
-	        },
-
-	        /**
-	         * Converts a UTF-8 string to a word array.
-	         *
-	         * @param {string} utf8Str The UTF-8 string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Utf8.parse(utf8String);
-	         */
-	        parse: function (utf8Str) {
-	            return Latin1.parse(unescape(encodeURIComponent(utf8Str)));
-	        }
-	    };
-
-	    /**
-	     * Abstract buffered block algorithm template.
-	     *
-	     * The property blockSize must be implemented in a concrete subtype.
-	     *
-	     * @property {number} _minBufferSize The number of blocks that should be kept unprocessed in the buffer. Default: 0
-	     */
-	    var BufferedBlockAlgorithm = C_lib.BufferedBlockAlgorithm = Base.extend({
-	        /**
-	         * Resets this block algorithm's data buffer to its initial state.
-	         *
-	         * @example
-	         *
-	         *     bufferedBlockAlgorithm.reset();
-	         */
-	        reset: function () {
-	            // Initial values
-	            this._data = new WordArray.init();
-	            this._nDataBytes = 0;
-	        },
-
-	        /**
-	         * Adds new data to this block algorithm's buffer.
-	         *
-	         * @param {WordArray|string} data The data to append. Strings are converted to a WordArray using UTF-8.
-	         *
-	         * @example
-	         *
-	         *     bufferedBlockAlgorithm._append('data');
-	         *     bufferedBlockAlgorithm._append(wordArray);
-	         */
-	        _append: function (data) {
-	            // Convert string to WordArray, else assume WordArray already
-	            if (typeof data == 'string') {
-	                data = Utf8.parse(data);
-	            }
-
-	            // Append
-	            this._data.concat(data);
-	            this._nDataBytes += data.sigBytes;
-	        },
-
-	        /**
-	         * Processes available data blocks.
-	         *
-	         * This method invokes _doProcessBlock(offset), which must be implemented by a concrete subtype.
-	         *
-	         * @param {boolean} doFlush Whether all blocks and partial blocks should be processed.
-	         *
-	         * @return {WordArray} The processed data.
-	         *
-	         * @example
-	         *
-	         *     var processedData = bufferedBlockAlgorithm._process();
-	         *     var processedData = bufferedBlockAlgorithm._process(!!'flush');
-	         */
-	        _process: function (doFlush) {
-	            var processedWords;
-
-	            // Shortcuts
-	            var data = this._data;
-	            var dataWords = data.words;
-	            var dataSigBytes = data.sigBytes;
-	            var blockSize = this.blockSize;
-	            var blockSizeBytes = blockSize * 4;
-
-	            // Count blocks ready
-	            var nBlocksReady = dataSigBytes / blockSizeBytes;
-	            if (doFlush) {
-	                // Round up to include partial blocks
-	                nBlocksReady = Math.ceil(nBlocksReady);
-	            } else {
-	                // Round down to include only full blocks,
-	                // less the number of blocks that must remain in the buffer
-	                nBlocksReady = Math.max((nBlocksReady | 0) - this._minBufferSize, 0);
-	            }
-
-	            // Count words ready
-	            var nWordsReady = nBlocksReady * blockSize;
-
-	            // Count bytes ready
-	            var nBytesReady = Math.min(nWordsReady * 4, dataSigBytes);
-
-	            // Process blocks
-	            if (nWordsReady) {
-	                for (var offset = 0; offset < nWordsReady; offset += blockSize) {
-	                    // Perform concrete-algorithm logic
-	                    this._doProcessBlock(dataWords, offset);
-	                }
-
-	                // Remove processed words
-	                processedWords = dataWords.splice(0, nWordsReady);
-	                data.sigBytes -= nBytesReady;
-	            }
-
-	            // Return processed words
-	            return new WordArray.init(processedWords, nBytesReady);
-	        },
-
-	        /**
-	         * Creates a copy of this object.
-	         *
-	         * @return {Object} The clone.
-	         *
-	         * @example
-	         *
-	         *     var clone = bufferedBlockAlgorithm.clone();
-	         */
-	        clone: function () {
-	            var clone = Base.clone.call(this);
-	            clone._data = this._data.clone();
-
-	            return clone;
-	        },
-
-	        _minBufferSize: 0
-	    });
-
-	    /**
-	     * Abstract hasher template.
-	     *
-	     * @property {number} blockSize The number of 32-bit words this hasher operates on. Default: 16 (512 bits)
-	     */
-	    var Hasher = C_lib.Hasher = BufferedBlockAlgorithm.extend({
-	        /**
-	         * Configuration options.
-	         */
-	        cfg: Base.extend(),
-
-	        /**
-	         * Initializes a newly created hasher.
-	         *
-	         * @param {Object} cfg (Optional) The configuration options to use for this hash computation.
-	         *
-	         * @example
-	         *
-	         *     var hasher = CryptoJS.algo.SHA256.create();
-	         */
-	        init: function (cfg) {
-	            // Apply config defaults
-	            this.cfg = this.cfg.extend(cfg);
-
-	            // Set initial values
-	            this.reset();
-	        },
-
-	        /**
-	         * Resets this hasher to its initial state.
-	         *
-	         * @example
-	         *
-	         *     hasher.reset();
-	         */
-	        reset: function () {
-	            // Reset data buffer
-	            BufferedBlockAlgorithm.reset.call(this);
-
-	            // Perform concrete-hasher logic
-	            this._doReset();
-	        },
-
-	        /**
-	         * Updates this hasher with a message.
-	         *
-	         * @param {WordArray|string} messageUpdate The message to append.
-	         *
-	         * @return {Hasher} This hasher.
-	         *
-	         * @example
-	         *
-	         *     hasher.update('message');
-	         *     hasher.update(wordArray);
-	         */
-	        update: function (messageUpdate) {
-	            // Append
-	            this._append(messageUpdate);
-
-	            // Update the hash
-	            this._process();
-
-	            // Chainable
-	            return this;
-	        },
-
-	        /**
-	         * Finalizes the hash computation.
-	         * Note that the finalize operation is effectively a destructive, read-once operation.
-	         *
-	         * @param {WordArray|string} messageUpdate (Optional) A final message update.
-	         *
-	         * @return {WordArray} The hash.
-	         *
-	         * @example
-	         *
-	         *     var hash = hasher.finalize();
-	         *     var hash = hasher.finalize('message');
-	         *     var hash = hasher.finalize(wordArray);
-	         */
-	        finalize: function (messageUpdate) {
-	            // Final message update
-	            if (messageUpdate) {
-	                this._append(messageUpdate);
-	            }
-
-	            // Perform concrete-hasher logic
-	            var hash = this._doFinalize();
-
-	            return hash;
-	        },
-
-	        blockSize: 512/32,
-
-	        /**
-	         * Creates a shortcut function to a hasher's object interface.
-	         *
-	         * @param {Hasher} hasher The hasher to create a helper for.
-	         *
-	         * @return {Function} The shortcut function.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var SHA256 = CryptoJS.lib.Hasher._createHelper(CryptoJS.algo.SHA256);
-	         */
-	        _createHelper: function (hasher) {
-	            return function (message, cfg) {
-	                return new hasher.init(cfg).finalize(message);
-	            };
-	        },
-
-	        /**
-	         * Creates a shortcut function to the HMAC's object interface.
-	         *
-	         * @param {Hasher} hasher The hasher to use in this HMAC helper.
-	         *
-	         * @return {Function} The shortcut function.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var HmacSHA256 = CryptoJS.lib.Hasher._createHmacHelper(CryptoJS.algo.SHA256);
-	         */
-	        _createHmacHelper: function (hasher) {
-	            return function (message, key) {
-	                return new C_algo.HMAC.init(hasher, key).finalize(message);
-	            };
-	        }
-	    });
-
-	    /**
-	     * Algorithm namespace.
-	     */
-	    var C_algo = C.algo = {};
-
-	    return C;
-	}(Math));
-
-
-	return CryptoJS;
-
-}));
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 2)))
-
-/***/ }),
-
-/***/ 32:
-/*!************************!*\
-  !*** crypto (ignored) ***!
-  \************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/* (ignored) */
-
-/***/ }),
-
-/***/ 329:
-/*!************************************************************************************!*\
-  !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js ***!
-  \************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(global, uni) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _uniI18n = __webpack_require__(/*! @dcloudio/uni-i18n */ 3);
-"undefined" != typeof globalThis ? globalThis : "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self && self;
-function t(e) {
-  return e && e.__esModule && Object.prototype.hasOwnProperty.call(e, "default") ? e.default : e;
-}
-function n(e, t, n) {
-  return e(n = {
-    path: t,
-    exports: {},
-    require: function (e, t) {
-      return function () {
-        throw new Error("Dynamic requires are not currently supported by @rollup/plugin-commonjs");
-      }(null == t && n.path);
-    }
-  }, n.exports), n.exports;
-}
-var s = n(function (e, t) {
-    var n;
-    e.exports = (n = n || function (e, t) {
-      var n = Object.create || function () {
-          function e() {}
-          return function (t) {
-            var n;
-            return e.prototype = t, n = new e(), e.prototype = null, n;
-          };
-        }(),
-        s = {},
-        o = s.lib = {},
-        r = o.Base = {
-          extend: function (e) {
-            var t = n(this);
-            return e && t.mixIn(e), t.hasOwnProperty("init") && this.init !== t.init || (t.init = function () {
-              t.$super.init.apply(this, arguments);
-            }), t.init.prototype = t, t.$super = this, t;
-          },
-          create: function () {
-            var e = this.extend();
-            return e.init.apply(e, arguments), e;
-          },
-          init: function () {},
-          mixIn: function (e) {
-            for (var t in e) e.hasOwnProperty(t) && (this[t] = e[t]);
-            e.hasOwnProperty("toString") && (this.toString = e.toString);
-          },
-          clone: function () {
-            return this.init.prototype.extend(this);
-          }
-        },
-        i = o.WordArray = r.extend({
-          init: function (e, n) {
-            e = this.words = e || [], this.sigBytes = n != t ? n : 4 * e.length;
-          },
-          toString: function (e) {
-            return (e || c).stringify(this);
-          },
-          concat: function (e) {
-            var t = this.words,
-              n = e.words,
-              s = this.sigBytes,
-              o = e.sigBytes;
-            if (this.clamp(), s % 4) for (var r = 0; r < o; r++) {
-              var i = n[r >>> 2] >>> 24 - r % 4 * 8 & 255;
-              t[s + r >>> 2] |= i << 24 - (s + r) % 4 * 8;
-            } else for (r = 0; r < o; r += 4) t[s + r >>> 2] = n[r >>> 2];
-            return this.sigBytes += o, this;
-          },
-          clamp: function () {
-            var t = this.words,
-              n = this.sigBytes;
-            t[n >>> 2] &= 4294967295 << 32 - n % 4 * 8, t.length = e.ceil(n / 4);
-          },
-          clone: function () {
-            var e = r.clone.call(this);
-            return e.words = this.words.slice(0), e;
-          },
-          random: function (t) {
-            for (var n, s = [], o = function (t) {
-                t = t;
-                var n = 987654321,
-                  s = 4294967295;
-                return function () {
-                  var o = ((n = 36969 * (65535 & n) + (n >> 16) & s) << 16) + (t = 18e3 * (65535 & t) + (t >> 16) & s) & s;
-                  return o /= 4294967296, (o += .5) * (e.random() > .5 ? 1 : -1);
-                };
-              }, r = 0; r < t; r += 4) {
-              var a = o(4294967296 * (n || e.random()));
-              n = 987654071 * a(), s.push(4294967296 * a() | 0);
-            }
-            return new i.init(s, t);
-          }
-        }),
-        a = s.enc = {},
-        c = a.Hex = {
-          stringify: function (e) {
-            for (var t = e.words, n = e.sigBytes, s = [], o = 0; o < n; o++) {
-              var r = t[o >>> 2] >>> 24 - o % 4 * 8 & 255;
-              s.push((r >>> 4).toString(16)), s.push((15 & r).toString(16));
-            }
-            return s.join("");
-          },
-          parse: function (e) {
-            for (var t = e.length, n = [], s = 0; s < t; s += 2) n[s >>> 3] |= parseInt(e.substr(s, 2), 16) << 24 - s % 8 * 4;
-            return new i.init(n, t / 2);
-          }
-        },
-        u = a.Latin1 = {
-          stringify: function (e) {
-            for (var t = e.words, n = e.sigBytes, s = [], o = 0; o < n; o++) {
-              var r = t[o >>> 2] >>> 24 - o % 4 * 8 & 255;
-              s.push(String.fromCharCode(r));
-            }
-            return s.join("");
-          },
-          parse: function (e) {
-            for (var t = e.length, n = [], s = 0; s < t; s++) n[s >>> 2] |= (255 & e.charCodeAt(s)) << 24 - s % 4 * 8;
-            return new i.init(n, t);
-          }
-        },
-        l = a.Utf8 = {
-          stringify: function (e) {
-            try {
-              return decodeURIComponent(escape(u.stringify(e)));
-            } catch (e) {
-              throw new Error("Malformed UTF-8 data");
-            }
-          },
-          parse: function (e) {
-            return u.parse(unescape(encodeURIComponent(e)));
-          }
-        },
-        h = o.BufferedBlockAlgorithm = r.extend({
-          reset: function () {
-            this._data = new i.init(), this._nDataBytes = 0;
-          },
-          _append: function (e) {
-            "string" == typeof e && (e = l.parse(e)), this._data.concat(e), this._nDataBytes += e.sigBytes;
-          },
-          _process: function (t) {
-            var n = this._data,
-              s = n.words,
-              o = n.sigBytes,
-              r = this.blockSize,
-              a = o / (4 * r),
-              c = (a = t ? e.ceil(a) : e.max((0 | a) - this._minBufferSize, 0)) * r,
-              u = e.min(4 * c, o);
-            if (c) {
-              for (var l = 0; l < c; l += r) this._doProcessBlock(s, l);
-              var h = s.splice(0, c);
-              n.sigBytes -= u;
-            }
-            return new i.init(h, u);
-          },
-          clone: function () {
-            var e = r.clone.call(this);
-            return e._data = this._data.clone(), e;
-          },
-          _minBufferSize: 0
-        });
-      o.Hasher = h.extend({
-        cfg: r.extend(),
-        init: function (e) {
-          this.cfg = this.cfg.extend(e), this.reset();
-        },
-        reset: function () {
-          h.reset.call(this), this._doReset();
-        },
-        update: function (e) {
-          return this._append(e), this._process(), this;
-        },
-        finalize: function (e) {
-          return e && this._append(e), this._doFinalize();
-        },
-        blockSize: 16,
-        _createHelper: function (e) {
-          return function (t, n) {
-            return new e.init(n).finalize(t);
-          };
-        },
-        _createHmacHelper: function (e) {
-          return function (t, n) {
-            return new d.HMAC.init(e, n).finalize(t);
-          };
-        }
-      });
-      var d = s.algo = {};
-      return s;
-    }(Math), n);
-  }),
-  o = (n(function (e, t) {
-    var n;
-    e.exports = (n = s, function (e) {
-      var t = n,
-        s = t.lib,
-        o = s.WordArray,
-        r = s.Hasher,
-        i = t.algo,
-        a = [];
-      !function () {
-        for (var t = 0; t < 64; t++) a[t] = 4294967296 * e.abs(e.sin(t + 1)) | 0;
-      }();
-      var c = i.MD5 = r.extend({
-        _doReset: function () {
-          this._hash = new o.init([1732584193, 4023233417, 2562383102, 271733878]);
-        },
-        _doProcessBlock: function (e, t) {
-          for (var n = 0; n < 16; n++) {
-            var s = t + n,
-              o = e[s];
-            e[s] = 16711935 & (o << 8 | o >>> 24) | 4278255360 & (o << 24 | o >>> 8);
-          }
-          var r = this._hash.words,
-            i = e[t + 0],
-            c = e[t + 1],
-            f = e[t + 2],
-            p = e[t + 3],
-            g = e[t + 4],
-            m = e[t + 5],
-            y = e[t + 6],
-            _ = e[t + 7],
-            w = e[t + 8],
-            k = e[t + 9],
-            S = e[t + 10],
-            v = e[t + 11],
-            T = e[t + 12],
-            A = e[t + 13],
-            P = e[t + 14],
-            I = e[t + 15],
-            O = r[0],
-            b = r[1],
-            C = r[2],
-            E = r[3];
-          O = u(O, b, C, E, i, 7, a[0]), E = u(E, O, b, C, c, 12, a[1]), C = u(C, E, O, b, f, 17, a[2]), b = u(b, C, E, O, p, 22, a[3]), O = u(O, b, C, E, g, 7, a[4]), E = u(E, O, b, C, m, 12, a[5]), C = u(C, E, O, b, y, 17, a[6]), b = u(b, C, E, O, _, 22, a[7]), O = u(O, b, C, E, w, 7, a[8]), E = u(E, O, b, C, k, 12, a[9]), C = u(C, E, O, b, S, 17, a[10]), b = u(b, C, E, O, v, 22, a[11]), O = u(O, b, C, E, T, 7, a[12]), E = u(E, O, b, C, A, 12, a[13]), C = u(C, E, O, b, P, 17, a[14]), O = l(O, b = u(b, C, E, O, I, 22, a[15]), C, E, c, 5, a[16]), E = l(E, O, b, C, y, 9, a[17]), C = l(C, E, O, b, v, 14, a[18]), b = l(b, C, E, O, i, 20, a[19]), O = l(O, b, C, E, m, 5, a[20]), E = l(E, O, b, C, S, 9, a[21]), C = l(C, E, O, b, I, 14, a[22]), b = l(b, C, E, O, g, 20, a[23]), O = l(O, b, C, E, k, 5, a[24]), E = l(E, O, b, C, P, 9, a[25]), C = l(C, E, O, b, p, 14, a[26]), b = l(b, C, E, O, w, 20, a[27]), O = l(O, b, C, E, A, 5, a[28]), E = l(E, O, b, C, f, 9, a[29]), C = l(C, E, O, b, _, 14, a[30]), O = h(O, b = l(b, C, E, O, T, 20, a[31]), C, E, m, 4, a[32]), E = h(E, O, b, C, w, 11, a[33]), C = h(C, E, O, b, v, 16, a[34]), b = h(b, C, E, O, P, 23, a[35]), O = h(O, b, C, E, c, 4, a[36]), E = h(E, O, b, C, g, 11, a[37]), C = h(C, E, O, b, _, 16, a[38]), b = h(b, C, E, O, S, 23, a[39]), O = h(O, b, C, E, A, 4, a[40]), E = h(E, O, b, C, i, 11, a[41]), C = h(C, E, O, b, p, 16, a[42]), b = h(b, C, E, O, y, 23, a[43]), O = h(O, b, C, E, k, 4, a[44]), E = h(E, O, b, C, T, 11, a[45]), C = h(C, E, O, b, I, 16, a[46]), O = d(O, b = h(b, C, E, O, f, 23, a[47]), C, E, i, 6, a[48]), E = d(E, O, b, C, _, 10, a[49]), C = d(C, E, O, b, P, 15, a[50]), b = d(b, C, E, O, m, 21, a[51]), O = d(O, b, C, E, T, 6, a[52]), E = d(E, O, b, C, p, 10, a[53]), C = d(C, E, O, b, S, 15, a[54]), b = d(b, C, E, O, c, 21, a[55]), O = d(O, b, C, E, w, 6, a[56]), E = d(E, O, b, C, I, 10, a[57]), C = d(C, E, O, b, y, 15, a[58]), b = d(b, C, E, O, A, 21, a[59]), O = d(O, b, C, E, g, 6, a[60]), E = d(E, O, b, C, v, 10, a[61]), C = d(C, E, O, b, f, 15, a[62]), b = d(b, C, E, O, k, 21, a[63]), r[0] = r[0] + O | 0, r[1] = r[1] + b | 0, r[2] = r[2] + C | 0, r[3] = r[3] + E | 0;
-        },
-        _doFinalize: function () {
-          var t = this._data,
-            n = t.words,
-            s = 8 * this._nDataBytes,
-            o = 8 * t.sigBytes;
-          n[o >>> 5] |= 128 << 24 - o % 32;
-          var r = e.floor(s / 4294967296),
-            i = s;
-          n[15 + (o + 64 >>> 9 << 4)] = 16711935 & (r << 8 | r >>> 24) | 4278255360 & (r << 24 | r >>> 8), n[14 + (o + 64 >>> 9 << 4)] = 16711935 & (i << 8 | i >>> 24) | 4278255360 & (i << 24 | i >>> 8), t.sigBytes = 4 * (n.length + 1), this._process();
-          for (var a = this._hash, c = a.words, u = 0; u < 4; u++) {
-            var l = c[u];
-            c[u] = 16711935 & (l << 8 | l >>> 24) | 4278255360 & (l << 24 | l >>> 8);
-          }
-          return a;
-        },
-        clone: function () {
-          var e = r.clone.call(this);
-          return e._hash = this._hash.clone(), e;
-        }
-      });
-      function u(e, t, n, s, o, r, i) {
-        var a = e + (t & n | ~t & s) + o + i;
-        return (a << r | a >>> 32 - r) + t;
-      }
-      function l(e, t, n, s, o, r, i) {
-        var a = e + (t & s | n & ~s) + o + i;
-        return (a << r | a >>> 32 - r) + t;
-      }
-      function h(e, t, n, s, o, r, i) {
-        var a = e + (t ^ n ^ s) + o + i;
-        return (a << r | a >>> 32 - r) + t;
-      }
-      function d(e, t, n, s, o, r, i) {
-        var a = e + (n ^ (t | ~s)) + o + i;
-        return (a << r | a >>> 32 - r) + t;
-      }
-      t.MD5 = r._createHelper(c), t.HmacMD5 = r._createHmacHelper(c);
-    }(Math), n.MD5);
-  }), n(function (e, t) {
-    var n, o, r;
-    e.exports = (o = (n = s).lib.Base, r = n.enc.Utf8, void (n.algo.HMAC = o.extend({
-      init: function (e, t) {
-        e = this._hasher = new e.init(), "string" == typeof t && (t = r.parse(t));
-        var n = e.blockSize,
-          s = 4 * n;
-        t.sigBytes > s && (t = e.finalize(t)), t.clamp();
-        for (var o = this._oKey = t.clone(), i = this._iKey = t.clone(), a = o.words, c = i.words, u = 0; u < n; u++) a[u] ^= 1549556828, c[u] ^= 909522486;
-        o.sigBytes = i.sigBytes = s, this.reset();
-      },
-      reset: function () {
-        var e = this._hasher;
-        e.reset(), e.update(this._iKey);
-      },
-      update: function (e) {
-        return this._hasher.update(e), this;
-      },
-      finalize: function (e) {
-        var t = this._hasher,
-          n = t.finalize(e);
-        return t.reset(), t.finalize(this._oKey.clone().concat(n));
-      }
-    })));
-  }), n(function (e, t) {
-    e.exports = s.HmacMD5;
-  }));
-const r = "FUNCTION",
-  i = "OBJECT",
-  a = "CLIENT_DB";
-function c(e) {
-  return Object.prototype.toString.call(e).slice(8, -1).toLowerCase();
-}
-function u(e) {
-  return "object" === c(e);
-}
-function l(e) {
-  return e && "string" == typeof e ? JSON.parse(e) : e;
-}
-const h = "development" === "test",
-  d = "mp-weixin",
-  f = l(undefined),
-  p = l([]),
-  g = false;
-let m = "";
-try {
-  {
-    const e = __webpack_require__(/*! uni-stat-config */ 330).default || __webpack_require__(/*! uni-stat-config */ 330);
-    m = e.appid;
-  }
-} catch (e) {}
-let y = {};
-function _(e, t = {}) {
-  var n, s;
-  return n = y, s = e, Object.prototype.hasOwnProperty.call(n, s) || (y[e] = t), y[e];
-}
-"app-plus" === d && (y = uni._globalUniCloudObj ? uni._globalUniCloudObj : uni._globalUniCloudObj = {});
-const w = ["invoke", "success", "fail", "complete"],
-  k = _("_globalUniCloudInterceptor");
-function S(e, t) {
-  k[e] || (k[e] = {}), u(t) && Object.keys(t).forEach(n => {
-    w.indexOf(n) > -1 && function (e, t, n) {
-      let s = k[e][t];
-      s || (s = k[e][t] = []), -1 === s.indexOf(n) && "function" == typeof n && s.push(n);
-    }(e, n, t[n]);
-  });
-}
-function v(e, t) {
-  k[e] || (k[e] = {}), u(t) ? Object.keys(t).forEach(n => {
-    w.indexOf(n) > -1 && function (e, t, n) {
-      const s = k[e][t];
-      if (!s) return;
-      const o = s.indexOf(n);
-      o > -1 && s.splice(o, 1);
-    }(e, n, t[n]);
-  }) : delete k[e];
-}
-function T(e, t) {
-  return e && 0 !== e.length ? e.reduce((e, n) => e.then(() => n(t)), Promise.resolve()) : Promise.resolve();
-}
-function A(e, t) {
-  return k[e] && k[e][t] || [];
-}
-const P = _("_globalUniCloudListener"),
-  I = "response",
-  O = "clientdb",
-  b = "cloudfunction",
-  C = "cloudobject";
-function E(e) {
-  return P[e] || (P[e] = []), P[e];
-}
-function U(e, t) {
-  const n = E(e);
-  for (let e = 0; e < n.length; e++) {
-    (0, n[e])(t);
-  }
-}
-function R(e, t) {
-  return t ? function (n) {
-    let s = !1;
-    if ("callFunction" === t) {
-      const e = n && n.type || r;
-      s = e !== r;
-    }
-    const o = "callFunction" === t && !s;
-    let i;
-    i = this.isReady ? Promise.resolve() : this.initUniCloud, n = n || {};
-    const a = i.then(() => s ? Promise.resolve() : T(A(t, "invoke"), n)).then(() => e.call(this, n)).then(e => s ? Promise.resolve(e) : T(A(t, "success"), e).then(() => T(A(t, "complete"), e)).then(() => (o && U(I, {
-      type: b,
-      content: e
-    }), Promise.resolve(e))), e => s ? Promise.reject(e) : T(A(t, "fail"), e).then(() => T(A(t, "complete"), e)).then(() => (U(I, {
-      type: b,
-      content: e
-    }), Promise.reject(e))));
-    if (!(n.success || n.fail || n.complete)) return a;
-    a.then(e => {
-      n.success && n.success(e), n.complete && n.complete(e), o && U(I, {
-        type: b,
-        content: e
-      });
-    }, e => {
-      n.fail && n.fail(e), n.complete && n.complete(e), o && U(I, {
-        type: b,
-        content: e
-      });
-    });
-  } : function (t) {
-    if (!((t = t || {}).success || t.fail || t.complete)) return e.call(this, t);
-    e.call(this, t).then(e => {
-      t.success && t.success(e), t.complete && t.complete(e);
-    }, e => {
-      t.fail && t.fail(e), t.complete && t.complete(e);
-    });
-  };
-}
-class x extends Error {
-  constructor(e) {
-    super(e.message), this.errMsg = e.message || "", this.errCode = this.code = e.code || "SYSTEM_ERROR", this.requestId = e.requestId;
-  }
-}
-function D() {
-  let e;
-  try {
-    if (uni.getLaunchOptionsSync) {
-      if (uni.getLaunchOptionsSync.toString().indexOf("not yet implemented") > -1) return;
-      const {
-        scene: t,
-        channel: n
-      } = uni.getLaunchOptionsSync();
-      e = t || n;
-    }
-  } catch (e) {}
-  return e;
-}
-let q;
-function L() {
-  const e = uni.getLocale && uni.getLocale() || "en";
-  if (q) return {
-    ...q,
-    locale: e,
-    LOCALE: e
-  };
-  const t = uni.getSystemInfoSync(),
-    {
-      deviceId: n,
-      platform: s,
-      osName: o,
-      uniPlatform: r,
-      appId: i
-    } = t;
-  return q = {
-    PLATFORM: r || d,
-    OS: o || s,
-    APPID: i || m,
-    DEVICEID: n,
-    channel: D(),
-    ...t
-  }, {
-    ...q,
-    locale: e,
-    LOCALE: e
-  };
-}
-var F = {
-  sign: function (e, t) {
-    let n = "";
-    return Object.keys(e).sort().forEach(function (t) {
-      e[t] && (n = n + "&" + t + "=" + e[t]);
-    }), n = n.slice(1), o(n, t).toString();
-  },
-  wrappedRequest: function (e, t) {
-    return new Promise((n, s) => {
-      t(Object.assign(e, {
-        complete(e) {
-          e || (e = {}), h && "h5" === d && e.errMsg && 0 === e.errMsg.indexOf("request:fail") && console.warn("发布H5，需要在uniCloud后台操作，绑定安全域名，否则会因为跨域问题而无法访问。教程参考：https://uniapp.dcloud.io/uniCloud/quickstart?id=useinh5");
-          const t = e.data && e.data.header && e.data.header["x-serverless-request-id"] || e.header && e.header["request-id"];
-          if (!e.statusCode || e.statusCode >= 400) return s(new x({
-            code: "SYS_ERR",
-            message: e.errMsg || "request:fail",
-            requestId: t
-          }));
-          const o = e.data;
-          if (o.error) return s(new x({
-            code: o.error.code,
-            message: o.error.message,
-            requestId: t
-          }));
-          o.result = o.data, o.requestId = t, delete o.data, n(o);
-        }
-      }));
-    });
-  }
-};
-var N = {
-    request: e => uni.request(e),
-    uploadFile: e => uni.uploadFile(e),
-    setStorageSync: (e, t) => uni.setStorageSync(e, t),
-    getStorageSync: e => uni.getStorageSync(e),
-    removeStorageSync: e => uni.removeStorageSync(e),
-    clearStorageSync: () => uni.clearStorageSync()
-  },
-  M = {
-    "uniCloud.init.paramRequired": "{param} required",
-    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
-  };
-const {
-  t: j
-} = (0, _uniI18n.initVueI18n)({
-  "zh-Hans": {
-    "uniCloud.init.paramRequired": "缺少参数：{param}",
-    "uniCloud.uploadFile.fileError": "filePath应为File对象"
-  },
-  "zh-Hant": {
-    "uniCloud.init.paramRequired": "缺少参数：{param}",
-    "uniCloud.uploadFile.fileError": "filePath应为File对象"
-  },
-  en: M,
-  fr: {
-    "uniCloud.init.paramRequired": "{param} required",
-    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
-  },
-  es: {
-    "uniCloud.init.paramRequired": "{param} required",
-    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
-  },
-  ja: M
-}, "zh-Hans");
-var $ = class {
-  constructor(e) {
-    ["spaceId", "clientSecret"].forEach(t => {
-      if (!Object.prototype.hasOwnProperty.call(e, t)) throw new Error(j("uniCloud.init.paramRequired", {
-        param: t
-      }));
-    }), this.config = Object.assign({}, {
-      endpoint: "https://api.bspapp.com"
-    }, e), this.config.provider = "aliyun", this.config.requestUrl = this.config.endpoint + "/client", this.config.envType = this.config.envType || "public", this.config.accessTokenKey = "access_token_" + this.config.spaceId, this.adapter = N, this._getAccessTokenPromise = null, this._getAccessTokenPromiseStatus = null;
-  }
-  get hasAccessToken() {
-    return !!this.accessToken;
-  }
-  setAccessToken(e) {
-    this.accessToken = e;
-  }
-  requestWrapped(e) {
-    return F.wrappedRequest(e, this.adapter.request);
-  }
-  requestAuth(e) {
-    return this.requestWrapped(e);
-  }
-  request(e, t) {
-    return Promise.resolve().then(() => this.hasAccessToken ? t ? this.requestWrapped(e) : this.requestWrapped(e).catch(t => new Promise((e, n) => {
-      !t || "GATEWAY_INVALID_TOKEN" !== t.code && "InvalidParameter.InvalidToken" !== t.code ? n(t) : e();
-    }).then(() => this.getAccessToken()).then(() => {
-      const t = this.rebuildRequest(e);
-      return this.request(t, !0);
-    })) : this.getAccessToken().then(() => {
-      const t = this.rebuildRequest(e);
-      return this.request(t, !0);
-    }));
-  }
-  rebuildRequest(e) {
-    const t = Object.assign({}, e);
-    return t.data.token = this.accessToken, t.header["x-basement-token"] = this.accessToken, t.header["x-serverless-sign"] = F.sign(t.data, this.config.clientSecret), t;
-  }
-  setupRequest(e, t) {
-    const n = Object.assign({}, e, {
-        spaceId: this.config.spaceId,
-        timestamp: Date.now()
-      }),
-      s = {
-        "Content-Type": "application/json"
-      };
-    return "auth" !== t && (n.token = this.accessToken, s["x-basement-token"] = this.accessToken), s["x-serverless-sign"] = F.sign(n, this.config.clientSecret), {
-      url: this.config.requestUrl,
-      method: "POST",
-      data: n,
-      dataType: "json",
-      header: s
-    };
-  }
-  getAccessToken() {
-    if ("pending" === this._getAccessTokenPromiseStatus) return this._getAccessTokenPromise;
-    this._getAccessTokenPromiseStatus = "pending";
-    return this._getAccessTokenPromise = this.requestAuth(this.setupRequest({
-      method: "serverless.auth.user.anonymousAuthorize",
-      params: "{}"
-    }, "auth")).then(e => new Promise((t, n) => {
-      e.result && e.result.accessToken ? (this.setAccessToken(e.result.accessToken), this._getAccessTokenPromiseStatus = "fulfilled", t(this.accessToken)) : (this._getAccessTokenPromiseStatus = "rejected", n(new x({
-        code: "AUTH_FAILED",
-        message: "获取accessToken失败"
-      })));
-    }), e => (this._getAccessTokenPromiseStatus = "rejected", Promise.reject(e))), this._getAccessTokenPromise;
-  }
-  authorize() {
-    this.getAccessToken();
-  }
-  callFunction(e) {
-    const t = {
-      method: "serverless.function.runtime.invoke",
-      params: JSON.stringify({
-        functionTarget: e.name,
-        functionArgs: e.data || {}
-      })
-    };
-    return this.request(this.setupRequest(t));
-  }
-  getOSSUploadOptionsFromPath(e) {
-    const t = {
-      method: "serverless.file.resource.generateProximalSign",
-      params: JSON.stringify(e)
-    };
-    return this.request(this.setupRequest(t));
-  }
-  uploadFileToOSS({
-    url: e,
-    formData: t,
-    name: n,
-    filePath: s,
-    fileType: o,
-    onUploadProgress: r
-  }) {
-    return new Promise((i, a) => {
-      const c = this.adapter.uploadFile({
-        url: e,
-        formData: t,
-        name: n,
-        filePath: s,
-        fileType: o,
-        header: {
-          "X-OSS-server-side-encrpytion": "AES256"
-        },
-        success(e) {
-          e && e.statusCode < 400 ? i(e) : a(new x({
-            code: "UPLOAD_FAILED",
-            message: "文件上传失败"
-          }));
-        },
-        fail(e) {
-          a(new x({
-            code: e.code || "UPLOAD_FAILED",
-            message: e.message || e.errMsg || "文件上传失败"
-          }));
-        }
-      });
-      "function" == typeof r && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(e => {
-        r({
-          loaded: e.totalBytesSent,
-          total: e.totalBytesExpectedToSend
-        });
-      });
-    });
-  }
-  reportOSSUpload(e) {
-    const t = {
-      method: "serverless.file.resource.report",
-      params: JSON.stringify(e)
-    };
-    return this.request(this.setupRequest(t));
-  }
-  uploadFile({
-    filePath: e,
-    cloudPath: t,
-    fileType: n = "image",
-    onUploadProgress: s,
-    config: o
-  }) {
-    if ("string" !== c(t)) throw new x({
-      code: "INVALID_PARAM",
-      message: "cloudPath必须为字符串类型"
-    });
-    if (!(t = t.trim())) throw new x({
-      code: "CLOUDPATH_REQUIRED",
-      message: "cloudPath不可为空"
-    });
-    if (/:\/\//.test(t)) throw new x({
-      code: "INVALID_PARAM",
-      message: "cloudPath不合法"
-    });
-    const r = o && o.envType || this.config.envType;
-    let i, a;
-    return this.getOSSUploadOptionsFromPath({
-      env: r,
-      filename: t
-    }).then(t => {
-      const o = t.result;
-      i = o.id, a = "https://" + o.cdnDomain + "/" + o.ossPath;
-      const r = {
-        url: "https://" + o.host,
-        formData: {
-          "Cache-Control": "max-age=2592000",
-          "Content-Disposition": "attachment",
-          OSSAccessKeyId: o.accessKeyId,
-          Signature: o.signature,
-          host: o.host,
-          id: i,
-          key: o.ossPath,
-          policy: o.policy,
-          success_action_status: 200
-        },
-        fileName: "file",
-        name: "file",
-        filePath: e,
-        fileType: n
-      };
-      return this.uploadFileToOSS(Object.assign({}, r, {
-        onUploadProgress: s
-      }));
-    }).then(() => this.reportOSSUpload({
-      id: i
-    })).then(t => new Promise((n, s) => {
-      t.success ? n({
-        success: !0,
-        filePath: e,
-        fileID: a
-      }) : s(new x({
-        code: "UPLOAD_FAILED",
-        message: "文件上传失败"
-      }));
-    }));
-  }
-  deleteFile({
-    fileList: e
-  }) {
-    const t = {
-      method: "serverless.file.resource.delete",
-      params: JSON.stringify({
-        id: e[0]
-      })
-    };
-    return this.request(this.setupRequest(t));
-  }
-  getTempFileURL({
-    fileList: e
-  } = {}) {
-    return new Promise((t, n) => {
-      Array.isArray(e) && 0 !== e.length || n(new x({
-        code: "INVALID_PARAM",
-        message: "fileList的元素必须是非空的字符串"
-      })), t({
-        fileList: e.map(e => ({
-          fileID: e,
-          tempFileURL: e
-        }))
-      });
-    });
-  }
-};
-var B = {
-  init(e) {
-    const t = new $(e),
-      n = {
-        signInAnonymously: function () {
-          return t.authorize();
-        },
-        getLoginState: function () {
-          return Promise.resolve(!1);
-        }
-      };
-    return t.auth = function () {
-      return n;
-    }, t.customAuth = t.auth, t;
-  }
-};
-const K = "undefined" != typeof location && "http:" === location.protocol ? "http:" : "https:";
-var H;
-!function (e) {
-  e.local = "local", e.none = "none", e.session = "session";
-}(H || (H = {}));
-var W = function () {};
-const z = () => {
-  let e;
-  if (!Promise) {
-    e = () => {}, e.promise = {};
-    const t = () => {
-      throw new x({
-        message: 'Your Node runtime does support ES6 Promises. Set "global.Promise" to your preferred implementation of promises.'
-      });
-    };
-    return Object.defineProperty(e.promise, "then", {
-      get: t
-    }), Object.defineProperty(e.promise, "catch", {
-      get: t
-    }), e;
-  }
-  const t = new Promise((t, n) => {
-    e = (e, s) => e ? n(e) : t(s);
-  });
-  return e.promise = t, e;
-};
-function J(e) {
-  return void 0 === e;
-}
-function V(e) {
-  return "[object Null]" === Object.prototype.toString.call(e);
-}
-var Y;
-function X(e) {
-  const t = (n = e, "[object Array]" === Object.prototype.toString.call(n) ? e : [e]);
-  var n;
-  for (const e of t) {
-    const {
-      isMatch: t,
-      genAdapter: n,
-      runtime: s
-    } = e;
-    if (t()) return {
-      adapter: n(),
-      runtime: s
-    };
-  }
-}
-!function (e) {
-  e.WEB = "web", e.WX_MP = "wx_mp";
-}(Y || (Y = {}));
-const G = {
-    adapter: null,
-    runtime: void 0
-  },
-  Q = ["anonymousUuidKey"];
-class Z extends W {
-  constructor() {
-    super(), G.adapter.root.tcbObject || (G.adapter.root.tcbObject = {});
-  }
-  setItem(e, t) {
-    G.adapter.root.tcbObject[e] = t;
-  }
-  getItem(e) {
-    return G.adapter.root.tcbObject[e];
-  }
-  removeItem(e) {
-    delete G.adapter.root.tcbObject[e];
-  }
-  clear() {
-    delete G.adapter.root.tcbObject;
-  }
-}
-function ee(e, t) {
-  switch (e) {
-    case "local":
-      return t.localStorage || new Z();
-    case "none":
-      return new Z();
-    default:
-      return t.sessionStorage || new Z();
-  }
-}
-class te {
-  constructor(e) {
-    if (!this._storage) {
-      this._persistence = G.adapter.primaryStorage || e.persistence, this._storage = ee(this._persistence, G.adapter);
-      const t = `access_token_${e.env}`,
-        n = `access_token_expire_${e.env}`,
-        s = `refresh_token_${e.env}`,
-        o = `anonymous_uuid_${e.env}`,
-        r = `login_type_${e.env}`,
-        i = `user_info_${e.env}`;
-      this.keys = {
-        accessTokenKey: t,
-        accessTokenExpireKey: n,
-        refreshTokenKey: s,
-        anonymousUuidKey: o,
-        loginTypeKey: r,
-        userInfoKey: i
-      };
-    }
-  }
-  updatePersistence(e) {
-    if (e === this._persistence) return;
-    const t = "local" === this._persistence;
-    this._persistence = e;
-    const n = ee(e, G.adapter);
-    for (const e in this.keys) {
-      const s = this.keys[e];
-      if (t && Q.includes(e)) continue;
-      const o = this._storage.getItem(s);
-      J(o) || V(o) || (n.setItem(s, o), this._storage.removeItem(s));
-    }
-    this._storage = n;
-  }
-  setStore(e, t, n) {
-    if (!this._storage) return;
-    const s = {
-        version: n || "localCachev1",
-        content: t
-      },
-      o = JSON.stringify(s);
-    try {
-      this._storage.setItem(e, o);
-    } catch (e) {
-      throw e;
-    }
-  }
-  getStore(e, t) {
-    try {
-      if (!this._storage) return;
-    } catch (e) {
-      return "";
-    }
-    t = t || "localCachev1";
-    const n = this._storage.getItem(e);
-    if (!n) return "";
-    if (n.indexOf(t) >= 0) {
-      return JSON.parse(n).content;
-    }
-    return "";
-  }
-  removeStore(e) {
-    this._storage.removeItem(e);
-  }
-}
-const ne = {},
-  se = {};
-function oe(e) {
-  return ne[e];
-}
-class re {
-  constructor(e, t) {
-    this.data = t || null, this.name = e;
-  }
-}
-class ie extends re {
-  constructor(e, t) {
-    super("error", {
-      error: e,
-      data: t
-    }), this.error = e;
-  }
-}
-const ae = new class {
-  constructor() {
-    this._listeners = {};
-  }
-  on(e, t) {
-    return function (e, t, n) {
-      n[e] = n[e] || [], n[e].push(t);
-    }(e, t, this._listeners), this;
-  }
-  off(e, t) {
-    return function (e, t, n) {
-      if (n && n[e]) {
-        const s = n[e].indexOf(t);
-        -1 !== s && n[e].splice(s, 1);
-      }
-    }(e, t, this._listeners), this;
-  }
-  fire(e, t) {
-    if (e instanceof ie) return console.error(e.error), this;
-    const n = "string" == typeof e ? new re(e, t || {}) : e;
-    const s = n.name;
-    if (this._listens(s)) {
-      n.target = this;
-      const e = this._listeners[s] ? [...this._listeners[s]] : [];
-      for (const t of e) t.call(this, n);
-    }
-    return this;
-  }
-  _listens(e) {
-    return this._listeners[e] && this._listeners[e].length > 0;
-  }
-}();
-function ce(e, t) {
-  ae.on(e, t);
-}
-function ue(e, t = {}) {
-  ae.fire(e, t);
-}
-function le(e, t) {
-  ae.off(e, t);
-}
-const he = "loginStateChanged",
-  de = "loginStateExpire",
-  fe = "loginTypeChanged",
-  pe = "anonymousConverted",
-  ge = "refreshAccessToken";
-var me;
-!function (e) {
-  e.ANONYMOUS = "ANONYMOUS", e.WECHAT = "WECHAT", e.WECHAT_PUBLIC = "WECHAT-PUBLIC", e.WECHAT_OPEN = "WECHAT-OPEN", e.CUSTOM = "CUSTOM", e.EMAIL = "EMAIL", e.USERNAME = "USERNAME", e.NULL = "NULL";
-}(me || (me = {}));
-const ye = ["auth.getJwt", "auth.logout", "auth.signInWithTicket", "auth.signInAnonymously", "auth.signIn", "auth.fetchAccessTokenWithRefreshToken", "auth.signUpWithEmailAndPassword", "auth.activateEndUserMail", "auth.sendPasswordResetEmail", "auth.resetPasswordWithToken", "auth.isUsernameRegistered"],
-  _e = {
-    "X-SDK-Version": "1.3.5"
-  };
-function we(e, t, n) {
-  const s = e[t];
-  e[t] = function (t) {
-    const o = {},
-      r = {};
-    n.forEach(n => {
-      const {
-        data: s,
-        headers: i
-      } = n.call(e, t);
-      Object.assign(o, s), Object.assign(r, i);
-    });
-    const i = t.data;
-    return i && (() => {
-      var e;
-      if (e = i, "[object FormData]" !== Object.prototype.toString.call(e)) t.data = {
-        ...i,
-        ...o
-      };else for (const e in o) i.append(e, o[e]);
-    })(), t.headers = {
-      ...(t.headers || {}),
-      ...r
-    }, s.call(e, t);
-  };
-}
-function ke() {
-  const e = Math.random().toString(16).slice(2);
-  return {
-    data: {
-      seqId: e
-    },
-    headers: {
-      ..._e,
-      "x-seqid": e
-    }
-  };
-}
-class Se {
-  constructor(e = {}) {
-    var t;
-    this.config = e, this._reqClass = new G.adapter.reqClass({
-      timeout: this.config.timeout,
-      timeoutMsg: `请求在${this.config.timeout / 1e3}s内未完成，已中断`,
-      restrictedMethods: ["post"]
-    }), this._cache = oe(this.config.env), this._localCache = (t = this.config.env, se[t]), we(this._reqClass, "post", [ke]), we(this._reqClass, "upload", [ke]), we(this._reqClass, "download", [ke]);
-  }
-  async post(e) {
-    return await this._reqClass.post(e);
-  }
-  async upload(e) {
-    return await this._reqClass.upload(e);
-  }
-  async download(e) {
-    return await this._reqClass.download(e);
-  }
-  async refreshAccessToken() {
-    let e, t;
-    this._refreshAccessTokenPromise || (this._refreshAccessTokenPromise = this._refreshAccessToken());
-    try {
-      e = await this._refreshAccessTokenPromise;
-    } catch (e) {
-      t = e;
-    }
-    if (this._refreshAccessTokenPromise = null, this._shouldRefreshAccessTokenHook = null, t) throw t;
-    return e;
-  }
-  async _refreshAccessToken() {
-    const {
-      accessTokenKey: e,
-      accessTokenExpireKey: t,
-      refreshTokenKey: n,
-      loginTypeKey: s,
-      anonymousUuidKey: o
-    } = this._cache.keys;
-    this._cache.removeStore(e), this._cache.removeStore(t);
-    let r = this._cache.getStore(n);
-    if (!r) throw new x({
-      message: "未登录CloudBase"
-    });
-    const i = {
-        refresh_token: r
-      },
-      a = await this.request("auth.fetchAccessTokenWithRefreshToken", i);
-    if (a.data.code) {
-      const {
-        code: e
-      } = a.data;
-      if ("SIGN_PARAM_INVALID" === e || "REFRESH_TOKEN_EXPIRED" === e || "INVALID_REFRESH_TOKEN" === e) {
-        if (this._cache.getStore(s) === me.ANONYMOUS && "INVALID_REFRESH_TOKEN" === e) {
-          const e = this._cache.getStore(o),
-            t = this._cache.getStore(n),
-            s = await this.send("auth.signInAnonymously", {
-              anonymous_uuid: e,
-              refresh_token: t
-            });
-          return this.setRefreshToken(s.refresh_token), this._refreshAccessToken();
-        }
-        ue(de), this._cache.removeStore(n);
-      }
-      throw new x({
-        code: a.data.code,
-        message: `刷新access token失败：${a.data.code}`
-      });
-    }
-    if (a.data.access_token) return ue(ge), this._cache.setStore(e, a.data.access_token), this._cache.setStore(t, a.data.access_token_expire + Date.now()), {
-      accessToken: a.data.access_token,
-      accessTokenExpire: a.data.access_token_expire
-    };
-    a.data.refresh_token && (this._cache.removeStore(n), this._cache.setStore(n, a.data.refresh_token), this._refreshAccessToken());
-  }
-  async getAccessToken() {
-    const {
-      accessTokenKey: e,
-      accessTokenExpireKey: t,
-      refreshTokenKey: n
-    } = this._cache.keys;
-    if (!this._cache.getStore(n)) throw new x({
-      message: "refresh token不存在，登录状态异常"
-    });
-    let s = this._cache.getStore(e),
-      o = this._cache.getStore(t),
-      r = !0;
-    return this._shouldRefreshAccessTokenHook && !(await this._shouldRefreshAccessTokenHook(s, o)) && (r = !1), (!s || !o || o < Date.now()) && r ? this.refreshAccessToken() : {
-      accessToken: s,
-      accessTokenExpire: o
-    };
-  }
-  async request(e, t, n) {
-    const s = `x-tcb-trace_${this.config.env}`;
-    let o = "application/x-www-form-urlencoded";
-    const r = {
-      action: e,
-      env: this.config.env,
-      dataVersion: "2019-08-16",
-      ...t
-    };
-    if (-1 === ye.indexOf(e)) {
-      const {
-        refreshTokenKey: e
-      } = this._cache.keys;
-      this._cache.getStore(e) && (r.access_token = (await this.getAccessToken()).accessToken);
-    }
-    let i;
-    if ("storage.uploadFile" === e) {
-      i = new FormData();
-      for (let e in i) i.hasOwnProperty(e) && void 0 !== i[e] && i.append(e, r[e]);
-      o = "multipart/form-data";
-    } else {
-      o = "application/json", i = {};
-      for (let e in r) void 0 !== r[e] && (i[e] = r[e]);
-    }
-    let a = {
-      headers: {
-        "content-type": o
-      }
-    };
-    n && n.onUploadProgress && (a.onUploadProgress = n.onUploadProgress);
-    const c = this._localCache.getStore(s);
-    c && (a.headers["X-TCB-Trace"] = c);
-    const {
-      parse: u,
-      inQuery: l,
-      search: h
-    } = t;
-    let d = {
-      env: this.config.env
-    };
-    u && (d.parse = !0), l && (d = {
-      ...l,
-      ...d
-    });
-    let f = function (e, t, n = {}) {
-      const s = /\?/.test(t);
-      let o = "";
-      for (let e in n) "" === o ? !s && (t += "?") : o += "&", o += `${e}=${encodeURIComponent(n[e])}`;
-      return /^http(s)?\:\/\//.test(t += o) ? t : `${e}${t}`;
-    }(K, "//tcb-api.tencentcloudapi.com/web", d);
-    h && (f += h);
-    const p = await this.post({
-        url: f,
-        data: i,
-        ...a
-      }),
-      g = p.header && p.header["x-tcb-trace"];
-    if (g && this._localCache.setStore(s, g), 200 !== Number(p.status) && 200 !== Number(p.statusCode) || !p.data) throw new x({
-      code: "NETWORK_ERROR",
-      message: "network request error"
-    });
-    return p;
-  }
-  async send(e, t = {}) {
-    const n = await this.request(e, t, {
-      onUploadProgress: t.onUploadProgress
-    });
-    if ("ACCESS_TOKEN_EXPIRED" === n.data.code && -1 === ye.indexOf(e)) {
-      await this.refreshAccessToken();
-      const n = await this.request(e, t, {
-        onUploadProgress: t.onUploadProgress
-      });
-      if (n.data.code) throw new x({
-        code: n.data.code,
-        message: n.data.message
-      });
-      return n.data;
-    }
-    if (n.data.code) throw new x({
-      code: n.data.code,
-      message: n.data.message
-    });
-    return n.data;
-  }
-  setRefreshToken(e) {
-    const {
-      accessTokenKey: t,
-      accessTokenExpireKey: n,
-      refreshTokenKey: s
-    } = this._cache.keys;
-    this._cache.removeStore(t), this._cache.removeStore(n), this._cache.setStore(s, e);
-  }
-}
-const ve = {};
-function Te(e) {
-  return ve[e];
-}
-class Ae {
-  constructor(e) {
-    this.config = e, this._cache = oe(e.env), this._request = Te(e.env);
-  }
-  setRefreshToken(e) {
-    const {
-      accessTokenKey: t,
-      accessTokenExpireKey: n,
-      refreshTokenKey: s
-    } = this._cache.keys;
-    this._cache.removeStore(t), this._cache.removeStore(n), this._cache.setStore(s, e);
-  }
-  setAccessToken(e, t) {
-    const {
-      accessTokenKey: n,
-      accessTokenExpireKey: s
-    } = this._cache.keys;
-    this._cache.setStore(n, e), this._cache.setStore(s, t);
-  }
-  async refreshUserInfo() {
-    const {
-      data: e
-    } = await this._request.send("auth.getUserInfo", {});
-    return this.setLocalUserInfo(e), e;
-  }
-  setLocalUserInfo(e) {
-    const {
-      userInfoKey: t
-    } = this._cache.keys;
-    this._cache.setStore(t, e);
-  }
-}
-class Pe {
-  constructor(e) {
-    if (!e) throw new x({
-      code: "PARAM_ERROR",
-      message: "envId is not defined"
-    });
-    this._envId = e, this._cache = oe(this._envId), this._request = Te(this._envId), this.setUserInfo();
-  }
-  linkWithTicket(e) {
-    if ("string" != typeof e) throw new x({
-      code: "PARAM_ERROR",
-      message: "ticket must be string"
-    });
-    return this._request.send("auth.linkWithTicket", {
-      ticket: e
-    });
-  }
-  linkWithRedirect(e) {
-    e.signInWithRedirect();
-  }
-  updatePassword(e, t) {
-    return this._request.send("auth.updatePassword", {
-      oldPassword: t,
-      newPassword: e
-    });
-  }
-  updateEmail(e) {
-    return this._request.send("auth.updateEmail", {
-      newEmail: e
-    });
-  }
-  updateUsername(e) {
-    if ("string" != typeof e) throw new x({
-      code: "PARAM_ERROR",
-      message: "username must be a string"
-    });
-    return this._request.send("auth.updateUsername", {
-      username: e
-    });
-  }
-  async getLinkedUidList() {
-    const {
-      data: e
-    } = await this._request.send("auth.getLinkedUidList", {});
-    let t = !1;
-    const {
-      users: n
-    } = e;
-    return n.forEach(e => {
-      e.wxOpenId && e.wxPublicId && (t = !0);
-    }), {
-      users: n,
-      hasPrimaryUid: t
-    };
-  }
-  setPrimaryUid(e) {
-    return this._request.send("auth.setPrimaryUid", {
-      uid: e
-    });
-  }
-  unlink(e) {
-    return this._request.send("auth.unlink", {
-      platform: e
-    });
-  }
-  async update(e) {
-    const {
-        nickName: t,
-        gender: n,
-        avatarUrl: s,
-        province: o,
-        country: r,
-        city: i
-      } = e,
-      {
-        data: a
-      } = await this._request.send("auth.updateUserInfo", {
-        nickName: t,
-        gender: n,
-        avatarUrl: s,
-        province: o,
-        country: r,
-        city: i
-      });
-    this.setLocalUserInfo(a);
-  }
-  async refresh() {
-    const {
-      data: e
-    } = await this._request.send("auth.getUserInfo", {});
-    return this.setLocalUserInfo(e), e;
-  }
-  setUserInfo() {
-    const {
-        userInfoKey: e
-      } = this._cache.keys,
-      t = this._cache.getStore(e);
-    ["uid", "loginType", "openid", "wxOpenId", "wxPublicId", "unionId", "qqMiniOpenId", "email", "hasPassword", "customUserId", "nickName", "gender", "avatarUrl"].forEach(e => {
-      this[e] = t[e];
-    }), this.location = {
-      country: t.country,
-      province: t.province,
-      city: t.city
-    };
-  }
-  setLocalUserInfo(e) {
-    const {
-      userInfoKey: t
-    } = this._cache.keys;
-    this._cache.setStore(t, e), this.setUserInfo();
-  }
-}
-class Ie {
-  constructor(e) {
-    if (!e) throw new x({
-      code: "PARAM_ERROR",
-      message: "envId is not defined"
-    });
-    this._cache = oe(e);
-    const {
-        refreshTokenKey: t,
-        accessTokenKey: n,
-        accessTokenExpireKey: s
-      } = this._cache.keys,
-      o = this._cache.getStore(t),
-      r = this._cache.getStore(n),
-      i = this._cache.getStore(s);
-    this.credential = {
-      refreshToken: o,
-      accessToken: r,
-      accessTokenExpire: i
-    }, this.user = new Pe(e);
-  }
-  get isAnonymousAuth() {
-    return this.loginType === me.ANONYMOUS;
-  }
-  get isCustomAuth() {
-    return this.loginType === me.CUSTOM;
-  }
-  get isWeixinAuth() {
-    return this.loginType === me.WECHAT || this.loginType === me.WECHAT_OPEN || this.loginType === me.WECHAT_PUBLIC;
-  }
-  get loginType() {
-    return this._cache.getStore(this._cache.keys.loginTypeKey);
-  }
-}
-class Oe extends Ae {
-  async signIn() {
-    this._cache.updatePersistence("local");
-    const {
-        anonymousUuidKey: e,
-        refreshTokenKey: t
-      } = this._cache.keys,
-      n = this._cache.getStore(e) || void 0,
-      s = this._cache.getStore(t) || void 0,
-      o = await this._request.send("auth.signInAnonymously", {
-        anonymous_uuid: n,
-        refresh_token: s
-      });
-    if (o.uuid && o.refresh_token) {
-      this._setAnonymousUUID(o.uuid), this.setRefreshToken(o.refresh_token), await this._request.refreshAccessToken(), ue(he), ue(fe, {
-        env: this.config.env,
-        loginType: me.ANONYMOUS,
-        persistence: "local"
-      });
-      const e = new Ie(this.config.env);
-      return await e.user.refresh(), e;
-    }
-    throw new x({
-      message: "匿名登录失败"
-    });
-  }
-  async linkAndRetrieveDataWithTicket(e) {
-    const {
-        anonymousUuidKey: t,
-        refreshTokenKey: n
-      } = this._cache.keys,
-      s = this._cache.getStore(t),
-      o = this._cache.getStore(n),
-      r = await this._request.send("auth.linkAndRetrieveDataWithTicket", {
-        anonymous_uuid: s,
-        refresh_token: o,
-        ticket: e
-      });
-    if (r.refresh_token) return this._clearAnonymousUUID(), this.setRefreshToken(r.refresh_token), await this._request.refreshAccessToken(), ue(pe, {
-      env: this.config.env
-    }), ue(fe, {
-      loginType: me.CUSTOM,
-      persistence: "local"
-    }), {
-      credential: {
-        refreshToken: r.refresh_token
-      }
-    };
-    throw new x({
-      message: "匿名转化失败"
-    });
-  }
-  _setAnonymousUUID(e) {
-    const {
-      anonymousUuidKey: t,
-      loginTypeKey: n
-    } = this._cache.keys;
-    this._cache.removeStore(t), this._cache.setStore(t, e), this._cache.setStore(n, me.ANONYMOUS);
-  }
-  _clearAnonymousUUID() {
-    this._cache.removeStore(this._cache.keys.anonymousUuidKey);
-  }
-}
-class be extends Ae {
-  async signIn(e) {
-    if ("string" != typeof e) throw new x({
-      param: "PARAM_ERROR",
-      message: "ticket must be a string"
-    });
-    const {
-        refreshTokenKey: t
-      } = this._cache.keys,
-      n = await this._request.send("auth.signInWithTicket", {
-        ticket: e,
-        refresh_token: this._cache.getStore(t) || ""
-      });
-    if (n.refresh_token) return this.setRefreshToken(n.refresh_token), await this._request.refreshAccessToken(), ue(he), ue(fe, {
-      env: this.config.env,
-      loginType: me.CUSTOM,
-      persistence: this.config.persistence
-    }), await this.refreshUserInfo(), new Ie(this.config.env);
-    throw new x({
-      message: "自定义登录失败"
-    });
-  }
-}
-class Ce extends Ae {
-  async signIn(e, t) {
-    if ("string" != typeof e) throw new x({
-      code: "PARAM_ERROR",
-      message: "email must be a string"
-    });
-    const {
-        refreshTokenKey: n
-      } = this._cache.keys,
-      s = await this._request.send("auth.signIn", {
-        loginType: "EMAIL",
-        email: e,
-        password: t,
-        refresh_token: this._cache.getStore(n) || ""
-      }),
-      {
-        refresh_token: o,
-        access_token: r,
-        access_token_expire: i
-      } = s;
-    if (o) return this.setRefreshToken(o), r && i ? this.setAccessToken(r, i) : await this._request.refreshAccessToken(), await this.refreshUserInfo(), ue(he), ue(fe, {
-      env: this.config.env,
-      loginType: me.EMAIL,
-      persistence: this.config.persistence
-    }), new Ie(this.config.env);
-    throw s.code ? new x({
-      code: s.code,
-      message: `邮箱登录失败: ${s.message}`
-    }) : new x({
-      message: "邮箱登录失败"
-    });
-  }
-  async activate(e) {
-    return this._request.send("auth.activateEndUserMail", {
-      token: e
-    });
-  }
-  async resetPasswordWithToken(e, t) {
-    return this._request.send("auth.resetPasswordWithToken", {
-      token: e,
-      newPassword: t
-    });
-  }
-}
-class Ee extends Ae {
-  async signIn(e, t) {
-    if ("string" != typeof e) throw new x({
-      code: "PARAM_ERROR",
-      message: "username must be a string"
-    });
-    "string" != typeof t && (t = "", console.warn("password is empty"));
-    const {
-        refreshTokenKey: n
-      } = this._cache.keys,
-      s = await this._request.send("auth.signIn", {
-        loginType: me.USERNAME,
-        username: e,
-        password: t,
-        refresh_token: this._cache.getStore(n) || ""
-      }),
-      {
-        refresh_token: o,
-        access_token_expire: r,
-        access_token: i
-      } = s;
-    if (o) return this.setRefreshToken(o), i && r ? this.setAccessToken(i, r) : await this._request.refreshAccessToken(), await this.refreshUserInfo(), ue(he), ue(fe, {
-      env: this.config.env,
-      loginType: me.USERNAME,
-      persistence: this.config.persistence
-    }), new Ie(this.config.env);
-    throw s.code ? new x({
-      code: s.code,
-      message: `用户名密码登录失败: ${s.message}`
-    }) : new x({
-      message: "用户名密码登录失败"
-    });
-  }
-}
-class Ue {
-  constructor(e) {
-    this.config = e, this._cache = oe(e.env), this._request = Te(e.env), this._onAnonymousConverted = this._onAnonymousConverted.bind(this), this._onLoginTypeChanged = this._onLoginTypeChanged.bind(this), ce(fe, this._onLoginTypeChanged);
-  }
-  get currentUser() {
-    const e = this.hasLoginState();
-    return e && e.user || null;
-  }
-  get loginType() {
-    return this._cache.getStore(this._cache.keys.loginTypeKey);
-  }
-  anonymousAuthProvider() {
-    return new Oe(this.config);
-  }
-  customAuthProvider() {
-    return new be(this.config);
-  }
-  emailAuthProvider() {
-    return new Ce(this.config);
-  }
-  usernameAuthProvider() {
-    return new Ee(this.config);
-  }
-  async signInAnonymously() {
-    return new Oe(this.config).signIn();
-  }
-  async signInWithEmailAndPassword(e, t) {
-    return new Ce(this.config).signIn(e, t);
-  }
-  signInWithUsernameAndPassword(e, t) {
-    return new Ee(this.config).signIn(e, t);
-  }
-  async linkAndRetrieveDataWithTicket(e) {
-    this._anonymousAuthProvider || (this._anonymousAuthProvider = new Oe(this.config)), ce(pe, this._onAnonymousConverted);
-    return await this._anonymousAuthProvider.linkAndRetrieveDataWithTicket(e);
-  }
-  async signOut() {
-    if (this.loginType === me.ANONYMOUS) throw new x({
-      message: "匿名用户不支持登出操作"
-    });
-    const {
-        refreshTokenKey: e,
-        accessTokenKey: t,
-        accessTokenExpireKey: n
-      } = this._cache.keys,
-      s = this._cache.getStore(e);
-    if (!s) return;
-    const o = await this._request.send("auth.logout", {
-      refresh_token: s
-    });
-    return this._cache.removeStore(e), this._cache.removeStore(t), this._cache.removeStore(n), ue(he), ue(fe, {
-      env: this.config.env,
-      loginType: me.NULL,
-      persistence: this.config.persistence
-    }), o;
-  }
-  async signUpWithEmailAndPassword(e, t) {
-    return this._request.send("auth.signUpWithEmailAndPassword", {
-      email: e,
-      password: t
-    });
-  }
-  async sendPasswordResetEmail(e) {
-    return this._request.send("auth.sendPasswordResetEmail", {
-      email: e
-    });
-  }
-  onLoginStateChanged(e) {
-    ce(he, () => {
-      const t = this.hasLoginState();
-      e.call(this, t);
-    });
-    const t = this.hasLoginState();
-    e.call(this, t);
-  }
-  onLoginStateExpired(e) {
-    ce(de, e.bind(this));
-  }
-  onAccessTokenRefreshed(e) {
-    ce(ge, e.bind(this));
-  }
-  onAnonymousConverted(e) {
-    ce(pe, e.bind(this));
-  }
-  onLoginTypeChanged(e) {
-    ce(fe, () => {
-      const t = this.hasLoginState();
-      e.call(this, t);
-    });
-  }
-  async getAccessToken() {
-    return {
-      accessToken: (await this._request.getAccessToken()).accessToken,
-      env: this.config.env
-    };
-  }
-  hasLoginState() {
-    const {
-      refreshTokenKey: e
-    } = this._cache.keys;
-    return this._cache.getStore(e) ? new Ie(this.config.env) : null;
-  }
-  async isUsernameRegistered(e) {
-    if ("string" != typeof e) throw new x({
-      code: "PARAM_ERROR",
-      message: "username must be a string"
-    });
-    const {
-      data: t
-    } = await this._request.send("auth.isUsernameRegistered", {
-      username: e
-    });
-    return t && t.isRegistered;
-  }
-  getLoginState() {
-    return Promise.resolve(this.hasLoginState());
-  }
-  async signInWithTicket(e) {
-    return new be(this.config).signIn(e);
-  }
-  shouldRefreshAccessToken(e) {
-    this._request._shouldRefreshAccessTokenHook = e.bind(this);
-  }
-  getUserInfo() {
-    return this._request.send("auth.getUserInfo", {}).then(e => e.code ? e : {
-      ...e.data,
-      requestId: e.seqId
-    });
-  }
-  getAuthHeader() {
-    const {
-        refreshTokenKey: e,
-        accessTokenKey: t
-      } = this._cache.keys,
-      n = this._cache.getStore(e);
-    return {
-      "x-cloudbase-credentials": this._cache.getStore(t) + "/@@/" + n
-    };
-  }
-  _onAnonymousConverted(e) {
-    const {
-      env: t
-    } = e.data;
-    t === this.config.env && this._cache.updatePersistence(this.config.persistence);
-  }
-  _onLoginTypeChanged(e) {
-    const {
-      loginType: t,
-      persistence: n,
-      env: s
-    } = e.data;
-    s === this.config.env && (this._cache.updatePersistence(n), this._cache.setStore(this._cache.keys.loginTypeKey, t));
-  }
-}
-const Re = function (e, t) {
-    t = t || z();
-    const n = Te(this.config.env),
-      {
-        cloudPath: s,
-        filePath: o,
-        onUploadProgress: r,
-        fileType: i = "image"
-      } = e;
-    return n.send("storage.getUploadMetadata", {
-      path: s
-    }).then(e => {
-      const {
-          data: {
-            url: a,
-            authorization: c,
-            token: u,
-            fileId: l,
-            cosFileId: h
-          },
-          requestId: d
-        } = e,
-        f = {
-          key: s,
-          signature: c,
-          "x-cos-meta-fileid": h,
-          success_action_status: "201",
-          "x-cos-security-token": u
-        };
-      n.upload({
-        url: a,
-        data: f,
-        file: o,
-        name: s,
-        fileType: i,
-        onUploadProgress: r
-      }).then(e => {
-        201 === e.statusCode ? t(null, {
-          fileID: l,
-          requestId: d
-        }) : t(new x({
-          code: "STORAGE_REQUEST_FAIL",
-          message: `STORAGE_REQUEST_FAIL: ${e.data}`
-        }));
-      }).catch(e => {
-        t(e);
-      });
-    }).catch(e => {
-      t(e);
-    }), t.promise;
-  },
-  xe = function (e, t) {
-    t = t || z();
-    const n = Te(this.config.env),
-      {
-        cloudPath: s
-      } = e;
-    return n.send("storage.getUploadMetadata", {
-      path: s
-    }).then(e => {
-      t(null, e);
-    }).catch(e => {
-      t(e);
-    }), t.promise;
-  },
-  De = function ({
-    fileList: e
-  }, t) {
-    if (t = t || z(), !e || !Array.isArray(e)) return {
-      code: "INVALID_PARAM",
-      message: "fileList必须是非空的数组"
-    };
-    for (let t of e) if (!t || "string" != typeof t) return {
-      code: "INVALID_PARAM",
-      message: "fileList的元素必须是非空的字符串"
-    };
-    const n = {
-      fileid_list: e
-    };
-    return Te(this.config.env).send("storage.batchDeleteFile", n).then(e => {
-      e.code ? t(null, e) : t(null, {
-        fileList: e.data.delete_list,
-        requestId: e.requestId
-      });
-    }).catch(e => {
-      t(e);
-    }), t.promise;
-  },
-  qe = function ({
-    fileList: e
-  }, t) {
-    t = t || z(), e && Array.isArray(e) || t(null, {
-      code: "INVALID_PARAM",
-      message: "fileList必须是非空的数组"
-    });
-    let n = [];
-    for (let s of e) "object" == typeof s ? (s.hasOwnProperty("fileID") && s.hasOwnProperty("maxAge") || t(null, {
-      code: "INVALID_PARAM",
-      message: "fileList的元素必须是包含fileID和maxAge的对象"
-    }), n.push({
-      fileid: s.fileID,
-      max_age: s.maxAge
-    })) : "string" == typeof s ? n.push({
-      fileid: s
-    }) : t(null, {
-      code: "INVALID_PARAM",
-      message: "fileList的元素必须是字符串"
-    });
-    const s = {
-      file_list: n
-    };
-    return Te(this.config.env).send("storage.batchGetDownloadUrl", s).then(e => {
-      e.code ? t(null, e) : t(null, {
-        fileList: e.data.download_list,
-        requestId: e.requestId
-      });
-    }).catch(e => {
-      t(e);
-    }), t.promise;
-  },
-  Le = async function ({
-    fileID: e
-  }, t) {
-    const n = (await qe.call(this, {
-      fileList: [{
-        fileID: e,
-        maxAge: 600
-      }]
-    })).fileList[0];
-    if ("SUCCESS" !== n.code) return t ? t(n) : new Promise(e => {
-      e(n);
-    });
-    const s = Te(this.config.env);
-    let o = n.download_url;
-    if (o = encodeURI(o), !t) return s.download({
-      url: o
-    });
-    t(await s.download({
-      url: o
-    }));
-  },
-  Fe = function ({
-    name: e,
-    data: t,
-    query: n,
-    parse: s,
-    search: o
-  }, r) {
-    const i = r || z();
-    let a;
-    try {
-      a = t ? JSON.stringify(t) : "";
-    } catch (e) {
-      return Promise.reject(e);
-    }
-    if (!e) return Promise.reject(new x({
-      code: "PARAM_ERROR",
-      message: "函数名不能为空"
-    }));
-    const c = {
-      inQuery: n,
-      parse: s,
-      search: o,
-      function_name: e,
-      request_data: a
-    };
-    return Te(this.config.env).send("functions.invokeFunction", c).then(e => {
-      if (e.code) i(null, e);else {
-        let t = e.data.response_data;
-        if (s) i(null, {
-          result: t,
-          requestId: e.requestId
-        });else try {
-          t = JSON.parse(e.data.response_data), i(null, {
-            result: t,
-            requestId: e.requestId
-          });
-        } catch (e) {
-          i(new x({
-            message: "response data must be json"
-          }));
-        }
-      }
-      return i.promise;
-    }).catch(e => {
-      i(e);
-    }), i.promise;
-  },
-  Ne = {
-    timeout: 15e3,
-    persistence: "session"
-  },
-  Me = {};
-class je {
-  constructor(e) {
-    this.config = e || this.config, this.authObj = void 0;
-  }
-  init(e) {
-    switch (G.adapter || (this.requestClient = new G.adapter.reqClass({
-      timeout: e.timeout || 5e3,
-      timeoutMsg: `请求在${(e.timeout || 5e3) / 1e3}s内未完成，已中断`
-    })), this.config = {
-      ...Ne,
-      ...e
-    }, !0) {
-      case this.config.timeout > 6e5:
-        console.warn("timeout大于可配置上限[10分钟]，已重置为上限数值"), this.config.timeout = 6e5;
-        break;
-      case this.config.timeout < 100:
-        console.warn("timeout小于可配置下限[100ms]，已重置为下限数值"), this.config.timeout = 100;
-    }
-    return new je(this.config);
-  }
-  auth({
-    persistence: e
-  } = {}) {
-    if (this.authObj) return this.authObj;
-    const t = e || G.adapter.primaryStorage || Ne.persistence;
-    var n;
-    return t !== this.config.persistence && (this.config.persistence = t), function (e) {
-      const {
-        env: t
-      } = e;
-      ne[t] = new te(e), se[t] = new te({
-        ...e,
-        persistence: "local"
-      });
-    }(this.config), n = this.config, ve[n.env] = new Se(n), this.authObj = new Ue(this.config), this.authObj;
-  }
-  on(e, t) {
-    return ce.apply(this, [e, t]);
-  }
-  off(e, t) {
-    return le.apply(this, [e, t]);
-  }
-  callFunction(e, t) {
-    return Fe.apply(this, [e, t]);
-  }
-  deleteFile(e, t) {
-    return De.apply(this, [e, t]);
-  }
-  getTempFileURL(e, t) {
-    return qe.apply(this, [e, t]);
-  }
-  downloadFile(e, t) {
-    return Le.apply(this, [e, t]);
-  }
-  uploadFile(e, t) {
-    return Re.apply(this, [e, t]);
-  }
-  getUploadMetadata(e, t) {
-    return xe.apply(this, [e, t]);
-  }
-  registerExtension(e) {
-    Me[e.name] = e;
-  }
-  async invokeExtension(e, t) {
-    const n = Me[e];
-    if (!n) throw new x({
-      message: `扩展${e} 必须先注册`
-    });
-    return await n.invoke(t, this);
-  }
-  useAdapters(e) {
-    const {
-      adapter: t,
-      runtime: n
-    } = X(e) || {};
-    t && (G.adapter = t), n && (G.runtime = n);
-  }
-}
-var $e = new je();
-function Be(e, t, n) {
-  void 0 === n && (n = {});
-  var s = /\?/.test(t),
-    o = "";
-  for (var r in n) "" === o ? !s && (t += "?") : o += "&", o += r + "=" + encodeURIComponent(n[r]);
-  return /^http(s)?:\/\//.test(t += o) ? t : "" + e + t;
-}
-class Ke {
-  post(e) {
-    const {
-      url: t,
-      data: n,
-      headers: s
-    } = e;
-    return new Promise((e, o) => {
-      N.request({
-        url: Be("https:", t),
-        data: n,
-        method: "POST",
-        header: s,
-        success(t) {
-          e(t);
-        },
-        fail(e) {
-          o(e);
-        }
-      });
-    });
-  }
-  upload(e) {
-    return new Promise((t, n) => {
-      const {
-          url: s,
-          file: o,
-          data: r,
-          headers: i,
-          fileType: a
-        } = e,
-        c = N.uploadFile({
-          url: Be("https:", s),
-          name: "file",
-          formData: Object.assign({}, r),
-          filePath: o,
-          fileType: a,
-          header: i,
-          success(e) {
-            const n = {
-              statusCode: e.statusCode,
-              data: e.data || {}
-            };
-            200 === e.statusCode && r.success_action_status && (n.statusCode = parseInt(r.success_action_status, 10)), t(n);
-          },
-          fail(e) {
-            h && "mp-alipay" === d && console.warn("支付宝小程序开发工具上传腾讯云时无法准确判断是否上传成功，请使用真机测试"), n(new Error(e.errMsg || "uploadFile:fail"));
-          }
-        });
-      "function" == typeof e.onUploadProgress && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(t => {
-        e.onUploadProgress({
-          loaded: t.totalBytesSent,
-          total: t.totalBytesExpectedToSend
-        });
-      });
-    });
-  }
-}
-const He = {
-  setItem(e, t) {
-    N.setStorageSync(e, t);
-  },
-  getItem: e => N.getStorageSync(e),
-  removeItem(e) {
-    N.removeStorageSync(e);
-  },
-  clear() {
-    N.clearStorageSync();
-  }
-};
-var We = {
-  genAdapter: function () {
-    return {
-      root: {},
-      reqClass: Ke,
-      localStorage: He,
-      primaryStorage: "local"
-    };
-  },
-  isMatch: function () {
-    return !0;
-  },
-  runtime: "uni_app"
-};
-$e.useAdapters(We);
-const ze = $e,
-  Je = ze.init;
-ze.init = function (e) {
-  e.env = e.spaceId;
-  const t = Je.call(this, e);
-  t.config.provider = "tencent", t.config.spaceId = e.spaceId;
-  const n = t.auth;
-  return t.auth = function (e) {
-    const t = n.call(this, e);
-    return ["linkAndRetrieveDataWithTicket", "signInAnonymously", "signOut", "getAccessToken", "getLoginState", "signInWithTicket", "getUserInfo"].forEach(e => {
-      t[e] = R(t[e]).bind(t);
-    }), t;
-  }, t.customAuth = t.auth, t;
-};
-var Ve = ze;
-function Ye() {
-  return {
-    token: N.getStorageSync("uni_id_token") || N.getStorageSync("uniIdToken"),
-    tokenExpired: N.getStorageSync("uni_id_token_expired")
-  };
-}
-function Xe({
-  token: e,
-  tokenExpired: t
-} = {}) {
-  e && N.setStorageSync("uni_id_token", e), t && N.setStorageSync("uni_id_token_expired", t);
-}
-function Ge() {
-  if (!h || "h5" !== d) return;
-  uni.getStorageSync("__LAST_DCLOUD_APPID") !== m && (uni.setStorageSync("__LAST_DCLOUD_APPID", m), console.warn("检测到当前项目与上次运行到此端口的项目不一致，自动清理uni-id保存的token信息（仅开发调试时生效）"), N.removeStorageSync("uni_id_token"), N.removeStorageSync("uniIdToken"), N.removeStorageSync("uni_id_token_expired"));
-}
-var Qe = class extends $ {
-  getAccessToken() {
-    return new Promise((e, t) => {
-      const n = "Anonymous_Access_token";
-      this.setAccessToken(n), e(n);
-    });
-  }
-  setupRequest(e, t) {
-    const n = Object.assign({}, e, {
-        spaceId: this.config.spaceId,
-        timestamp: Date.now()
-      }),
-      s = {
-        "Content-Type": "application/json"
-      };
-    "auth" !== t && (n.token = this.accessToken, s["x-basement-token"] = this.accessToken), s["x-serverless-sign"] = F.sign(n, this.config.clientSecret);
-    const o = L();
-    s["x-client-info"] = JSON.stringify(o);
-    const {
-      token: r
-    } = Ye();
-    return s["x-client-token"] = r, {
-      url: this.config.requestUrl,
-      method: "POST",
-      data: n,
-      dataType: "json",
-      header: JSON.parse(JSON.stringify(s))
-    };
-  }
-  uploadFileToOSS({
-    url: e,
-    formData: t,
-    name: n,
-    filePath: s,
-    fileType: o,
-    onUploadProgress: r
-  }) {
-    return new Promise((i, a) => {
-      const c = this.adapter.uploadFile({
-        url: e,
-        formData: t,
-        name: n,
-        filePath: s,
-        fileType: o,
-        success(e) {
-          e && e.statusCode < 400 ? i(e) : a(new x({
-            code: "UPLOAD_FAILED",
-            message: "文件上传失败"
-          }));
-        },
-        fail(e) {
-          a(new x({
-            code: e.code || "UPLOAD_FAILED",
-            message: e.message || e.errMsg || "文件上传失败"
-          }));
-        }
-      });
-      "function" == typeof r && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(e => {
-        r({
-          loaded: e.totalBytesSent,
-          total: e.totalBytesExpectedToSend
-        });
-      });
-    });
-  }
-  uploadFile({
-    filePath: e,
-    cloudPath: t,
-    fileType: n = "image",
-    onUploadProgress: s
-  }) {
-    if (!t) throw new x({
-      code: "CLOUDPATH_REQUIRED",
-      message: "cloudPath不可为空"
-    });
-    let o;
-    return this.getOSSUploadOptionsFromPath({
-      cloudPath: t
-    }).then(t => {
-      const {
-        url: r,
-        formData: i,
-        name: a
-      } = t.result;
-      o = t.result.fileUrl;
-      const c = {
-        url: r,
-        formData: i,
-        name: a,
-        filePath: e,
-        fileType: n
-      };
-      return this.uploadFileToOSS(Object.assign({}, c, {
-        onUploadProgress: s
-      }));
-    }).then(() => this.reportOSSUpload({
-      cloudPath: t
-    })).then(t => new Promise((n, s) => {
-      t.success ? n({
-        success: !0,
-        filePath: e,
-        fileID: o
-      }) : s(new x({
-        code: "UPLOAD_FAILED",
-        message: "文件上传失败"
-      }));
-    }));
-  }
-  deleteFile({
-    fileList: e
-  }) {
-    const t = {
-      method: "serverless.file.resource.delete",
-      params: JSON.stringify({
-        fileList: e
-      })
-    };
-    return this.request(this.setupRequest(t));
-  }
-  getTempFileURL({
-    fileList: e
-  } = {}) {
-    const t = {
-      method: "serverless.file.resource.getTempFileURL",
-      params: JSON.stringify({
-        fileList: e
-      })
-    };
-    return this.request(this.setupRequest(t));
-  }
-};
-var Ze = {
-  init(e) {
-    const t = new Qe(e),
-      n = {
-        signInAnonymously: function () {
-          return t.authorize();
-        },
-        getLoginState: function () {
-          return Promise.resolve(!1);
-        }
-      };
-    return t.auth = function () {
-      return n;
-    }, t.customAuth = t.auth, t;
-  }
-};
-function et({
-  data: e
-}) {
-  let t;
-  t = L();
-  const n = JSON.parse(JSON.stringify(e || {}));
-  if (Object.assign(n, {
-    clientInfo: t
-  }), !n.uniIdToken) {
-    const {
-      token: e
-    } = Ye();
-    e && (n.uniIdToken = e);
-  }
-  return n;
-}
-function tt({
-  name: e,
-  data: t
-}) {
-  const {
-      localAddress: n,
-      localPort: s
-    } = this,
-    o = {
-      aliyun: "aliyun",
-      tencent: "tcb"
-    }[this.config.provider],
-    r = this.config.spaceId,
-    i = `http://${n}:${s}/system/check-function`,
-    a = `http://${n}:${s}/cloudfunctions/${e}`;
-  return new Promise((t, n) => {
-    N.request({
-      method: "POST",
-      url: i,
-      data: {
-        name: e,
-        platform: d,
-        provider: o,
-        spaceId: r
-      },
-      timeout: 3e3,
-      success(e) {
-        t(e);
-      },
-      fail() {
-        t({
-          data: {
-            code: "NETWORK_ERROR",
-            message: "连接本地调试服务失败，请检查客户端是否和主机在同一局域网下，自动切换为已部署的云函数。"
-          }
-        });
-      }
-    });
-  }).then(({
-    data: e
-  } = {}) => {
-    const {
-      code: t,
-      message: n
-    } = e || {};
-    return {
-      code: 0 === t ? 0 : t || "SYS_ERR",
-      message: n || "SYS_ERR"
-    };
-  }).then(({
-    code: n,
-    message: s
-  }) => {
-    if (0 !== n) {
-      switch (n) {
-        case "MODULE_ENCRYPTED":
-          console.error(`此云函数（${e}）依赖加密公共模块不可本地调试，自动切换为云端已部署的云函数`);
-          break;
-        case "FUNCTION_ENCRYPTED":
-          console.error(`此云函数（${e}）已加密不可本地调试，自动切换为云端已部署的云函数`);
-          break;
-        case "ACTION_ENCRYPTED":
-          console.error(s || "需要访问加密的uni-clientDB-action，自动切换为云端环境");
-          break;
-        case "NETWORK_ERROR":
-          {
-            const e = "连接本地调试服务失败，请检查客户端是否和主机在同一局域网下";
-            throw console.error(e), new Error(e);
-          }
-        case "SWITCH_TO_CLOUD":
-          break;
-        default:
-          {
-            const e = `检测本地调试服务出现错误：${s}，请检查网络环境或重启客户端再试`;
-            throw console.error(e), new Error(e);
-          }
-      }
-      return this._originCallFunction({
-        name: e,
-        data: t
-      });
-    }
-    return new Promise((e, n) => {
-      const s = et.call(this, {
-        data: t
-      });
-      N.request({
-        method: "POST",
-        url: a,
-        data: {
-          provider: o,
-          platform: d,
-          param: s
-        },
-        success: ({
-          statusCode: t,
-          data: s
-        } = {}) => !t || t >= 400 ? n(new x({
-          code: s.code || "SYS_ERR",
-          message: s.message || "request:fail"
-        })) : e({
-          result: s
-        }),
-        fail(e) {
-          n(new x({
-            code: e.code || e.errCode || "SYS_ERR",
-            message: e.message || e.errMsg || "request:fail"
-          }));
-        }
-      });
-    });
-  });
-}
-const nt = [{
-  rule: /fc_function_not_found|FUNCTION_NOT_FOUND/,
-  content: "，云函数[{functionName}]在云端不存在，请检查此云函数名称是否正确以及该云函数是否已上传到服务空间",
-  mode: "append"
-}];
-var st = /[\\^$.*+?()[\]{}|]/g,
-  ot = RegExp(st.source);
-function rt(e, t, n) {
-  return e.replace(new RegExp((s = t) && ot.test(s) ? s.replace(st, "\\$&") : s, "g"), n);
-  var s;
-}
-function it({
-  functionName: e,
-  result: t,
-  logPvd: n
-}) {
-  if (this.config.useDebugFunction && t && t.requestId) {
-    const s = JSON.stringify({
-      spaceId: this.config.spaceId,
-      functionName: e,
-      requestId: t.requestId
-    });
-    console.log(`[${n}-request]${s}[/${n}-request]`);
-  }
-}
-function at(e) {
-  const t = e.callFunction,
-    n = function (n) {
-      const s = n.name;
-      n.data = et.call(e, {
-        data: n.data
-      });
-      const o = {
-        aliyun: "aliyun",
-        tencent: "tcb",
-        tcb: "tcb"
-      }[this.config.provider];
-      return t.call(this, n).then(e => (e.errCode = 0, it.call(this, {
-        functionName: s,
-        result: e,
-        logPvd: o
-      }), Promise.resolve(e)), e => (it.call(this, {
-        functionName: s,
-        result: e,
-        logPvd: o
-      }), e && e.message && (e.message = function ({
-        message: e = "",
-        extraInfo: t = {},
-        formatter: n = []
-      } = {}) {
-        for (let s = 0; s < n.length; s++) {
-          const {
-              rule: o,
-              content: r,
-              mode: i
-            } = n[s],
-            a = e.match(o);
-          if (!a) continue;
-          let c = r;
-          for (let e = 1; e < a.length; e++) c = rt(c, `{$${e}}`, a[e]);
-          for (const e in t) c = rt(c, `{${e}}`, t[e]);
-          return "replace" === i ? c : e + c;
-        }
-        return e;
-      }({
-        message: `[${n.name}]: ${e.message}`,
-        formatter: nt,
-        extraInfo: {
-          functionName: s
-        }
-      })), Promise.reject(e)));
-    };
-  e.callFunction = function (t) {
-    let s;
-    return h && e.debugInfo && !e.debugInfo.forceRemote && p ? (e._originCallFunction || (e._originCallFunction = n), s = tt.call(this, t)) : s = n.call(this, t), Object.defineProperty(s, "result", {
-      get: () => (console.warn("当前返回结果为Promise类型，不可直接访问其result属性，详情请参考：https://uniapp.dcloud.net.cn/uniCloud/faq?id=promise"), {})
-    }), s;
-  };
-}
-const ct = Symbol("CLIENT_DB_INTERNAL");
-function ut(e, t) {
-  return e.then = "DoNotReturnProxyWithAFunctionNamedThen", e._internalType = ct, e.__ob__ = void 0, new Proxy(e, {
-    get(e, n, s) {
-      if ("_uniClient" === n) return null;
-      if (n in e || "string" != typeof n) {
-        const t = e[n];
-        return "function" == typeof t ? t.bind(e) : t;
-      }
-      return t.get(e, n, s);
-    }
-  });
-}
-function lt(e) {
-  return {
-    on: (t, n) => {
-      e[t] = e[t] || [], e[t].indexOf(n) > -1 || e[t].push(n);
-    },
-    off: (t, n) => {
-      e[t] = e[t] || [];
-      const s = e[t].indexOf(n);
-      -1 !== s && e[t].splice(s, 1);
-    }
-  };
-}
-const ht = ["db.Geo", "db.command", "command.aggregate"];
-function dt(e, t) {
-  return ht.indexOf(`${e}.${t}`) > -1;
-}
-function ft(e) {
-  switch (c(e)) {
-    case "array":
-      return e.map(e => ft(e));
-    case "object":
-      return e._internalType === ct || Object.keys(e).forEach(t => {
-        e[t] = ft(e[t]);
-      }), e;
-    case "regexp":
-      return {
-        $regexp: {
-          source: e.source,
-          flags: e.flags
-        }
-      };
-    case "date":
-      return {
-        $date: e.toISOString()
-      };
-    default:
-      return e;
-  }
-}
-class pt {
-  constructor(e, t, n) {
-    this.content = e, this.prevStage = t || null, this.udb = null, this._database = n;
-  }
-  toJSON() {
-    let e = this;
-    const t = [e.content];
-    for (; e.prevStage;) e = e.prevStage, t.push(e.content);
-    return {
-      $db: t.reverse().map(e => ({
-        $method: e.$method,
-        $param: ft(e.$param)
-      }))
-    };
-  }
-  getAction() {
-    const e = this.toJSON().$db.find(e => "action" === e.$method);
-    return e && e.$param && e.$param[0];
-  }
-  getCommand() {
-    return {
-      $db: this.toJSON().$db.filter(e => "action" !== e.$method)
-    };
-  }
-  get useAggregate() {
-    let e = this,
-      t = !1;
-    for (; e.prevStage;) {
-      e = e.prevStage;
-      const n = e.content.$method;
-      if ("aggregate" === n || "pipeline" === n) {
-        t = !0;
-        break;
-      }
-    }
-    return t;
-  }
-  get count() {
-    if (!this.useAggregate) return function () {
-      return this._send("count", Array.from(arguments));
-    };
-    const e = this;
-    return function () {
-      return gt({
-        $method: "count",
-        $param: ft(Array.from(arguments))
-      }, e, this._database);
-    };
-  }
-  get() {
-    return this._send("get", Array.from(arguments));
-  }
-  add() {
-    return this._send("add", Array.from(arguments));
-  }
-  remove() {
-    return this._send("remove", Array.from(arguments));
-  }
-  update() {
-    return this._send("update", Array.from(arguments));
-  }
-  end() {
-    return this._send("end", Array.from(arguments));
-  }
-  set() {
-    throw new Error("clientDB禁止使用set方法");
-  }
-  _send(e, t) {
-    const n = this.getAction(),
-      s = this.getCommand();
-    if (s.$db.push({
-      $method: e,
-      $param: ft(t)
-    }), h) {
-      const e = s.$db.find(e => "collection" === e.$method),
-        t = e && e.$param;
-      t && 1 === t.length && "string" == typeof e.$param[0] && e.$param[0].indexOf(",") > -1 && console.warn("检测到使用JQL语法联表查询时，未使用getTemp先过滤主表数据，在主表数据量大的情况下可能会查询缓慢。\n- 如何优化请参考此文档：https://uniapp.dcloud.net.cn/uniCloud/jql?id=lookup-with-temp \n- 如果主表数据量很小请忽略此信息，项目发行时不会出现此提示。");
-    }
-    return this._database._callCloudFunction({
-      action: n,
-      command: s
-    });
-  }
-}
-function gt(e, t, n) {
-  return ut(new pt(e, t, n), {
-    get(e, t) {
-      let s = "db";
-      return e && e.content && (s = e.content.$method), dt(s, t) ? gt({
-        $method: t
-      }, e, n) : function () {
-        return gt({
-          $method: t,
-          $param: ft(Array.from(arguments))
-        }, e, n);
-      };
-    }
-  });
-}
-function mt({
-  path: e,
-  method: t
-}) {
-  return class {
-    constructor() {
-      this.param = Array.from(arguments);
-    }
-    toJSON() {
-      return {
-        $newDb: [...e.map(e => ({
-          $method: e
-        })), {
-          $method: t,
-          $param: this.param
-        }]
-      };
-    }
-  };
-}
-class yt extends class {
-  constructor({
-    uniClient: e = {}
-  } = {}) {
-    this._uniClient = e, this._authCallBacks = {}, this._dbCallBacks = {}, e.isDefault && (this._dbCallBacks = _("_globalUniCloudDatabaseCallback")), this.auth = lt(this._authCallBacks), Object.assign(this, lt(this._dbCallBacks)), this.env = ut({}, {
-      get: (e, t) => ({
-        $env: t
-      })
-    }), this.Geo = ut({}, {
-      get: (e, t) => mt({
-        path: ["Geo"],
-        method: t
-      })
-    }), this.serverDate = mt({
-      path: [],
-      method: "serverDate"
-    }), this.RegExp = mt({
-      path: [],
-      method: "RegExp"
-    });
-  }
-  getCloudEnv(e) {
-    if ("string" != typeof e || !e.trim()) throw new Error("getCloudEnv参数错误");
-    return {
-      $env: e.replace("$cloudEnv_", "")
-    };
-  }
-  _callback(e, t) {
-    const n = this._dbCallBacks;
-    n[e] && n[e].forEach(e => {
-      e(...t);
-    });
-  }
-  _callbackAuth(e, t) {
-    const n = this._authCallBacks;
-    n[e] && n[e].forEach(e => {
-      e(...t);
-    });
-  }
-  multiSend() {
-    const e = Array.from(arguments),
-      t = e.map(e => {
-        const t = e.getAction(),
-          n = e.getCommand();
-        if ("getTemp" !== n.$db[n.$db.length - 1].$method) throw new Error("multiSend只支持子命令内使用getTemp");
-        return {
-          action: t,
-          command: n
-        };
-      });
-    return this._callCloudFunction({
-      multiCommand: t,
-      queryList: e
-    });
-  }
-} {
-  _callCloudFunction({
-    action: e,
-    command: t,
-    multiCommand: n,
-    queryList: s
-  }) {
-    function o(e, t) {
-      if (n && s) for (let n = 0; n < s.length; n++) {
-        const o = s[n];
-        o.udb && "function" == typeof o.udb.setResult && (t ? o.udb.setResult(t) : o.udb.setResult(e.result.dataList[n]));
-      }
-    }
-    const r = this;
-    function i(e) {
-      return r._callback("error", [e]), T(A("database", "fail"), e).then(() => T(A("database", "complete"), e)).then(() => (o(null, e), U(I, {
-        type: O,
-        content: e
-      }), Promise.reject(e)));
-    }
-    const c = T(A("database", "invoke")),
-      u = this._uniClient;
-    return c.then(() => u.callFunction({
-      name: "DCloud-clientDB",
-      type: a,
-      data: {
-        action: e,
-        command: t,
-        multiCommand: n
-      }
-    })).then(e => {
-      const {
-        code: t,
-        message: n,
-        token: s,
-        tokenExpired: r,
-        systemInfo: a = []
-      } = e.result;
-      if (a) for (let e = 0; e < a.length; e++) {
-        const {
-            level: t,
-            message: n,
-            detail: s
-          } = a[e],
-          o = console["app-plus" === d && "warn" === t ? "error" : t] || console.log;
-        let r = "[System Info]" + n;
-        s && (r = `${r}\n详细信息：${s}`), o(r);
-      }
-      if (t) {
-        return i(new x({
-          code: t,
-          message: n,
-          requestId: e.requestId
-        }));
-      }
-      e.result.errCode = e.result.code, e.result.errMsg = e.result.message, s && r && (Xe({
-        token: s,
-        tokenExpired: r
-      }), this._callbackAuth("refreshToken", [{
-        token: s,
-        tokenExpired: r
-      }]), this._callback("refreshToken", [{
-        token: s,
-        tokenExpired: r
-      }]));
-      const c = [{
-        prop: "affectedDocs",
-        tips: "affectedDocs不再推荐使用，请使用inserted/deleted/updated/data.length替代"
-      }, {
-        prop: "code",
-        tips: "code不再推荐使用，请使用errCode替代"
-      }, {
-        prop: "message",
-        tips: "message不再推荐使用，请使用errMsg替代"
-      }];
-      for (let t = 0; t < c.length; t++) {
-        const {
-          prop: n,
-          tips: s
-        } = c[t];
-        if (n in e.result) {
-          const t = e.result[n];
-          Object.defineProperty(e.result, n, {
-            get: () => (console.warn(s), t)
-          });
-        }
-      }
-      return function (e) {
-        return T(A("database", "success"), e).then(() => T(A("database", "complete"), e)).then(() => (o(e, null), U(I, {
-          type: O,
-          content: e
-        }), Promise.resolve(e)));
-      }(e);
-    }, e => {
-      /fc_function_not_found|FUNCTION_NOT_FOUND/g.test(e.message) && console.warn("clientDB未初始化，请在web控制台保存一次schema以开启clientDB");
-      return i(new x({
-        code: e.code || "SYSTEM_ERROR",
-        message: e.message,
-        requestId: e.requestId
-      }));
-    });
-  }
-}
-function _t(e) {
-  e.database = function (t) {
-    if (t && Object.keys(t).length > 0) return e.init(t).database();
-    if (this._database) return this._database;
-    const n = function (e, t = {}) {
-      return ut(new e(t), {
-        get: (e, t) => dt("db", t) ? gt({
-          $method: t
-        }, null, e) : function () {
-          return gt({
-            $method: t,
-            $param: ft(Array.from(arguments))
-          }, null, e);
-        }
-      });
-    }(yt, {
-      uniClient: e
-    });
-    return this._database = n, n;
-  };
-}
-function wt(e) {
-  e.onResponse = function (e) {
-    !function (e, t) {
-      const n = E(e);
-      n.includes(t) || n.push(t);
-    }(I, e);
-  }, e.offResponse = function (e) {
-    !function (e, t) {
-      const n = E(e),
-        s = n.indexOf(t);
-      -1 !== s && n.splice(s, 1);
-    }(I, e);
-  };
-}
-let kt;
-const St = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-  vt = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
-function Tt() {
-  const e = Ye().token || "",
-    t = e.split(".");
-  if (!e || 3 !== t.length) return {
-    uid: null,
-    role: [],
-    permission: [],
-    tokenExpired: 0
-  };
-  let n;
-  try {
-    n = JSON.parse((s = t[1], decodeURIComponent(kt(s).split("").map(function (e) {
-      return "%" + ("00" + e.charCodeAt(0).toString(16)).slice(-2);
-    }).join(""))));
-  } catch (e) {
-    throw new Error("获取当前用户信息出错，详细错误信息为：" + e.message);
-  }
-  var s;
-  return n.tokenExpired = 1e3 * n.exp, delete n.exp, delete n.iat, n;
-}
-kt = "function" != typeof atob ? function (e) {
-  if (e = String(e).replace(/[\t\n\f\r ]+/g, ""), !vt.test(e)) throw new Error("Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded.");
-  var t;
-  e += "==".slice(2 - (3 & e.length));
-  for (var n, s, o = "", r = 0; r < e.length;) t = St.indexOf(e.charAt(r++)) << 18 | St.indexOf(e.charAt(r++)) << 12 | (n = St.indexOf(e.charAt(r++))) << 6 | (s = St.indexOf(e.charAt(r++))), o += 64 === n ? String.fromCharCode(t >> 16 & 255) : 64 === s ? String.fromCharCode(t >> 16 & 255, t >> 8 & 255) : String.fromCharCode(t >> 16 & 255, t >> 8 & 255, 255 & t);
-  return o;
-} : atob;
-var At = t(n(function (e, t) {
-  Object.defineProperty(t, "__esModule", {
-    value: !0
-  });
-  const n = "chooseAndUploadFile:ok",
-    s = "chooseAndUploadFile:fail";
-  function o(e, t) {
-    return e.tempFiles.forEach((e, n) => {
-      e.name || (e.name = e.path.substring(e.path.lastIndexOf("/") + 1)), t && (e.fileType = t), e.cloudPath = Date.now() + "_" + n + e.name.substring(e.name.lastIndexOf("."));
-    }), e.tempFilePaths || (e.tempFilePaths = e.tempFiles.map(e => e.path)), e;
-  }
-  function r(e, t, {
-    onChooseFile: s,
-    onUploadProgress: o
-  }) {
-    return t.then(e => {
-      if (s) {
-        const t = s(e);
-        if (void 0 !== t) return Promise.resolve(t).then(t => void 0 === t ? e : t);
-      }
-      return e;
-    }).then(t => !1 === t ? {
-      errMsg: n,
-      tempFilePaths: [],
-      tempFiles: []
-    } : function (e, t, s = 5, o) {
-      (t = Object.assign({}, t)).errMsg = n;
-      const r = t.tempFiles,
-        i = r.length;
-      let a = 0;
-      return new Promise(n => {
-        for (; a < s;) c();
-        function c() {
-          const s = a++;
-          if (s >= i) return void (!r.find(e => !e.url && !e.errMsg) && n(t));
-          const u = r[s];
-          e.uploadFile({
-            filePath: u.path,
-            cloudPath: u.cloudPath,
-            fileType: u.fileType,
-            onUploadProgress(e) {
-              e.index = s, e.tempFile = u, e.tempFilePath = u.path, o && o(e);
-            }
-          }).then(e => {
-            u.url = e.fileID, s < i && c();
-          }).catch(e => {
-            u.errMsg = e.errMsg || e.message, s < i && c();
-          });
-        }
-      });
-    }(e, t, 5, o));
-  }
-  t.initChooseAndUploadFile = function (e) {
-    return function (t = {
-      type: "all"
-    }) {
-      return "image" === t.type ? r(e, function (e) {
-        const {
-          count: t,
-          sizeType: n,
-          sourceType: r = ["album", "camera"],
-          extension: i
-        } = e;
-        return new Promise((e, a) => {
-          uni.chooseImage({
-            count: t,
-            sizeType: n,
-            sourceType: r,
-            extension: i,
-            success(t) {
-              e(o(t, "image"));
-            },
-            fail(e) {
-              a({
-                errMsg: e.errMsg.replace("chooseImage:fail", s)
-              });
-            }
-          });
-        });
-      }(t), t) : "video" === t.type ? r(e, function (e) {
-        const {
-          camera: t,
-          compressed: n,
-          maxDuration: r,
-          sourceType: i = ["album", "camera"],
-          extension: a
-        } = e;
-        return new Promise((e, c) => {
-          uni.chooseVideo({
-            camera: t,
-            compressed: n,
-            maxDuration: r,
-            sourceType: i,
-            extension: a,
-            success(t) {
-              const {
-                tempFilePath: n,
-                duration: s,
-                size: r,
-                height: i,
-                width: a
-              } = t;
-              e(o({
-                errMsg: "chooseVideo:ok",
-                tempFilePaths: [n],
-                tempFiles: [{
-                  name: t.tempFile && t.tempFile.name || "",
-                  path: n,
-                  size: r,
-                  type: t.tempFile && t.tempFile.type || "",
-                  width: a,
-                  height: i,
-                  duration: s,
-                  fileType: "video",
-                  cloudPath: ""
-                }]
-              }, "video"));
-            },
-            fail(e) {
-              c({
-                errMsg: e.errMsg.replace("chooseVideo:fail", s)
-              });
-            }
-          });
-        });
-      }(t), t) : r(e, function (e) {
-        const {
-          count: t,
-          extension: n
-        } = e;
-        return new Promise((e, r) => {
-          let i = uni.chooseFile;
-          if ("undefined" != typeof wx && "function" == typeof wx.chooseMessageFile && (i = wx.chooseMessageFile), "function" != typeof i) return r({
-            errMsg: s + " 请指定 type 类型，该平台仅支持选择 image 或 video。"
-          });
-          i({
-            type: "all",
-            count: t,
-            extension: n,
-            success(t) {
-              e(o(t));
-            },
-            fail(e) {
-              r({
-                errMsg: e.errMsg.replace("chooseFile:fail", s)
-              });
-            }
-          });
-        });
-      }(t), t);
-    };
-  };
-}));
-const Pt = "manual";
-function It(e) {
-  return {
-    props: {
-      localdata: {
-        type: Array,
-        default: () => []
-      },
-      options: {
-        type: [Object, Array],
-        default: () => ({})
-      },
-      spaceInfo: {
-        type: Object,
-        default: () => ({})
-      },
-      collection: {
-        type: [String, Array],
-        default: ""
-      },
-      action: {
-        type: String,
-        default: ""
-      },
-      field: {
-        type: String,
-        default: ""
-      },
-      orderby: {
-        type: String,
-        default: ""
-      },
-      where: {
-        type: [String, Object],
-        default: ""
-      },
-      pageData: {
-        type: String,
-        default: "add"
-      },
-      pageCurrent: {
-        type: Number,
-        default: 1
-      },
-      pageSize: {
-        type: Number,
-        default: 20
-      },
-      getcount: {
-        type: [Boolean, String],
-        default: !1
-      },
-      gettree: {
-        type: [Boolean, String],
-        default: !1
-      },
-      gettreepath: {
-        type: [Boolean, String],
-        default: !1
-      },
-      startwith: {
-        type: String,
-        default: ""
-      },
-      limitlevel: {
-        type: Number,
-        default: 10
-      },
-      groupby: {
-        type: String,
-        default: ""
-      },
-      groupField: {
-        type: String,
-        default: ""
-      },
-      distinct: {
-        type: [Boolean, String],
-        default: !1
-      },
-      foreignKey: {
-        type: String,
-        default: ""
-      },
-      loadtime: {
-        type: String,
-        default: "auto"
-      },
-      manual: {
-        type: Boolean,
-        default: !1
-      }
-    },
-    data: () => ({
-      mixinDatacomLoading: !1,
-      mixinDatacomHasMore: !1,
-      mixinDatacomResData: [],
-      mixinDatacomErrorMessage: "",
-      mixinDatacomPage: {}
-    }),
-    created() {
-      this.mixinDatacomPage = {
-        current: this.pageCurrent,
-        size: this.pageSize,
-        count: 0
-      }, this.$watch(() => {
-        var e = [];
-        return ["pageCurrent", "pageSize", "localdata", "collection", "action", "field", "orderby", "where", "getont", "getcount", "gettree", "groupby", "groupField", "distinct"].forEach(t => {
-          e.push(this[t]);
-        }), e;
-      }, (e, t) => {
-        if (this.loadtime === Pt) return;
-        let n = !1;
-        const s = [];
-        for (let o = 2; o < e.length; o++) e[o] !== t[o] && (s.push(e[o]), n = !0);
-        e[0] !== t[0] && (this.mixinDatacomPage.current = this.pageCurrent), this.mixinDatacomPage.size = this.pageSize, this.onMixinDatacomPropsChange(n, s);
-      });
-    },
-    methods: {
-      onMixinDatacomPropsChange(e, t) {},
-      mixinDatacomEasyGet({
-        getone: e = !1,
-        success: t,
-        fail: n
-      } = {}) {
-        this.mixinDatacomLoading || (this.mixinDatacomLoading = !0, this.mixinDatacomErrorMessage = "", this.mixinDatacomGet().then(n => {
-          this.mixinDatacomLoading = !1;
-          const {
-            data: s,
-            count: o
-          } = n.result;
-          this.getcount && (this.mixinDatacomPage.count = o), this.mixinDatacomHasMore = s.length < this.pageSize;
-          const r = e ? s.length ? s[0] : void 0 : s;
-          this.mixinDatacomResData = r, t && t(r);
-        }).catch(e => {
-          this.mixinDatacomLoading = !1, this.mixinDatacomErrorMessage = e, n && n(e);
-        }));
-      },
-      mixinDatacomGet(t = {}) {
-        let n = e.database(this.spaceInfo);
-        const s = t.action || this.action;
-        s && (n = n.action(s));
-        const o = t.collection || this.collection;
-        n = Array.isArray(o) ? n.collection(...o) : n.collection(o);
-        const r = t.where || this.where;
-        r && Object.keys(r).length && (n = n.where(r));
-        const i = t.field || this.field;
-        i && (n = n.field(i));
-        const a = t.foreignKey || this.foreignKey;
-        a && (n = n.foreignKey(a));
-        const c = t.groupby || this.groupby;
-        c && (n = n.groupBy(c));
-        const u = t.groupField || this.groupField;
-        u && (n = n.groupField(u));
-        !0 === (void 0 !== t.distinct ? t.distinct : this.distinct) && (n = n.distinct());
-        const l = t.orderby || this.orderby;
-        l && (n = n.orderBy(l));
-        const h = void 0 !== t.pageCurrent ? t.pageCurrent : this.mixinDatacomPage.current,
-          d = void 0 !== t.pageSize ? t.pageSize : this.mixinDatacomPage.size,
-          f = void 0 !== t.getcount ? t.getcount : this.getcount,
-          p = void 0 !== t.gettree ? t.gettree : this.gettree,
-          g = void 0 !== t.gettreepath ? t.gettreepath : this.gettreepath,
-          m = {
-            getCount: f
-          },
-          y = {
-            limitLevel: void 0 !== t.limitlevel ? t.limitlevel : this.limitlevel,
-            startWith: void 0 !== t.startwith ? t.startwith : this.startwith
-          };
-        return p && (m.getTree = y), g && (m.getTreePath = y), n = n.skip(d * (h - 1)).limit(d).get(m), n;
-      }
-    }
-  };
-}
-function Ot(e) {
-  return function (t, n = {}) {
-    n = function (e, t = {}) {
-      return e.customUI = t.customUI || e.customUI, Object.assign(e.loadingOptions, t.loadingOptions), Object.assign(e.errorOptions, t.errorOptions), e;
-    }({
-      customUI: !1,
-      loadingOptions: {
-        title: "加载中...",
-        mask: !0
-      },
-      errorOptions: {
-        type: "modal",
-        retry: !1
-      }
-    }, n);
-    const {
-        customUI: s,
-        loadingOptions: o,
-        errorOptions: r
-      } = n,
-      a = !s;
-    return new Proxy({}, {
-      get: (n, s) => async function n(...c) {
-        let u;
-        a && uni.showLoading({
-          title: o.title,
-          mask: o.mask
-        });
-        try {
-          u = await e.callFunction({
-            name: t,
-            type: i,
-            data: {
-              method: s,
-              params: c
-            }
-          });
-        } catch (e) {
-          u = {
-            result: e
-          };
-        }
-        const {
-          errCode: l,
-          errMsg: h,
-          newToken: d
-        } = u.result || {};
-        if (a && uni.hideLoading(), d && d.token && d.tokenExpired && Xe(d), l) {
-          if (a) if ("toast" === r.type) uni.showToast({
-            title: h,
-            icon: "none"
-          });else {
-            if ("modal" !== r.type) throw new Error(`Invalid errorOptions.type: ${r.type}`);
-            {
-              const {
-                confirm: e
-              } = await async function ({
-                title: e,
-                content: t,
-                showCancel: n,
-                cancelText: s,
-                confirmText: o
-              } = {}) {
-                return new Promise((r, i) => {
-                  uni.showModal({
-                    title: e,
-                    content: t,
-                    showCancel: n,
-                    cancelText: s,
-                    confirmText: o,
-                    success(e) {
-                      r(e);
-                    },
-                    fail() {
-                      r({
-                        confirm: !1,
-                        cancel: !0
-                      });
-                    }
-                  });
-                });
-              }({
-                title: "提示",
-                content: h,
-                showCancel: r.retry,
-                cancelText: "取消",
-                confirmText: r.retry ? "重试" : "确定"
-              });
-              if (r.retry && e) return n(...c);
-            }
-          }
-          const e = new x({
-            code: l,
-            message: h,
-            requestId: u.requestId
-          });
-          throw e.detail = u.result, U(I, {
-            type: C,
-            content: e
-          }), e;
-        }
-        return U(I, {
-          type: C,
-          content: u.result
-        }), u.result;
-      }
-    });
-  };
-}
-async function bt(e, t) {
-  const n = `http://${e}:${t}/system/ping`;
-  try {
-    const e = await (s = {
-      url: n,
-      timeout: 500
-    }, new Promise((e, t) => {
-      N.request({
-        ...s,
-        success(t) {
-          e(t);
-        },
-        fail(e) {
-          t(e);
-        }
-      });
-    }));
-    return !(!e.data || 0 !== e.data.code);
-  } catch (e) {
-    return !1;
-  }
-  var s;
-}
-function Ct(e) {
-  if (e.initUniCloudStatus && "rejected" !== e.initUniCloudStatus) return;
-  let t = Promise.resolve();
-  var n;
-  n = 1, t = new Promise((e, t) => {
-    setTimeout(() => {
-      e();
-    }, n);
-  }), e.isReady = !1, e.isDefault = !1;
-  const s = e.auth();
-  e.initUniCloudStatus = "pending", e.initUniCloud = t.then(() => s.getLoginState()).then(e => e ? Promise.resolve() : s.signInAnonymously()).then(() => {
-    if (!h) return Promise.resolve();
-    if (h && e.debugInfo) {
-      const {
-        address: t,
-        servePort: n
-      } = e.debugInfo;
-      return async function (e, t) {
-        let n;
-        for (let s = 0; s < e.length; s++) {
-          const o = e[s];
-          if (await bt(o, t)) {
-            n = o;
-            break;
-          }
-        }
-        return {
-          address: n,
-          port: t
-        };
-      }(t, n);
-    }
-  }).then(({
-    address: t,
-    port: n
-  } = {}) => {
-    if (!h) return Promise.resolve();
-    if (t) e.localAddress = t, e.localPort = n;else if (e.debugInfo) {
-      const t = console["app-plus" === d ? "error" : "warn"];
-      let n = "";
-      "remote" === e.debugInfo.initialLaunchType ? (e.debugInfo.forceRemote = !0, n = "当前客户端和HBuilderX不在同一局域网下（或其他网络原因无法连接HBuilderX），uniCloud本地调试服务不对当前客户端生效。\n- 如果不使用uniCloud本地调试服务，请直接忽略此信息。\n- 如需使用uniCloud本地调试服务，请将客户端与主机连接到同一局域网下并重新运行到客户端。\n- 如果在HBuilderX开启的状态下切换过网络环境，请重启HBuilderX后再试\n- 检查系统防火墙是否拦截了HBuilderX自带的nodejs") : n = "无法连接uniCloud本地调试服务，请检查当前客户端是否与主机在同一局域网下。\n- 如需使用uniCloud本地调试服务，请将客户端与主机连接到同一局域网下并重新运行到客户端。\n- 如果在HBuilderX开启的状态下切换过网络环境，请重启HBuilderX后再试\n- 检查系统防火墙是否拦截了HBuilderX自带的nodejs", "h5" === d && (n += "\n- 部分浏览器开启节流模式之后访问本地地址受限，请检查是否启用了节流模式"), t(n);
-    }
-  }).then(() => {
-    Ge(), e.isReady = !0, e.initUniCloudStatus = "fulfilled";
-  }).catch(t => {
-    console.error(t), e.initUniCloudStatus = "rejected";
-  });
-}
-let Et = new class {
-  init(e) {
-    let t = {};
-    const n = !1 !== e.debugFunction && h && ("h5" === d && navigator.userAgent.indexOf("HBuilderX") > 0 || "app-plus" === d);
-    switch (e.provider) {
-      case "tcb":
-      case "tencent":
-        t = Ve.init(Object.assign(e, {
-          useDebugFunction: n
-        }));
-        break;
-      case "aliyun":
-        t = B.init(Object.assign(e, {
-          useDebugFunction: n
-        }));
-        break;
-      case "private":
-        t = Ze.init(Object.assign(e, {
-          useDebugFunction: n
-        }));
-        break;
-      default:
-        throw new Error("未提供正确的provider参数");
-    }
-    const s = f;
-    h && s && !s.code && (t.debugInfo = s), Ct(t), t.reInit = function () {
-      Ct(this);
-    }, at(t), function (e) {
-      const t = e.uploadFile;
-      e.uploadFile = function (e) {
-        return t.call(this, e);
-      };
-    }(t), _t(t), function (e) {
-      e.getCurrentUserInfo = Tt, e.chooseAndUploadFile = At.initChooseAndUploadFile(e), Object.assign(e, {
-        get mixinDatacom() {
-          return It(e);
-        }
-      }), e.importObject = Ot(e);
-    }(t);
-    return ["callFunction", "uploadFile", "deleteFile", "getTempFileURL", "downloadFile", "chooseAndUploadFile"].forEach(e => {
-      if (!t[e]) return;
-      const n = t[e];
-      t[e] = function () {
-        return t.reInit(), n.apply(t, Array.from(arguments));
-      }, t[e] = R(t[e], e).bind(t);
-    }), t.init = this.init, t;
-  }
-}();
-(() => {
-  {
-    const e = p;
-    let t = {};
-    if (1 === e.length) t = e[0], Et = Et.init(t), Et.isDefault = !0;else {
-      const t = ["auth", "callFunction", "uploadFile", "deleteFile", "getTempFileURL", "downloadFile", "database", "getCurrentUSerInfo", "importObject"];
-      let n;
-      n = e && e.length > 0 ? "应用有多个服务空间，请通过uniCloud.init方法指定要使用的服务空间" : g ? "应用未关联服务空间，请在uniCloud目录右键关联服务空间" : "uni-app cli项目内使用uniCloud需要使用HBuilderX的运行菜单运行项目，且需要在uniCloud目录关联服务空间", t.forEach(e => {
-        Et[e] = function () {
-          return console.error(n), Promise.reject(new x({
-            code: "SYS_ERR",
-            message: n
-          }));
-        };
-      });
-    }
-    Object.assign(Et, {
-      get mixinDatacom() {
-        return It(Et);
-      }
-    }), wt(Et), Et.addInterceptor = S, Et.removeInterceptor = v, h && "h5" === d && (window.uniCloud = Et);
-  }
-})();
-var Ut = Et;
-exports.default = Ut;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2), __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
-
-/***/ }),
-
-/***/ 33:
-/*!********************************************!*\
-  !*** ./node_modules/crypto-js/x64-core.js ***!
-  \********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function (undefined) {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var Base = C_lib.Base;
-	    var X32WordArray = C_lib.WordArray;
-
-	    /**
-	     * x64 namespace.
-	     */
-	    var C_x64 = C.x64 = {};
-
-	    /**
-	     * A 64-bit word.
-	     */
-	    var X64Word = C_x64.Word = Base.extend({
-	        /**
-	         * Initializes a newly created 64-bit word.
-	         *
-	         * @param {number} high The high 32 bits.
-	         * @param {number} low The low 32 bits.
-	         *
-	         * @example
-	         *
-	         *     var x64Word = CryptoJS.x64.Word.create(0x00010203, 0x04050607);
-	         */
-	        init: function (high, low) {
-	            this.high = high;
-	            this.low = low;
-	        }
-
-	        /**
-	         * Bitwise NOTs this word.
-	         *
-	         * @return {X64Word} A new x64-Word object after negating.
-	         *
-	         * @example
-	         *
-	         *     var negated = x64Word.not();
-	         */
-	        // not: function () {
-	            // var high = ~this.high;
-	            // var low = ~this.low;
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Bitwise ANDs this word with the passed word.
-	         *
-	         * @param {X64Word} word The x64-Word to AND with this word.
-	         *
-	         * @return {X64Word} A new x64-Word object after ANDing.
-	         *
-	         * @example
-	         *
-	         *     var anded = x64Word.and(anotherX64Word);
-	         */
-	        // and: function (word) {
-	            // var high = this.high & word.high;
-	            // var low = this.low & word.low;
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Bitwise ORs this word with the passed word.
-	         *
-	         * @param {X64Word} word The x64-Word to OR with this word.
-	         *
-	         * @return {X64Word} A new x64-Word object after ORing.
-	         *
-	         * @example
-	         *
-	         *     var ored = x64Word.or(anotherX64Word);
-	         */
-	        // or: function (word) {
-	            // var high = this.high | word.high;
-	            // var low = this.low | word.low;
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Bitwise XORs this word with the passed word.
-	         *
-	         * @param {X64Word} word The x64-Word to XOR with this word.
-	         *
-	         * @return {X64Word} A new x64-Word object after XORing.
-	         *
-	         * @example
-	         *
-	         *     var xored = x64Word.xor(anotherX64Word);
-	         */
-	        // xor: function (word) {
-	            // var high = this.high ^ word.high;
-	            // var low = this.low ^ word.low;
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Shifts this word n bits to the left.
-	         *
-	         * @param {number} n The number of bits to shift.
-	         *
-	         * @return {X64Word} A new x64-Word object after shifting.
-	         *
-	         * @example
-	         *
-	         *     var shifted = x64Word.shiftL(25);
-	         */
-	        // shiftL: function (n) {
-	            // if (n < 32) {
-	                // var high = (this.high << n) | (this.low >>> (32 - n));
-	                // var low = this.low << n;
-	            // } else {
-	                // var high = this.low << (n - 32);
-	                // var low = 0;
-	            // }
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Shifts this word n bits to the right.
-	         *
-	         * @param {number} n The number of bits to shift.
-	         *
-	         * @return {X64Word} A new x64-Word object after shifting.
-	         *
-	         * @example
-	         *
-	         *     var shifted = x64Word.shiftR(7);
-	         */
-	        // shiftR: function (n) {
-	            // if (n < 32) {
-	                // var low = (this.low >>> n) | (this.high << (32 - n));
-	                // var high = this.high >>> n;
-	            // } else {
-	                // var low = this.high >>> (n - 32);
-	                // var high = 0;
-	            // }
-
-	            // return X64Word.create(high, low);
-	        // },
-
-	        /**
-	         * Rotates this word n bits to the left.
-	         *
-	         * @param {number} n The number of bits to rotate.
-	         *
-	         * @return {X64Word} A new x64-Word object after rotating.
-	         *
-	         * @example
-	         *
-	         *     var rotated = x64Word.rotL(25);
-	         */
-	        // rotL: function (n) {
-	            // return this.shiftL(n).or(this.shiftR(64 - n));
-	        // },
-
-	        /**
-	         * Rotates this word n bits to the right.
-	         *
-	         * @param {number} n The number of bits to rotate.
-	         *
-	         * @return {X64Word} A new x64-Word object after rotating.
-	         *
-	         * @example
-	         *
-	         *     var rotated = x64Word.rotR(7);
-	         */
-	        // rotR: function (n) {
-	            // return this.shiftR(n).or(this.shiftL(64 - n));
-	        // },
-
-	        /**
-	         * Adds this word with the passed word.
-	         *
-	         * @param {X64Word} word The x64-Word to add with this word.
-	         *
-	         * @return {X64Word} A new x64-Word object after adding.
-	         *
-	         * @example
-	         *
-	         *     var added = x64Word.add(anotherX64Word);
-	         */
-	        // add: function (word) {
-	            // var low = (this.low + word.low) | 0;
-	            // var carry = (low >>> 0) < (this.low >>> 0) ? 1 : 0;
-	            // var high = (this.high + word.high + carry) | 0;
-
-	            // return X64Word.create(high, low);
-	        // }
-	    });
-
-	    /**
-	     * An array of 64-bit words.
-	     *
-	     * @property {Array} words The array of CryptoJS.x64.Word objects.
-	     * @property {number} sigBytes The number of significant bytes in this word array.
-	     */
-	    var X64WordArray = C_x64.WordArray = Base.extend({
-	        /**
-	         * Initializes a newly created word array.
-	         *
-	         * @param {Array} words (Optional) An array of CryptoJS.x64.Word objects.
-	         * @param {number} sigBytes (Optional) The number of significant bytes in the words.
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.x64.WordArray.create();
-	         *
-	         *     var wordArray = CryptoJS.x64.WordArray.create([
-	         *         CryptoJS.x64.Word.create(0x00010203, 0x04050607),
-	         *         CryptoJS.x64.Word.create(0x18191a1b, 0x1c1d1e1f)
-	         *     ]);
-	         *
-	         *     var wordArray = CryptoJS.x64.WordArray.create([
-	         *         CryptoJS.x64.Word.create(0x00010203, 0x04050607),
-	         *         CryptoJS.x64.Word.create(0x18191a1b, 0x1c1d1e1f)
-	         *     ], 10);
-	         */
-	        init: function (words, sigBytes) {
-	            words = this.words = words || [];
-
-	            if (sigBytes != undefined) {
-	                this.sigBytes = sigBytes;
-	            } else {
-	                this.sigBytes = words.length * 8;
-	            }
-	        },
-
-	        /**
-	         * Converts this 64-bit word array to a 32-bit word array.
-	         *
-	         * @return {CryptoJS.lib.WordArray} This word array's data as a 32-bit word array.
-	         *
-	         * @example
-	         *
-	         *     var x32WordArray = x64WordArray.toX32();
-	         */
-	        toX32: function () {
-	            // Shortcuts
-	            var x64Words = this.words;
-	            var x64WordsLength = x64Words.length;
-
-	            // Convert
-	            var x32Words = [];
-	            for (var i = 0; i < x64WordsLength; i++) {
-	                var x64Word = x64Words[i];
-	                x32Words.push(x64Word.high);
-	                x32Words.push(x64Word.low);
-	            }
-
-	            return X32WordArray.create(x32Words, this.sigBytes);
-	        },
-
-	        /**
-	         * Creates a copy of this word array.
-	         *
-	         * @return {X64WordArray} The clone.
-	         *
-	         * @example
-	         *
-	         *     var clone = x64WordArray.clone();
-	         */
-	        clone: function () {
-	            var clone = Base.clone.call(this);
-
-	            // Clone "words" array
-	            var words = clone.words = this.words.slice(0);
-
-	            // Clone each X64Word object
-	            var wordsLength = words.length;
-	            for (var i = 0; i < wordsLength; i++) {
-	                words[i] = words[i].clone();
-	            }
-
-	            return clone;
-	        }
-	    });
-	}());
-
-
-	return CryptoJS;
-
-}));
-
-/***/ }),
-
-/***/ 330:
-/*!****************************************!*\
-  !*** ./src/pages.json?{"type":"stat"} ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  "appid": "__UNI__54D91B4"
-};
-exports.default = _default;
-
-/***/ }),
-
-/***/ 34:
-/*!***************************************************!*\
-  !*** ./node_modules/crypto-js/lib-typedarrays.js ***!
-  \***************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function () {
-	    // Check if typed arrays are supported
-	    if (typeof ArrayBuffer != 'function') {
-	        return;
-	    }
-
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-
-	    // Reference original init
-	    var superInit = WordArray.init;
-
-	    // Augment WordArray.init to handle typed arrays
-	    var subInit = WordArray.init = function (typedArray) {
-	        // Convert buffers to uint8
-	        if (typedArray instanceof ArrayBuffer) {
-	            typedArray = new Uint8Array(typedArray);
-	        }
-
-	        // Convert other array views to uint8
-	        if (
-	            typedArray instanceof Int8Array ||
-	            (typeof Uint8ClampedArray !== "undefined" && typedArray instanceof Uint8ClampedArray) ||
-	            typedArray instanceof Int16Array ||
-	            typedArray instanceof Uint16Array ||
-	            typedArray instanceof Int32Array ||
-	            typedArray instanceof Uint32Array ||
-	            typedArray instanceof Float32Array ||
-	            typedArray instanceof Float64Array
-	        ) {
-	            typedArray = new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength);
-	        }
-
-	        // Handle Uint8Array
-	        if (typedArray instanceof Uint8Array) {
-	            // Shortcut
-	            var typedArrayByteLength = typedArray.byteLength;
-
-	            // Extract bytes
-	            var words = [];
-	            for (var i = 0; i < typedArrayByteLength; i++) {
-	                words[i >>> 2] |= typedArray[i] << (24 - (i % 4) * 8);
-	            }
-
-	            // Initialize this word array
-	            superInit.call(this, words, typedArrayByteLength);
-	        } else {
-	            // Else call normal init
-	            superInit.apply(this, arguments);
-	        }
-	    };
-
-	    subInit.prototype = WordArray;
-	}());
-
-
-	return CryptoJS.lib.WordArray;
-
-}));
-
-/***/ }),
-
-/***/ 35:
-/*!*********************************************!*\
-  !*** ./node_modules/crypto-js/enc-utf16.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function () {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-	    var C_enc = C.enc;
-
-	    /**
-	     * UTF-16 BE encoding strategy.
-	     */
-	    var Utf16BE = C_enc.Utf16 = C_enc.Utf16BE = {
-	        /**
-	         * Converts a word array to a UTF-16 BE string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The UTF-16 BE string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var utf16String = CryptoJS.enc.Utf16.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-
-	            // Convert
-	            var utf16Chars = [];
-	            for (var i = 0; i < sigBytes; i += 2) {
-	                var codePoint = (words[i >>> 2] >>> (16 - (i % 4) * 8)) & 0xffff;
-	                utf16Chars.push(String.fromCharCode(codePoint));
-	            }
-
-	            return utf16Chars.join('');
-	        },
-
-	        /**
-	         * Converts a UTF-16 BE string to a word array.
-	         *
-	         * @param {string} utf16Str The UTF-16 BE string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Utf16.parse(utf16String);
-	         */
-	        parse: function (utf16Str) {
-	            // Shortcut
-	            var utf16StrLength = utf16Str.length;
-
-	            // Convert
-	            var words = [];
-	            for (var i = 0; i < utf16StrLength; i++) {
-	                words[i >>> 1] |= utf16Str.charCodeAt(i) << (16 - (i % 2) * 16);
-	            }
-
-	            return WordArray.create(words, utf16StrLength * 2);
-	        }
-	    };
-
-	    /**
-	     * UTF-16 LE encoding strategy.
-	     */
-	    C_enc.Utf16LE = {
-	        /**
-	         * Converts a word array to a UTF-16 LE string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The UTF-16 LE string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var utf16Str = CryptoJS.enc.Utf16LE.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-
-	            // Convert
-	            var utf16Chars = [];
-	            for (var i = 0; i < sigBytes; i += 2) {
-	                var codePoint = swapEndian((words[i >>> 2] >>> (16 - (i % 4) * 8)) & 0xffff);
-	                utf16Chars.push(String.fromCharCode(codePoint));
-	            }
-
-	            return utf16Chars.join('');
-	        },
-
-	        /**
-	         * Converts a UTF-16 LE string to a word array.
-	         *
-	         * @param {string} utf16Str The UTF-16 LE string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Utf16LE.parse(utf16Str);
-	         */
-	        parse: function (utf16Str) {
-	            // Shortcut
-	            var utf16StrLength = utf16Str.length;
-
-	            // Convert
-	            var words = [];
-	            for (var i = 0; i < utf16StrLength; i++) {
-	                words[i >>> 1] |= swapEndian(utf16Str.charCodeAt(i) << (16 - (i % 2) * 16));
-	            }
-
-	            return WordArray.create(words, utf16StrLength * 2);
-	        }
-	    };
-
-	    function swapEndian(word) {
-	        return ((word << 8) & 0xff00ff00) | ((word >>> 8) & 0x00ff00ff);
-	    }
-	}());
-
-
-	return CryptoJS.enc.Utf16;
-
-}));
-
-/***/ }),
-
-/***/ 352:
-/*!*****************************************************************!*\
-  !*** ./src/uni_modules/uni-icons/components/uni-icons/icons.js ***!
-  \*****************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  "id": "2852637",
-  "name": "uniui图标库",
-  "font_family": "uniicons",
-  "css_prefix_text": "uniui-",
-  "description": "",
-  "glyphs": [{
-    "icon_id": "25027049",
-    "name": "yanse",
-    "font_class": "color",
-    "unicode": "e6cf",
-    "unicode_decimal": 59087
-  }, {
-    "icon_id": "25027048",
-    "name": "wallet",
-    "font_class": "wallet",
-    "unicode": "e6b1",
-    "unicode_decimal": 59057
-  }, {
-    "icon_id": "25015720",
-    "name": "settings-filled",
-    "font_class": "settings-filled",
-    "unicode": "e6ce",
-    "unicode_decimal": 59086
-  }, {
-    "icon_id": "25015434",
-    "name": "shimingrenzheng-filled",
-    "font_class": "auth-filled",
-    "unicode": "e6cc",
-    "unicode_decimal": 59084
-  }, {
-    "icon_id": "24934246",
-    "name": "shop-filled",
-    "font_class": "shop-filled",
-    "unicode": "e6cd",
-    "unicode_decimal": 59085
-  }, {
-    "icon_id": "24934159",
-    "name": "staff-filled-01",
-    "font_class": "staff-filled",
-    "unicode": "e6cb",
-    "unicode_decimal": 59083
-  }, {
-    "icon_id": "24932461",
-    "name": "VIP-filled",
-    "font_class": "vip-filled",
-    "unicode": "e6c6",
-    "unicode_decimal": 59078
-  }, {
-    "icon_id": "24932462",
-    "name": "plus_circle_fill",
-    "font_class": "plus-filled",
-    "unicode": "e6c7",
-    "unicode_decimal": 59079
-  }, {
-    "icon_id": "24932463",
-    "name": "folder_add-filled",
-    "font_class": "folder-add-filled",
-    "unicode": "e6c8",
-    "unicode_decimal": 59080
-  }, {
-    "icon_id": "24932464",
-    "name": "yanse-filled",
-    "font_class": "color-filled",
-    "unicode": "e6c9",
-    "unicode_decimal": 59081
-  }, {
-    "icon_id": "24932465",
-    "name": "tune-filled",
-    "font_class": "tune-filled",
-    "unicode": "e6ca",
-    "unicode_decimal": 59082
-  }, {
-    "icon_id": "24932455",
-    "name": "a-rilidaka-filled",
-    "font_class": "calendar-filled",
-    "unicode": "e6c0",
-    "unicode_decimal": 59072
-  }, {
-    "icon_id": "24932456",
-    "name": "notification-filled",
-    "font_class": "notification-filled",
-    "unicode": "e6c1",
-    "unicode_decimal": 59073
-  }, {
-    "icon_id": "24932457",
-    "name": "wallet-filled",
-    "font_class": "wallet-filled",
-    "unicode": "e6c2",
-    "unicode_decimal": 59074
-  }, {
-    "icon_id": "24932458",
-    "name": "paihangbang-filled",
-    "font_class": "medal-filled",
-    "unicode": "e6c3",
-    "unicode_decimal": 59075
-  }, {
-    "icon_id": "24932459",
-    "name": "gift-filled",
-    "font_class": "gift-filled",
-    "unicode": "e6c4",
-    "unicode_decimal": 59076
-  }, {
-    "icon_id": "24932460",
-    "name": "fire-filled",
-    "font_class": "fire-filled",
-    "unicode": "e6c5",
-    "unicode_decimal": 59077
-  }, {
-    "icon_id": "24928001",
-    "name": "refreshempty",
-    "font_class": "refreshempty",
-    "unicode": "e6bf",
-    "unicode_decimal": 59071
-  }, {
-    "icon_id": "24926853",
-    "name": "location-ellipse",
-    "font_class": "location-filled",
-    "unicode": "e6af",
-    "unicode_decimal": 59055
-  }, {
-    "icon_id": "24926735",
-    "name": "person-filled",
-    "font_class": "person-filled",
-    "unicode": "e69d",
-    "unicode_decimal": 59037
-  }, {
-    "icon_id": "24926703",
-    "name": "personadd-filled",
-    "font_class": "personadd-filled",
-    "unicode": "e698",
-    "unicode_decimal": 59032
-  }, {
-    "icon_id": "24923351",
-    "name": "back",
-    "font_class": "back",
-    "unicode": "e6b9",
-    "unicode_decimal": 59065
-  }, {
-    "icon_id": "24923352",
-    "name": "forward",
-    "font_class": "forward",
-    "unicode": "e6ba",
-    "unicode_decimal": 59066
-  }, {
-    "icon_id": "24923353",
-    "name": "arrowthinright",
-    "font_class": "arrow-right",
-    "unicode": "e6bb",
-    "unicode_decimal": 59067
-  }, {
-    "icon_id": "24923353",
-    "name": "arrowthinright",
-    "font_class": "arrowthinright",
-    "unicode": "e6bb",
-    "unicode_decimal": 59067
-  }, {
-    "icon_id": "24923354",
-    "name": "arrowthinleft",
-    "font_class": "arrow-left",
-    "unicode": "e6bc",
-    "unicode_decimal": 59068
-  }, {
-    "icon_id": "24923354",
-    "name": "arrowthinleft",
-    "font_class": "arrowthinleft",
-    "unicode": "e6bc",
-    "unicode_decimal": 59068
-  }, {
-    "icon_id": "24923355",
-    "name": "arrowthinup",
-    "font_class": "arrow-up",
-    "unicode": "e6bd",
-    "unicode_decimal": 59069
-  }, {
-    "icon_id": "24923355",
-    "name": "arrowthinup",
-    "font_class": "arrowthinup",
-    "unicode": "e6bd",
-    "unicode_decimal": 59069
-  }, {
-    "icon_id": "24923356",
-    "name": "arrowthindown",
-    "font_class": "arrow-down",
-    "unicode": "e6be",
-    "unicode_decimal": 59070
-  }, {
-    "icon_id": "24923356",
-    "name": "arrowthindown",
-    "font_class": "arrowthindown",
-    "unicode": "e6be",
-    "unicode_decimal": 59070
-  }, {
-    "icon_id": "24923349",
-    "name": "arrowdown",
-    "font_class": "bottom",
-    "unicode": "e6b8",
-    "unicode_decimal": 59064
-  }, {
-    "icon_id": "24923349",
-    "name": "arrowdown",
-    "font_class": "arrowdown",
-    "unicode": "e6b8",
-    "unicode_decimal": 59064
-  }, {
-    "icon_id": "24923346",
-    "name": "arrowright",
-    "font_class": "right",
-    "unicode": "e6b5",
-    "unicode_decimal": 59061
-  }, {
-    "icon_id": "24923346",
-    "name": "arrowright",
-    "font_class": "arrowright",
-    "unicode": "e6b5",
-    "unicode_decimal": 59061
-  }, {
-    "icon_id": "24923347",
-    "name": "arrowup",
-    "font_class": "top",
-    "unicode": "e6b6",
-    "unicode_decimal": 59062
-  }, {
-    "icon_id": "24923347",
-    "name": "arrowup",
-    "font_class": "arrowup",
-    "unicode": "e6b6",
-    "unicode_decimal": 59062
-  }, {
-    "icon_id": "24923348",
-    "name": "arrowleft",
-    "font_class": "left",
-    "unicode": "e6b7",
-    "unicode_decimal": 59063
-  }, {
-    "icon_id": "24923348",
-    "name": "arrowleft",
-    "font_class": "arrowleft",
-    "unicode": "e6b7",
-    "unicode_decimal": 59063
-  }, {
-    "icon_id": "24923334",
-    "name": "eye",
-    "font_class": "eye",
-    "unicode": "e651",
-    "unicode_decimal": 58961
-  }, {
-    "icon_id": "24923335",
-    "name": "eye-filled",
-    "font_class": "eye-filled",
-    "unicode": "e66a",
-    "unicode_decimal": 58986
-  }, {
-    "icon_id": "24923336",
-    "name": "eye-slash",
-    "font_class": "eye-slash",
-    "unicode": "e6b3",
-    "unicode_decimal": 59059
-  }, {
-    "icon_id": "24923337",
-    "name": "eye-slash-filled",
-    "font_class": "eye-slash-filled",
-    "unicode": "e6b4",
-    "unicode_decimal": 59060
-  }, {
-    "icon_id": "24923305",
-    "name": "info-filled",
-    "font_class": "info-filled",
-    "unicode": "e649",
-    "unicode_decimal": 58953
-  }, {
-    "icon_id": "24923299",
-    "name": "reload-01",
-    "font_class": "reload",
-    "unicode": "e6b2",
-    "unicode_decimal": 59058
-  }, {
-    "icon_id": "24923195",
-    "name": "mic_slash_fill",
-    "font_class": "micoff-filled",
-    "unicode": "e6b0",
-    "unicode_decimal": 59056
-  }, {
-    "icon_id": "24923165",
-    "name": "map-pin-ellipse",
-    "font_class": "map-pin-ellipse",
-    "unicode": "e6ac",
-    "unicode_decimal": 59052
-  }, {
-    "icon_id": "24923166",
-    "name": "map-pin",
-    "font_class": "map-pin",
-    "unicode": "e6ad",
-    "unicode_decimal": 59053
-  }, {
-    "icon_id": "24923167",
-    "name": "location",
-    "font_class": "location",
-    "unicode": "e6ae",
-    "unicode_decimal": 59054
-  }, {
-    "icon_id": "24923064",
-    "name": "starhalf",
-    "font_class": "starhalf",
-    "unicode": "e683",
-    "unicode_decimal": 59011
-  }, {
-    "icon_id": "24923065",
-    "name": "star",
-    "font_class": "star",
-    "unicode": "e688",
-    "unicode_decimal": 59016
-  }, {
-    "icon_id": "24923066",
-    "name": "star-filled",
-    "font_class": "star-filled",
-    "unicode": "e68f",
-    "unicode_decimal": 59023
-  }, {
-    "icon_id": "24899646",
-    "name": "a-rilidaka",
-    "font_class": "calendar",
-    "unicode": "e6a0",
-    "unicode_decimal": 59040
-  }, {
-    "icon_id": "24899647",
-    "name": "fire",
-    "font_class": "fire",
-    "unicode": "e6a1",
-    "unicode_decimal": 59041
-  }, {
-    "icon_id": "24899648",
-    "name": "paihangbang",
-    "font_class": "medal",
-    "unicode": "e6a2",
-    "unicode_decimal": 59042
-  }, {
-    "icon_id": "24899649",
-    "name": "font",
-    "font_class": "font",
-    "unicode": "e6a3",
-    "unicode_decimal": 59043
-  }, {
-    "icon_id": "24899650",
-    "name": "gift",
-    "font_class": "gift",
-    "unicode": "e6a4",
-    "unicode_decimal": 59044
-  }, {
-    "icon_id": "24899651",
-    "name": "link",
-    "font_class": "link",
-    "unicode": "e6a5",
-    "unicode_decimal": 59045
-  }, {
-    "icon_id": "24899652",
-    "name": "notification",
-    "font_class": "notification",
-    "unicode": "e6a6",
-    "unicode_decimal": 59046
-  }, {
-    "icon_id": "24899653",
-    "name": "staff",
-    "font_class": "staff",
-    "unicode": "e6a7",
-    "unicode_decimal": 59047
-  }, {
-    "icon_id": "24899654",
-    "name": "VIP",
-    "font_class": "vip",
-    "unicode": "e6a8",
-    "unicode_decimal": 59048
-  }, {
-    "icon_id": "24899655",
-    "name": "folder_add",
-    "font_class": "folder-add",
-    "unicode": "e6a9",
-    "unicode_decimal": 59049
-  }, {
-    "icon_id": "24899656",
-    "name": "tune",
-    "font_class": "tune",
-    "unicode": "e6aa",
-    "unicode_decimal": 59050
-  }, {
-    "icon_id": "24899657",
-    "name": "shimingrenzheng",
-    "font_class": "auth",
-    "unicode": "e6ab",
-    "unicode_decimal": 59051
-  }, {
-    "icon_id": "24899565",
-    "name": "person",
-    "font_class": "person",
-    "unicode": "e699",
-    "unicode_decimal": 59033
-  }, {
-    "icon_id": "24899566",
-    "name": "email-filled",
-    "font_class": "email-filled",
-    "unicode": "e69a",
-    "unicode_decimal": 59034
-  }, {
-    "icon_id": "24899567",
-    "name": "phone-filled",
-    "font_class": "phone-filled",
-    "unicode": "e69b",
-    "unicode_decimal": 59035
-  }, {
-    "icon_id": "24899568",
-    "name": "phone",
-    "font_class": "phone",
-    "unicode": "e69c",
-    "unicode_decimal": 59036
-  }, {
-    "icon_id": "24899570",
-    "name": "email",
-    "font_class": "email",
-    "unicode": "e69e",
-    "unicode_decimal": 59038
-  }, {
-    "icon_id": "24899571",
-    "name": "personadd",
-    "font_class": "personadd",
-    "unicode": "e69f",
-    "unicode_decimal": 59039
-  }, {
-    "icon_id": "24899558",
-    "name": "chatboxes-filled",
-    "font_class": "chatboxes-filled",
-    "unicode": "e692",
-    "unicode_decimal": 59026
-  }, {
-    "icon_id": "24899559",
-    "name": "contact",
-    "font_class": "contact",
-    "unicode": "e693",
-    "unicode_decimal": 59027
-  }, {
-    "icon_id": "24899560",
-    "name": "chatbubble-filled",
-    "font_class": "chatbubble-filled",
-    "unicode": "e694",
-    "unicode_decimal": 59028
-  }, {
-    "icon_id": "24899561",
-    "name": "contact-filled",
-    "font_class": "contact-filled",
-    "unicode": "e695",
-    "unicode_decimal": 59029
-  }, {
-    "icon_id": "24899562",
-    "name": "chatboxes",
-    "font_class": "chatboxes",
-    "unicode": "e696",
-    "unicode_decimal": 59030
-  }, {
-    "icon_id": "24899563",
-    "name": "chatbubble",
-    "font_class": "chatbubble",
-    "unicode": "e697",
-    "unicode_decimal": 59031
-  }, {
-    "icon_id": "24881290",
-    "name": "upload-filled",
-    "font_class": "upload-filled",
-    "unicode": "e68e",
-    "unicode_decimal": 59022
-  }, {
-    "icon_id": "24881292",
-    "name": "upload",
-    "font_class": "upload",
-    "unicode": "e690",
-    "unicode_decimal": 59024
-  }, {
-    "icon_id": "24881293",
-    "name": "weixin",
-    "font_class": "weixin",
-    "unicode": "e691",
-    "unicode_decimal": 59025
-  }, {
-    "icon_id": "24881274",
-    "name": "compose",
-    "font_class": "compose",
-    "unicode": "e67f",
-    "unicode_decimal": 59007
-  }, {
-    "icon_id": "24881275",
-    "name": "qq",
-    "font_class": "qq",
-    "unicode": "e680",
-    "unicode_decimal": 59008
-  }, {
-    "icon_id": "24881276",
-    "name": "download-filled",
-    "font_class": "download-filled",
-    "unicode": "e681",
-    "unicode_decimal": 59009
-  }, {
-    "icon_id": "24881277",
-    "name": "pengyouquan",
-    "font_class": "pyq",
-    "unicode": "e682",
-    "unicode_decimal": 59010
-  }, {
-    "icon_id": "24881279",
-    "name": "sound",
-    "font_class": "sound",
-    "unicode": "e684",
-    "unicode_decimal": 59012
-  }, {
-    "icon_id": "24881280",
-    "name": "trash-filled",
-    "font_class": "trash-filled",
-    "unicode": "e685",
-    "unicode_decimal": 59013
-  }, {
-    "icon_id": "24881281",
-    "name": "sound-filled",
-    "font_class": "sound-filled",
-    "unicode": "e686",
-    "unicode_decimal": 59014
-  }, {
-    "icon_id": "24881282",
-    "name": "trash",
-    "font_class": "trash",
-    "unicode": "e687",
-    "unicode_decimal": 59015
-  }, {
-    "icon_id": "24881284",
-    "name": "videocam-filled",
-    "font_class": "videocam-filled",
-    "unicode": "e689",
-    "unicode_decimal": 59017
-  }, {
-    "icon_id": "24881285",
-    "name": "spinner-cycle",
-    "font_class": "spinner-cycle",
-    "unicode": "e68a",
-    "unicode_decimal": 59018
-  }, {
-    "icon_id": "24881286",
-    "name": "weibo",
-    "font_class": "weibo",
-    "unicode": "e68b",
-    "unicode_decimal": 59019
-  }, {
-    "icon_id": "24881288",
-    "name": "videocam",
-    "font_class": "videocam",
-    "unicode": "e68c",
-    "unicode_decimal": 59020
-  }, {
-    "icon_id": "24881289",
-    "name": "download",
-    "font_class": "download",
-    "unicode": "e68d",
-    "unicode_decimal": 59021
-  }, {
-    "icon_id": "24879601",
-    "name": "help",
-    "font_class": "help",
-    "unicode": "e679",
-    "unicode_decimal": 59001
-  }, {
-    "icon_id": "24879602",
-    "name": "navigate-filled",
-    "font_class": "navigate-filled",
-    "unicode": "e67a",
-    "unicode_decimal": 59002
-  }, {
-    "icon_id": "24879603",
-    "name": "plusempty",
-    "font_class": "plusempty",
-    "unicode": "e67b",
-    "unicode_decimal": 59003
-  }, {
-    "icon_id": "24879604",
-    "name": "smallcircle",
-    "font_class": "smallcircle",
-    "unicode": "e67c",
-    "unicode_decimal": 59004
-  }, {
-    "icon_id": "24879605",
-    "name": "minus-filled",
-    "font_class": "minus-filled",
-    "unicode": "e67d",
-    "unicode_decimal": 59005
-  }, {
-    "icon_id": "24879606",
-    "name": "micoff",
-    "font_class": "micoff",
-    "unicode": "e67e",
-    "unicode_decimal": 59006
-  }, {
-    "icon_id": "24879588",
-    "name": "closeempty",
-    "font_class": "closeempty",
-    "unicode": "e66c",
-    "unicode_decimal": 58988
-  }, {
-    "icon_id": "24879589",
-    "name": "clear",
-    "font_class": "clear",
-    "unicode": "e66d",
-    "unicode_decimal": 58989
-  }, {
-    "icon_id": "24879590",
-    "name": "navigate",
-    "font_class": "navigate",
-    "unicode": "e66e",
-    "unicode_decimal": 58990
-  }, {
-    "icon_id": "24879591",
-    "name": "minus",
-    "font_class": "minus",
-    "unicode": "e66f",
-    "unicode_decimal": 58991
-  }, {
-    "icon_id": "24879592",
-    "name": "image",
-    "font_class": "image",
-    "unicode": "e670",
-    "unicode_decimal": 58992
-  }, {
-    "icon_id": "24879593",
-    "name": "mic",
-    "font_class": "mic",
-    "unicode": "e671",
-    "unicode_decimal": 58993
-  }, {
-    "icon_id": "24879594",
-    "name": "paperplane",
-    "font_class": "paperplane",
-    "unicode": "e672",
-    "unicode_decimal": 58994
-  }, {
-    "icon_id": "24879595",
-    "name": "close",
-    "font_class": "close",
-    "unicode": "e673",
-    "unicode_decimal": 58995
-  }, {
-    "icon_id": "24879596",
-    "name": "help-filled",
-    "font_class": "help-filled",
-    "unicode": "e674",
-    "unicode_decimal": 58996
-  }, {
-    "icon_id": "24879597",
-    "name": "plus-filled",
-    "font_class": "paperplane-filled",
-    "unicode": "e675",
-    "unicode_decimal": 58997
-  }, {
-    "icon_id": "24879598",
-    "name": "plus",
-    "font_class": "plus",
-    "unicode": "e676",
-    "unicode_decimal": 58998
-  }, {
-    "icon_id": "24879599",
-    "name": "mic-filled",
-    "font_class": "mic-filled",
-    "unicode": "e677",
-    "unicode_decimal": 58999
-  }, {
-    "icon_id": "24879600",
-    "name": "image-filled",
-    "font_class": "image-filled",
-    "unicode": "e678",
-    "unicode_decimal": 59000
-  }, {
-    "icon_id": "24855900",
-    "name": "locked-filled",
-    "font_class": "locked-filled",
-    "unicode": "e668",
-    "unicode_decimal": 58984
-  }, {
-    "icon_id": "24855901",
-    "name": "info",
-    "font_class": "info",
-    "unicode": "e669",
-    "unicode_decimal": 58985
-  }, {
-    "icon_id": "24855903",
-    "name": "locked",
-    "font_class": "locked",
-    "unicode": "e66b",
-    "unicode_decimal": 58987
-  }, {
-    "icon_id": "24855884",
-    "name": "camera-filled",
-    "font_class": "camera-filled",
-    "unicode": "e658",
-    "unicode_decimal": 58968
-  }, {
-    "icon_id": "24855885",
-    "name": "chat-filled",
-    "font_class": "chat-filled",
-    "unicode": "e659",
-    "unicode_decimal": 58969
-  }, {
-    "icon_id": "24855886",
-    "name": "camera",
-    "font_class": "camera",
-    "unicode": "e65a",
-    "unicode_decimal": 58970
-  }, {
-    "icon_id": "24855887",
-    "name": "circle",
-    "font_class": "circle",
-    "unicode": "e65b",
-    "unicode_decimal": 58971
-  }, {
-    "icon_id": "24855888",
-    "name": "checkmarkempty",
-    "font_class": "checkmarkempty",
-    "unicode": "e65c",
-    "unicode_decimal": 58972
-  }, {
-    "icon_id": "24855889",
-    "name": "chat",
-    "font_class": "chat",
-    "unicode": "e65d",
-    "unicode_decimal": 58973
-  }, {
-    "icon_id": "24855890",
-    "name": "circle-filled",
-    "font_class": "circle-filled",
-    "unicode": "e65e",
-    "unicode_decimal": 58974
-  }, {
-    "icon_id": "24855891",
-    "name": "flag",
-    "font_class": "flag",
-    "unicode": "e65f",
-    "unicode_decimal": 58975
-  }, {
-    "icon_id": "24855892",
-    "name": "flag-filled",
-    "font_class": "flag-filled",
-    "unicode": "e660",
-    "unicode_decimal": 58976
-  }, {
-    "icon_id": "24855893",
-    "name": "gear-filled",
-    "font_class": "gear-filled",
-    "unicode": "e661",
-    "unicode_decimal": 58977
-  }, {
-    "icon_id": "24855894",
-    "name": "home",
-    "font_class": "home",
-    "unicode": "e662",
-    "unicode_decimal": 58978
-  }, {
-    "icon_id": "24855895",
-    "name": "home-filled",
-    "font_class": "home-filled",
-    "unicode": "e663",
-    "unicode_decimal": 58979
-  }, {
-    "icon_id": "24855896",
-    "name": "gear",
-    "font_class": "gear",
-    "unicode": "e664",
-    "unicode_decimal": 58980
-  }, {
-    "icon_id": "24855897",
-    "name": "smallcircle-filled",
-    "font_class": "smallcircle-filled",
-    "unicode": "e665",
-    "unicode_decimal": 58981
-  }, {
-    "icon_id": "24855898",
-    "name": "map-filled",
-    "font_class": "map-filled",
-    "unicode": "e666",
-    "unicode_decimal": 58982
-  }, {
-    "icon_id": "24855899",
-    "name": "map",
-    "font_class": "map",
-    "unicode": "e667",
-    "unicode_decimal": 58983
-  }, {
-    "icon_id": "24855825",
-    "name": "refresh-filled",
-    "font_class": "refresh-filled",
-    "unicode": "e656",
-    "unicode_decimal": 58966
-  }, {
-    "icon_id": "24855826",
-    "name": "refresh",
-    "font_class": "refresh",
-    "unicode": "e657",
-    "unicode_decimal": 58967
-  }, {
-    "icon_id": "24855808",
-    "name": "cloud-upload",
-    "font_class": "cloud-upload",
-    "unicode": "e645",
-    "unicode_decimal": 58949
-  }, {
-    "icon_id": "24855809",
-    "name": "cloud-download-filled",
-    "font_class": "cloud-download-filled",
-    "unicode": "e646",
-    "unicode_decimal": 58950
-  }, {
-    "icon_id": "24855810",
-    "name": "cloud-download",
-    "font_class": "cloud-download",
-    "unicode": "e647",
-    "unicode_decimal": 58951
-  }, {
-    "icon_id": "24855811",
-    "name": "cloud-upload-filled",
-    "font_class": "cloud-upload-filled",
-    "unicode": "e648",
-    "unicode_decimal": 58952
-  }, {
-    "icon_id": "24855813",
-    "name": "redo",
-    "font_class": "redo",
-    "unicode": "e64a",
-    "unicode_decimal": 58954
-  }, {
-    "icon_id": "24855814",
-    "name": "images-filled",
-    "font_class": "images-filled",
-    "unicode": "e64b",
-    "unicode_decimal": 58955
-  }, {
-    "icon_id": "24855815",
-    "name": "undo-filled",
-    "font_class": "undo-filled",
-    "unicode": "e64c",
-    "unicode_decimal": 58956
-  }, {
-    "icon_id": "24855816",
-    "name": "more",
-    "font_class": "more",
-    "unicode": "e64d",
-    "unicode_decimal": 58957
-  }, {
-    "icon_id": "24855817",
-    "name": "more-filled",
-    "font_class": "more-filled",
-    "unicode": "e64e",
-    "unicode_decimal": 58958
-  }, {
-    "icon_id": "24855818",
-    "name": "undo",
-    "font_class": "undo",
-    "unicode": "e64f",
-    "unicode_decimal": 58959
-  }, {
-    "icon_id": "24855819",
-    "name": "images",
-    "font_class": "images",
-    "unicode": "e650",
-    "unicode_decimal": 58960
-  }, {
-    "icon_id": "24855821",
-    "name": "paperclip",
-    "font_class": "paperclip",
-    "unicode": "e652",
-    "unicode_decimal": 58962
-  }, {
-    "icon_id": "24855822",
-    "name": "settings",
-    "font_class": "settings",
-    "unicode": "e653",
-    "unicode_decimal": 58963
-  }, {
-    "icon_id": "24855823",
-    "name": "search",
-    "font_class": "search",
-    "unicode": "e654",
-    "unicode_decimal": 58964
-  }, {
-    "icon_id": "24855824",
-    "name": "redo-filled",
-    "font_class": "redo-filled",
-    "unicode": "e655",
-    "unicode_decimal": 58965
-  }, {
-    "icon_id": "24841702",
-    "name": "list",
-    "font_class": "list",
-    "unicode": "e644",
-    "unicode_decimal": 58948
-  }, {
-    "icon_id": "24841489",
-    "name": "mail-open-filled",
-    "font_class": "mail-open-filled",
-    "unicode": "e63a",
-    "unicode_decimal": 58938
-  }, {
-    "icon_id": "24841491",
-    "name": "hand-thumbsdown-filled",
-    "font_class": "hand-down-filled",
-    "unicode": "e63c",
-    "unicode_decimal": 58940
-  }, {
-    "icon_id": "24841492",
-    "name": "hand-thumbsdown",
-    "font_class": "hand-down",
-    "unicode": "e63d",
-    "unicode_decimal": 58941
-  }, {
-    "icon_id": "24841493",
-    "name": "hand-thumbsup-filled",
-    "font_class": "hand-up-filled",
-    "unicode": "e63e",
-    "unicode_decimal": 58942
-  }, {
-    "icon_id": "24841494",
-    "name": "hand-thumbsup",
-    "font_class": "hand-up",
-    "unicode": "e63f",
-    "unicode_decimal": 58943
-  }, {
-    "icon_id": "24841496",
-    "name": "heart-filled",
-    "font_class": "heart-filled",
-    "unicode": "e641",
-    "unicode_decimal": 58945
-  }, {
-    "icon_id": "24841498",
-    "name": "mail-open",
-    "font_class": "mail-open",
-    "unicode": "e643",
-    "unicode_decimal": 58947
-  }, {
-    "icon_id": "24841488",
-    "name": "heart",
-    "font_class": "heart",
-    "unicode": "e639",
-    "unicode_decimal": 58937
-  }, {
-    "icon_id": "24839963",
-    "name": "loop",
-    "font_class": "loop",
-    "unicode": "e633",
-    "unicode_decimal": 58931
-  }, {
-    "icon_id": "24839866",
-    "name": "pulldown",
-    "font_class": "pulldown",
-    "unicode": "e632",
-    "unicode_decimal": 58930
-  }, {
-    "icon_id": "24813798",
-    "name": "scan",
-    "font_class": "scan",
-    "unicode": "e62a",
-    "unicode_decimal": 58922
-  }, {
-    "icon_id": "24813786",
-    "name": "bars",
-    "font_class": "bars",
-    "unicode": "e627",
-    "unicode_decimal": 58919
-  }, {
-    "icon_id": "24813788",
-    "name": "cart-filled",
-    "font_class": "cart-filled",
-    "unicode": "e629",
-    "unicode_decimal": 58921
-  }, {
-    "icon_id": "24813790",
-    "name": "checkbox",
-    "font_class": "checkbox",
-    "unicode": "e62b",
-    "unicode_decimal": 58923
-  }, {
-    "icon_id": "24813791",
-    "name": "checkbox-filled",
-    "font_class": "checkbox-filled",
-    "unicode": "e62c",
-    "unicode_decimal": 58924
-  }, {
-    "icon_id": "24813794",
-    "name": "shop",
-    "font_class": "shop",
-    "unicode": "e62f",
-    "unicode_decimal": 58927
-  }, {
-    "icon_id": "24813795",
-    "name": "headphones",
-    "font_class": "headphones",
-    "unicode": "e630",
-    "unicode_decimal": 58928
-  }, {
-    "icon_id": "24813796",
-    "name": "cart",
-    "font_class": "cart",
-    "unicode": "e631",
-    "unicode_decimal": 58929
-  }]
-};
-exports.default = _default;
-
-/***/ }),
-
-/***/ 36:
-/*!**********************************************!*\
-  !*** ./node_modules/crypto-js/enc-base64.js ***!
-  \**********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function () {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-	    var C_enc = C.enc;
-
-	    /**
-	     * Base64 encoding strategy.
-	     */
-	    var Base64 = C_enc.Base64 = {
-	        /**
-	         * Converts a word array to a Base64 string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @return {string} The Base64 string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
-	         */
-	        stringify: function (wordArray) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-	            var map = this._map;
-
-	            // Clamp excess bits
-	            wordArray.clamp();
-
-	            // Convert
-	            var base64Chars = [];
-	            for (var i = 0; i < sigBytes; i += 3) {
-	                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
-	                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
-	                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
-
-	                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
-
-	                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
-	                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
-	                }
-	            }
-
-	            // Add padding
-	            var paddingChar = map.charAt(64);
-	            if (paddingChar) {
-	                while (base64Chars.length % 4) {
-	                    base64Chars.push(paddingChar);
-	                }
-	            }
-
-	            return base64Chars.join('');
-	        },
-
-	        /**
-	         * Converts a Base64 string to a word array.
-	         *
-	         * @param {string} base64Str The Base64 string.
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
-	         */
-	        parse: function (base64Str) {
-	            // Shortcuts
-	            var base64StrLength = base64Str.length;
-	            var map = this._map;
-	            var reverseMap = this._reverseMap;
-
-	            if (!reverseMap) {
-	                    reverseMap = this._reverseMap = [];
-	                    for (var j = 0; j < map.length; j++) {
-	                        reverseMap[map.charCodeAt(j)] = j;
-	                    }
-	            }
-
-	            // Ignore padding
-	            var paddingChar = map.charAt(64);
-	            if (paddingChar) {
-	                var paddingIndex = base64Str.indexOf(paddingChar);
-	                if (paddingIndex !== -1) {
-	                    base64StrLength = paddingIndex;
-	                }
-	            }
-
-	            // Convert
-	            return parseLoop(base64Str, base64StrLength, reverseMap);
-
-	        },
-
-	        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
-	    };
-
-	    function parseLoop(base64Str, base64StrLength, reverseMap) {
-	      var words = [];
-	      var nBytes = 0;
-	      for (var i = 0; i < base64StrLength; i++) {
-	          if (i % 4) {
-	              var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
-	              var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
-	              var bitsCombined = bits1 | bits2;
-	              words[nBytes >>> 2] |= bitsCombined << (24 - (nBytes % 4) * 8);
-	              nBytes++;
-	          }
-	      }
-	      return WordArray.create(words, nBytes);
-	    }
-	}());
-
-
-	return CryptoJS.enc.Base64;
-
-}));
-
-/***/ }),
-
-/***/ 360:
-/*!******************************************************************************!*\
-  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/index.js ***!
-  \******************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _en = _interopRequireDefault(__webpack_require__(/*! ./en.json */ 361));
-var _zhHans = _interopRequireDefault(__webpack_require__(/*! ./zh-Hans.json */ 362));
-var _zhHant = _interopRequireDefault(__webpack_require__(/*! ./zh-Hant.json */ 363));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-var _default = {
-  en: _en.default,
-  'zh-Hans': _zhHans.default,
-  'zh-Hant': _zhHant.default
-};
-exports.default = _default;
-
-/***/ }),
-
-/***/ 361:
-/*!*****************************************************************************!*\
-  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/en.json ***!
-  \*****************************************************************************/
-/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
-/***/ (function(module) {
-
-module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"Pull up to show more\",\"uni-load-more.contentrefresh\":\"loading...\",\"uni-load-more.contentnomore\":\"No more data\"}");
-
-/***/ }),
-
-/***/ 362:
-/*!**********************************************************************************!*\
-  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/zh-Hans.json ***!
-  \**********************************************************************************/
-/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
-/***/ (function(module) {
-
-module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"上拉显示更多\",\"uni-load-more.contentrefresh\":\"正在加载...\",\"uni-load-more.contentnomore\":\"没有更多数据了\"}");
-
-/***/ }),
-
-/***/ 363:
-/*!**********************************************************************************!*\
-  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/zh-Hant.json ***!
-  \**********************************************************************************/
-/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
-/***/ (function(module) {
-
-module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"上拉顯示更多\",\"uni-load-more.contentrefresh\":\"正在加載...\",\"uni-load-more.contentnomore\":\"沒有更多數據了\"}");
-
-/***/ }),
-
-/***/ 37:
-/*!*************************************************!*\
-  !*** ./node_modules/crypto-js/enc-base64url.js ***!
-  \*************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function () {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-	    var C_enc = C.enc;
-
-	    /**
-	     * Base64url encoding strategy.
-	     */
-	    var Base64url = C_enc.Base64url = {
-	        /**
-	         * Converts a word array to a Base64url string.
-	         *
-	         * @param {WordArray} wordArray The word array.
-	         *
-	         * @param {boolean} urlSafe Whether to use url safe
-	         *
-	         * @return {string} The Base64url string.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var base64String = CryptoJS.enc.Base64url.stringify(wordArray);
-	         */
-	        stringify: function (wordArray, urlSafe=true) {
-	            // Shortcuts
-	            var words = wordArray.words;
-	            var sigBytes = wordArray.sigBytes;
-	            var map = urlSafe ? this._safe_map : this._map;
-
-	            // Clamp excess bits
-	            wordArray.clamp();
-
-	            // Convert
-	            var base64Chars = [];
-	            for (var i = 0; i < sigBytes; i += 3) {
-	                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
-	                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
-	                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
-
-	                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
-
-	                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
-	                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
-	                }
-	            }
-
-	            // Add padding
-	            var paddingChar = map.charAt(64);
-	            if (paddingChar) {
-	                while (base64Chars.length % 4) {
-	                    base64Chars.push(paddingChar);
-	                }
-	            }
-
-	            return base64Chars.join('');
-	        },
-
-	        /**
-	         * Converts a Base64url string to a word array.
-	         *
-	         * @param {string} base64Str The Base64url string.
-	         *
-	         * @param {boolean} urlSafe Whether to use url safe
-	         *
-	         * @return {WordArray} The word array.
-	         *
-	         * @static
-	         *
-	         * @example
-	         *
-	         *     var wordArray = CryptoJS.enc.Base64url.parse(base64String);
-	         */
-	        parse: function (base64Str, urlSafe=true) {
-	            // Shortcuts
-	            var base64StrLength = base64Str.length;
-	            var map = urlSafe ? this._safe_map : this._map;
-	            var reverseMap = this._reverseMap;
-
-	            if (!reverseMap) {
-	                reverseMap = this._reverseMap = [];
-	                for (var j = 0; j < map.length; j++) {
-	                    reverseMap[map.charCodeAt(j)] = j;
-	                }
-	            }
-
-	            // Ignore padding
-	            var paddingChar = map.charAt(64);
-	            if (paddingChar) {
-	                var paddingIndex = base64Str.indexOf(paddingChar);
-	                if (paddingIndex !== -1) {
-	                    base64StrLength = paddingIndex;
-	                }
-	            }
-
-	            // Convert
-	            return parseLoop(base64Str, base64StrLength, reverseMap);
-
-	        },
-
-	        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
-	        _safe_map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',
-	    };
-
-	    function parseLoop(base64Str, base64StrLength, reverseMap) {
-	        var words = [];
-	        var nBytes = 0;
-	        for (var i = 0; i < base64StrLength; i++) {
-	            if (i % 4) {
-	                var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
-	                var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
-	                var bitsCombined = bits1 | bits2;
-	                words[nBytes >>> 2] |= bitsCombined << (24 - (nBytes % 4) * 8);
-	                nBytes++;
-	            }
-	        }
-	        return WordArray.create(words, nBytes);
-	    }
-	}());
-
-	return CryptoJS.enc.Base64url;
-
-}));
-
-/***/ }),
-
-/***/ 38:
-/*!***************************************!*\
-  !*** ./node_modules/crypto-js/md5.js ***!
-  \***************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function (Math) {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-	    var Hasher = C_lib.Hasher;
-	    var C_algo = C.algo;
-
-	    // Constants table
-	    var T = [];
-
-	    // Compute constants
-	    (function () {
-	        for (var i = 0; i < 64; i++) {
-	            T[i] = (Math.abs(Math.sin(i + 1)) * 0x100000000) | 0;
-	        }
-	    }());
-
-	    /**
-	     * MD5 hash algorithm.
-	     */
-	    var MD5 = C_algo.MD5 = Hasher.extend({
-	        _doReset: function () {
-	            this._hash = new WordArray.init([
-	                0x67452301, 0xefcdab89,
-	                0x98badcfe, 0x10325476
-	            ]);
-	        },
-
-	        _doProcessBlock: function (M, offset) {
-	            // Swap endian
-	            for (var i = 0; i < 16; i++) {
-	                // Shortcuts
-	                var offset_i = offset + i;
-	                var M_offset_i = M[offset_i];
-
-	                M[offset_i] = (
-	                    (((M_offset_i << 8)  | (M_offset_i >>> 24)) & 0x00ff00ff) |
-	                    (((M_offset_i << 24) | (M_offset_i >>> 8))  & 0xff00ff00)
-	                );
-	            }
-
-	            // Shortcuts
-	            var H = this._hash.words;
-
-	            var M_offset_0  = M[offset + 0];
-	            var M_offset_1  = M[offset + 1];
-	            var M_offset_2  = M[offset + 2];
-	            var M_offset_3  = M[offset + 3];
-	            var M_offset_4  = M[offset + 4];
-	            var M_offset_5  = M[offset + 5];
-	            var M_offset_6  = M[offset + 6];
-	            var M_offset_7  = M[offset + 7];
-	            var M_offset_8  = M[offset + 8];
-	            var M_offset_9  = M[offset + 9];
-	            var M_offset_10 = M[offset + 10];
-	            var M_offset_11 = M[offset + 11];
-	            var M_offset_12 = M[offset + 12];
-	            var M_offset_13 = M[offset + 13];
-	            var M_offset_14 = M[offset + 14];
-	            var M_offset_15 = M[offset + 15];
-
-	            // Working varialbes
-	            var a = H[0];
-	            var b = H[1];
-	            var c = H[2];
-	            var d = H[3];
-
-	            // Computation
-	            a = FF(a, b, c, d, M_offset_0,  7,  T[0]);
-	            d = FF(d, a, b, c, M_offset_1,  12, T[1]);
-	            c = FF(c, d, a, b, M_offset_2,  17, T[2]);
-	            b = FF(b, c, d, a, M_offset_3,  22, T[3]);
-	            a = FF(a, b, c, d, M_offset_4,  7,  T[4]);
-	            d = FF(d, a, b, c, M_offset_5,  12, T[5]);
-	            c = FF(c, d, a, b, M_offset_6,  17, T[6]);
-	            b = FF(b, c, d, a, M_offset_7,  22, T[7]);
-	            a = FF(a, b, c, d, M_offset_8,  7,  T[8]);
-	            d = FF(d, a, b, c, M_offset_9,  12, T[9]);
-	            c = FF(c, d, a, b, M_offset_10, 17, T[10]);
-	            b = FF(b, c, d, a, M_offset_11, 22, T[11]);
-	            a = FF(a, b, c, d, M_offset_12, 7,  T[12]);
-	            d = FF(d, a, b, c, M_offset_13, 12, T[13]);
-	            c = FF(c, d, a, b, M_offset_14, 17, T[14]);
-	            b = FF(b, c, d, a, M_offset_15, 22, T[15]);
-
-	            a = GG(a, b, c, d, M_offset_1,  5,  T[16]);
-	            d = GG(d, a, b, c, M_offset_6,  9,  T[17]);
-	            c = GG(c, d, a, b, M_offset_11, 14, T[18]);
-	            b = GG(b, c, d, a, M_offset_0,  20, T[19]);
-	            a = GG(a, b, c, d, M_offset_5,  5,  T[20]);
-	            d = GG(d, a, b, c, M_offset_10, 9,  T[21]);
-	            c = GG(c, d, a, b, M_offset_15, 14, T[22]);
-	            b = GG(b, c, d, a, M_offset_4,  20, T[23]);
-	            a = GG(a, b, c, d, M_offset_9,  5,  T[24]);
-	            d = GG(d, a, b, c, M_offset_14, 9,  T[25]);
-	            c = GG(c, d, a, b, M_offset_3,  14, T[26]);
-	            b = GG(b, c, d, a, M_offset_8,  20, T[27]);
-	            a = GG(a, b, c, d, M_offset_13, 5,  T[28]);
-	            d = GG(d, a, b, c, M_offset_2,  9,  T[29]);
-	            c = GG(c, d, a, b, M_offset_7,  14, T[30]);
-	            b = GG(b, c, d, a, M_offset_12, 20, T[31]);
-
-	            a = HH(a, b, c, d, M_offset_5,  4,  T[32]);
-	            d = HH(d, a, b, c, M_offset_8,  11, T[33]);
-	            c = HH(c, d, a, b, M_offset_11, 16, T[34]);
-	            b = HH(b, c, d, a, M_offset_14, 23, T[35]);
-	            a = HH(a, b, c, d, M_offset_1,  4,  T[36]);
-	            d = HH(d, a, b, c, M_offset_4,  11, T[37]);
-	            c = HH(c, d, a, b, M_offset_7,  16, T[38]);
-	            b = HH(b, c, d, a, M_offset_10, 23, T[39]);
-	            a = HH(a, b, c, d, M_offset_13, 4,  T[40]);
-	            d = HH(d, a, b, c, M_offset_0,  11, T[41]);
-	            c = HH(c, d, a, b, M_offset_3,  16, T[42]);
-	            b = HH(b, c, d, a, M_offset_6,  23, T[43]);
-	            a = HH(a, b, c, d, M_offset_9,  4,  T[44]);
-	            d = HH(d, a, b, c, M_offset_12, 11, T[45]);
-	            c = HH(c, d, a, b, M_offset_15, 16, T[46]);
-	            b = HH(b, c, d, a, M_offset_2,  23, T[47]);
-
-	            a = II(a, b, c, d, M_offset_0,  6,  T[48]);
-	            d = II(d, a, b, c, M_offset_7,  10, T[49]);
-	            c = II(c, d, a, b, M_offset_14, 15, T[50]);
-	            b = II(b, c, d, a, M_offset_5,  21, T[51]);
-	            a = II(a, b, c, d, M_offset_12, 6,  T[52]);
-	            d = II(d, a, b, c, M_offset_3,  10, T[53]);
-	            c = II(c, d, a, b, M_offset_10, 15, T[54]);
-	            b = II(b, c, d, a, M_offset_1,  21, T[55]);
-	            a = II(a, b, c, d, M_offset_8,  6,  T[56]);
-	            d = II(d, a, b, c, M_offset_15, 10, T[57]);
-	            c = II(c, d, a, b, M_offset_6,  15, T[58]);
-	            b = II(b, c, d, a, M_offset_13, 21, T[59]);
-	            a = II(a, b, c, d, M_offset_4,  6,  T[60]);
-	            d = II(d, a, b, c, M_offset_11, 10, T[61]);
-	            c = II(c, d, a, b, M_offset_2,  15, T[62]);
-	            b = II(b, c, d, a, M_offset_9,  21, T[63]);
-
-	            // Intermediate hash value
-	            H[0] = (H[0] + a) | 0;
-	            H[1] = (H[1] + b) | 0;
-	            H[2] = (H[2] + c) | 0;
-	            H[3] = (H[3] + d) | 0;
-	        },
-
-	        _doFinalize: function () {
-	            // Shortcuts
-	            var data = this._data;
-	            var dataWords = data.words;
-
-	            var nBitsTotal = this._nDataBytes * 8;
-	            var nBitsLeft = data.sigBytes * 8;
-
-	            // Add padding
-	            dataWords[nBitsLeft >>> 5] |= 0x80 << (24 - nBitsLeft % 32);
-
-	            var nBitsTotalH = Math.floor(nBitsTotal / 0x100000000);
-	            var nBitsTotalL = nBitsTotal;
-	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 15] = (
-	                (((nBitsTotalH << 8)  | (nBitsTotalH >>> 24)) & 0x00ff00ff) |
-	                (((nBitsTotalH << 24) | (nBitsTotalH >>> 8))  & 0xff00ff00)
-	            );
-	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 14] = (
-	                (((nBitsTotalL << 8)  | (nBitsTotalL >>> 24)) & 0x00ff00ff) |
-	                (((nBitsTotalL << 24) | (nBitsTotalL >>> 8))  & 0xff00ff00)
-	            );
-
-	            data.sigBytes = (dataWords.length + 1) * 4;
-
-	            // Hash final blocks
-	            this._process();
-
-	            // Shortcuts
-	            var hash = this._hash;
-	            var H = hash.words;
-
-	            // Swap endian
-	            for (var i = 0; i < 4; i++) {
-	                // Shortcut
-	                var H_i = H[i];
-
-	                H[i] = (((H_i << 8)  | (H_i >>> 24)) & 0x00ff00ff) |
-	                       (((H_i << 24) | (H_i >>> 8))  & 0xff00ff00);
-	            }
-
-	            // Return final computed hash
-	            return hash;
-	        },
-
-	        clone: function () {
-	            var clone = Hasher.clone.call(this);
-	            clone._hash = this._hash.clone();
-
-	            return clone;
-	        }
-	    });
-
-	    function FF(a, b, c, d, x, s, t) {
-	        var n = a + ((b & c) | (~b & d)) + x + t;
-	        return ((n << s) | (n >>> (32 - s))) + b;
-	    }
-
-	    function GG(a, b, c, d, x, s, t) {
-	        var n = a + ((b & d) | (c & ~d)) + x + t;
-	        return ((n << s) | (n >>> (32 - s))) + b;
-	    }
-
-	    function HH(a, b, c, d, x, s, t) {
-	        var n = a + (b ^ c ^ d) + x + t;
-	        return ((n << s) | (n >>> (32 - s))) + b;
-	    }
-
-	    function II(a, b, c, d, x, s, t) {
-	        var n = a + (c ^ (b | ~d)) + x + t;
-	        return ((n << s) | (n >>> (32 - s))) + b;
-	    }
-
-	    /**
-	     * Shortcut function to the hasher's object interface.
-	     *
-	     * @param {WordArray|string} message The message to hash.
-	     *
-	     * @return {WordArray} The hash.
-	     *
-	     * @static
-	     *
-	     * @example
-	     *
-	     *     var hash = CryptoJS.MD5('message');
-	     *     var hash = CryptoJS.MD5(wordArray);
-	     */
-	    C.MD5 = Hasher._createHelper(MD5);
-
-	    /**
-	     * Shortcut function to the HMAC's object interface.
-	     *
-	     * @param {WordArray|string} message The message to hash.
-	     * @param {WordArray|string} key The secret key.
-	     *
-	     * @return {WordArray} The HMAC.
-	     *
-	     * @static
-	     *
-	     * @example
-	     *
-	     *     var hmac = CryptoJS.HmacMD5(message, key);
-	     */
-	    C.HmacMD5 = Hasher._createHmacHelper(MD5);
-	}(Math));
-
-
-	return CryptoJS.MD5;
-
-}));
-
-/***/ }),
-
-/***/ 39:
-/*!****************************************!*\
-  !*** ./node_modules/crypto-js/sha1.js ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-;(function (root, factory) {
-	if (true) {
-		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
-	}
-	else {}
-}(this, function (CryptoJS) {
-
-	(function () {
-	    // Shortcuts
-	    var C = CryptoJS;
-	    var C_lib = C.lib;
-	    var WordArray = C_lib.WordArray;
-	    var Hasher = C_lib.Hasher;
-	    var C_algo = C.algo;
-
-	    // Reusable object
-	    var W = [];
-
-	    /**
-	     * SHA-1 hash algorithm.
-	     */
-	    var SHA1 = C_algo.SHA1 = Hasher.extend({
-	        _doReset: function () {
-	            this._hash = new WordArray.init([
-	                0x67452301, 0xefcdab89,
-	                0x98badcfe, 0x10325476,
-	                0xc3d2e1f0
-	            ]);
-	        },
-
-	        _doProcessBlock: function (M, offset) {
-	            // Shortcut
-	            var H = this._hash.words;
-
-	            // Working variables
-	            var a = H[0];
-	            var b = H[1];
-	            var c = H[2];
-	            var d = H[3];
-	            var e = H[4];
-
-	            // Computation
-	            for (var i = 0; i < 80; i++) {
-	                if (i < 16) {
-	                    W[i] = M[offset + i] | 0;
-	                } else {
-	                    var n = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
-	                    W[i] = (n << 1) | (n >>> 31);
-	                }
-
-	                var t = ((a << 5) | (a >>> 27)) + e + W[i];
-	                if (i < 20) {
-	                    t += ((b & c) | (~b & d)) + 0x5a827999;
-	                } else if (i < 40) {
-	                    t += (b ^ c ^ d) + 0x6ed9eba1;
-	                } else if (i < 60) {
-	                    t += ((b & c) | (b & d) | (c & d)) - 0x70e44324;
-	                } else /* if (i < 80) */ {
-	                    t += (b ^ c ^ d) - 0x359d3e2a;
-	                }
-
-	                e = d;
-	                d = c;
-	                c = (b << 30) | (b >>> 2);
-	                b = a;
-	                a = t;
-	            }
-
-	            // Intermediate hash value
-	            H[0] = (H[0] + a) | 0;
-	            H[1] = (H[1] + b) | 0;
-	            H[2] = (H[2] + c) | 0;
-	            H[3] = (H[3] + d) | 0;
-	            H[4] = (H[4] + e) | 0;
-	        },
-
-	        _doFinalize: function () {
-	            // Shortcuts
-	            var data = this._data;
-	            var dataWords = data.words;
-
-	            var nBitsTotal = this._nDataBytes * 8;
-	            var nBitsLeft = data.sigBytes * 8;
-
-	            // Add padding
-	            dataWords[nBitsLeft >>> 5] |= 0x80 << (24 - nBitsLeft % 32);
-	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 14] = Math.floor(nBitsTotal / 0x100000000);
-	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 15] = nBitsTotal;
-	            data.sigBytes = dataWords.length * 4;
-
-	            // Hash final blocks
-	            this._process();
-
-	            // Return final computed hash
-	            return this._hash;
-	        },
-
-	        clone: function () {
-	            var clone = Hasher.clone.call(this);
-	            clone._hash = this._hash.clone();
-
-	            return clone;
-	        }
-	    });
-
-	    /**
-	     * Shortcut function to the hasher's object interface.
-	     *
-	     * @param {WordArray|string} message The message to hash.
-	     *
-	     * @return {WordArray} The hash.
-	     *
-	     * @static
-	     *
-	     * @example
-	     *
-	     *     var hash = CryptoJS.SHA1('message');
-	     *     var hash = CryptoJS.SHA1(wordArray);
-	     */
-	    C.SHA1 = Hasher._createHelper(SHA1);
-
-	    /**
-	     * Shortcut function to the HMAC's object interface.
-	     *
-	     * @param {WordArray|string} message The message to hash.
-	     * @param {WordArray|string} key The secret key.
-	     *
-	     * @return {WordArray} The HMAC.
-	     *
-	     * @static
-	     *
-	     * @example
-	     *
-	     *     var hmac = CryptoJS.HmacSHA1(message, key);
-	     */
-	    C.HmacSHA1 = Hasher._createHmacHelper(SHA1);
-	}());
-
-
-	return CryptoJS.SHA1;
-
-}));
-
-/***/ }),
-
-/***/ 4:
+/* 4 */
 /*!******************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/mp-vue/dist/mp.runtime.esm.js ***!
   \******************************************************************************************/
@@ -16629,7 +3786,8 @@ function observe (value, asRootData) {
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
-    !value._isVue
+    !value._isVue &&
+    !value.__v_isMPComponent
   ) {
     ob = new Observer(value);
   }
@@ -21047,6 +8205,8 @@ Vue.version = '2.6.11';
  */
 var ARRAYTYPE = '[object Array]';
 var OBJECTTYPE = '[object Object]';
+var NULLTYPE = '[object Null]';
+var UNDEFINEDTYPE = '[object Undefined]';
 // const FUNCTIONTYPE = '[object Function]'
 
 function diff(current, pre) {
@@ -21080,6 +8240,16 @@ function syncKeys(current, pre) {
     }
 }
 
+function nullOrUndefined(currentType, preType) {
+    if(
+        (currentType === NULLTYPE || currentType === UNDEFINEDTYPE) && 
+        (preType === NULLTYPE || preType === UNDEFINEDTYPE)
+    ) {
+        return false
+    }
+    return true
+}
+
 function _diff(current, pre, path, result) {
     if (current === pre) { return }
     var rootCurrentType = type(current);
@@ -21094,7 +8264,7 @@ function _diff(current, pre, path, result) {
                 var currentType = type(currentValue);
                 var preType = type(preValue);
                 if (currentType != ARRAYTYPE && currentType != OBJECTTYPE) {
-                    if (currentValue !== pre[key]) {
+                    if (currentValue !== pre[key] && nullOrUndefined(currentType, preType)) {
                         setResult(result, (path == '' ? '' : path + ".") + key, currentValue);
                     }
                 } else if (currentType == ARRAYTYPE) {
@@ -21153,7 +8323,7 @@ function type(obj) {
 
 function flushCallbacks$1(vm) {
     if (vm.__next_tick_callbacks && vm.__next_tick_callbacks.length) {
-        if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+        if (Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:flushCallbacks[' + vm.__next_tick_callbacks.length + ']');
@@ -21174,14 +8344,14 @@ function nextTick$1(vm, cb) {
     //1.nextTick 之前 已 setData 且 setData 还未回调完成
     //2.nextTick 之前存在 render watcher
     if (!vm.__next_tick_pending && !hasRenderWatcher(vm)) {
-        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:nextVueTick');
         }
         return nextTick(cb, vm)
     }else{
-        if(Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance$1 = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance$1.is || mpInstance$1.route) + '][' + vm._uid +
                 ']:nextMPTick');
@@ -21211,6 +8381,16 @@ function nextTick$1(vm, cb) {
 }
 
 /*  */
+
+function clearInstance(key, value) {
+  // 简易去除 Vue 和小程序组件实例
+  if (value) {
+    if (value._isVue || value.__v_isMPComponent) {
+      return {}
+    }
+  }
+  return value
+}
 
 function cloneWithData(vm) {
   // 确保当前 vm 所有数据被同步
@@ -21243,7 +8423,7 @@ function cloneWithData(vm) {
     ret['value'] = vm.value;
   }
 
-  return JSON.parse(JSON.stringify(ret))
+  return JSON.parse(JSON.stringify(ret, clearInstance))
 }
 
 var patch = function(oldVnode, vnode) {
@@ -21267,7 +8447,7 @@ var patch = function(oldVnode, vnode) {
     });
     var diffData = this.$shouldDiffData === false ? data : diff(data, mpData);
     if (Object.keys(diffData).length) {
-      if (Object({"NODE_ENV":"test","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_ENV_VERSION":"trial","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + this._uid +
           ']差量更新',
           JSON.stringify(diffData));
@@ -21453,9 +8633,16 @@ function internalMixin(Vue) {
 
   Vue.prototype.$emit = function(event) {
     if (this.$scope && event) {
-      (this.$scope['_triggerEvent'] || this.$scope['triggerEvent']).call(this.$scope, event, {
-        __args__: toArray(arguments, 1)
-      });
+      var triggerEvent = this.$scope['_triggerEvent'] || this.$scope['triggerEvent'];
+      if (triggerEvent) {
+        try {
+          triggerEvent.call(this.$scope, event, {
+            __args__: toArray(arguments, 1)
+          });
+        } catch (error) {
+
+        }
+      }
     }
     return oldEmit.apply(this, arguments)
   };
@@ -21622,7 +8809,8 @@ var LIFECYCLE_HOOKS$1 = [
     // 'onReady', // 兼容旧版本，应该移除该事件
     'onPageShow',
     'onPageHide',
-    'onPageResize'
+    'onPageResize',
+    'onUploadDouyinVideo'
 ];
 function lifecycleMixin$1(Vue) {
 
@@ -21676,8 +8864,7774 @@ internalMixin(Vue);
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2)))
 
 /***/ }),
+/* 5 */
+/*!************************!*\
+  !*** ./src/pages.json ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
 
-/***/ 40:
+
+
+/***/ }),
+/* 6 */,
+/* 7 */,
+/* 8 */,
+/* 9 */
+/*!***************************!*\
+  !*** ./src/utils/init.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+var _util = __webpack_require__(/*! ./util */ 10);
+var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 13));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+// 是否登录
+uni.hasLogin = () => {
+  return !!(0, _util.lsGet)('iclubUserToken3');
+};
+
+// 清除登录信息
+uni.clearLogin = () => {
+  (0, _util.lsDel)('iclubUserToken3');
+  (0, _util.lsDel)('userInfo');
+  (0, _util.lsDel)('userHasUploadInfo');
+  (0, _util.lsDel)('encryptKey');
+  (0, _util.lsDel)('encryptIV');
+  (0, _util.lsDel)('encryptVersion');
+  _store.default.commit('setIsLogin', false);
+};
+
+// toast
+uni.cToast = (option = {}) => {
+  const title = typeof option === 'string' ? option : option.title || '';
+  if (title) {
+    setTimeout(() => {
+      uni.showToast({
+        title: title,
+        mask: option.mask || false,
+        icon: option.icon || 'none',
+        duration: option.duration || 3000
+      });
+    }, 500);
+  }
+};
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 10 */
+/*!***************************!*\
+  !*** ./src/utils/util.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+var _validate = __webpack_require__(/*! ./validate */ 11);
+const {
+  env
+} = __webpack_require__(/*! @/http/env */ 12);
+const formatTime = date => {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+  return `${[year, month, day].map(formatNumber).join('/')} ${[hour, minute, second].map(formatNumber).join(':')}`;
+};
+const getQueryParam = key => {
+  const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i');
+  const r = window.location.search.substr(1).match(reg);
+  if (r != null) {
+    return decodeURI(r[2]);
+  }
+  return null;
+};
+const formatNumber = n => {
+  n = n.toString();
+  return n[1] ? n : `0${n}`;
+};
+
+// 格式化数字
+const numberFormat = value => {
+  const param = {};
+  const k = 10000;
+  const sizes = ['', '万', '亿', '万亿'];
+  let i;
+  if (value < k) {
+    param.value = value;
+    param.unit = '';
+  } else {
+    i = Math.floor(Math.log(value) / Math.log(k));
+    param.value = (value / Math.pow(k, i)).toFixed(0);
+    param.unit = sizes[i];
+  }
+  return param.value + param.unit;
+};
+
+// 格式化时间
+// 这都n年了iOS依然不认识2020-12-12，需要转换为2020/12/12
+const getDate = time => {
+  if (time instanceof Date) {
+    return time;
+  }
+  switch (typeof time) {
+    case 'string':
+      {
+        // 2020-12-12T12:12:12.000Z、2020-12-12T12:12:12.000
+        if (time.indexOf('T') > -1) {
+          return new Date(time);
+        }
+        return new Date(time.replace(/-/g, '/'));
+      }
+    default:
+      return new Date(time);
+  }
+};
+const pad = (str, length = 2) => {
+  str += '';
+  while (str.length < length) {
+    str = '0' + str;
+  }
+  return str.slice(-length);
+};
+const parser = {
+  yyyy: dateObj => {
+    return pad(dateObj.year, 4);
+  },
+  yy: dateObj => {
+    return pad(dateObj.year);
+  },
+  MM: dateObj => {
+    return pad(dateObj.month);
+  },
+  M: dateObj => {
+    return dateObj.month;
+  },
+  dd: dateObj => {
+    return pad(dateObj.day);
+  },
+  d: dateObj => {
+    return dateObj.day;
+  },
+  hh: dateObj => {
+    return pad(dateObj.hour);
+  },
+  h: dateObj => {
+    return dateObj.hour;
+  },
+  mm: dateObj => {
+    return pad(dateObj.minute);
+  },
+  m: dateObj => {
+    return dateObj.minute;
+  },
+  ss: dateObj => {
+    return pad(dateObj.second);
+  },
+  s: dateObj => {
+    return dateObj.second;
+  },
+  SSS: dateObj => {
+    return pad(dateObj.millisecond, 3);
+  },
+  S: dateObj => {
+    return dateObj.millisecond;
+  }
+};
+const formatDate = (date, format = 'yyyy-MM-dd') => {
+  if (!date && date !== 0) {
+    return '';
+  }
+  date = getDate(date);
+  const dateObj = {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    hour: date.getHours(),
+    minute: date.getMinutes(),
+    second: date.getSeconds(),
+    millisecond: date.getMilliseconds()
+  };
+  const tokenRegExp = /yyyy|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/;
+  let flag = true;
+  let result = format;
+  while (flag) {
+    flag = false;
+    result = result.replace(tokenRegExp, function (matched) {
+      flag = true;
+      return parser[matched](dateObj);
+    });
+  }
+  return result;
+};
+function getAppIdFromUrl(url) {
+  const appidMatch = url.match(/appid=([^&]*)/);
+  return appidMatch ? appidMatch[1] : null;
+}
+const pageJump = (url, callback = null) => {
+  console.log('url', url);
+  if (url.includes('appid')) {
+    const pathMatch = url.match(/(.*)&appid=/);
+    const path = pathMatch ? pathMatch[1].replace(/^\//, '') : null; // 去掉前面的斜杠
+    const appId = getAppIdFromUrl(url);
+    if (path && appId) {
+      console.log({
+        path,
+        appId
+      });
+      uni.navigateToMiniProgram({
+        appId,
+        path,
+        success: res => {
+          console.log('跳转结果', res);
+        },
+        complete() {
+          callback === null || callback === void 0 || callback();
+        }
+      });
+    }
+    return;
+  }
+  // webview跳转外网地址带上token
+  if ((0, _validate.isHttpLink)(url)) {
+    url += (url.indexOf('?') > -1 ? '&' : '?') + '&token=' + lsGet('iclubUserToken3');
+    url = '/pages/webview/webView?url=' + encodeURIComponent(url);
+  }
+  uni.navigateTo({
+    url,
+    success(res) {
+      callback === null || callback === void 0 || callback();
+    }
+  });
+};
+
+// 回退到指定页面，如果没有，则回退到上一页
+const backToPage = url => {
+  const routers = getCurrentPages().map(i => i.route).reverse();
+  const index = routers.indexOf(url);
+  uni.navigateBack({
+    delta: Math.max(index, 1)
+  });
+};
+
+// 刷新当前页面
+const refreshCurrentPage = () => {
+  const pages = getCurrentPages().reverse();
+  const url = pages[0] && pages[0].$page.fullPath;
+  console.log(url, 'urlurl刷新当前页面');
+  function reloadPage() {
+    console.log('页面列表', getCurrentPages());
+    const pages = getCurrentPages().slice(0, -1);
+    const currentPage = pages[pages.length - 1];
+    console.log('刷新当前页面', currentPage);
+    if (currentPage) {
+      currentPage.onLoad(currentPage.options);
+    }
+  }
+  if (!url) return;
+  if (url.includes('login')) {
+    wx.navigateBack({
+      success: function () {
+        reloadPage();
+      }
+    });
+  } else {
+    reloadPage();
+    // uni.redirectTo({ url })
+  }
+};
+
+// 判断是否登录
+const isLogin = () => {
+  return !!lsGet('iclubUserToken3');
+};
+
+// 获取微信二维码进来的参数
+const getScene = scene => {
+  // 当重新获取用户信息第一次进的时候,得到的%3D会变成%253D, 这里兼容一下
+  const newScene = scene.replace('%253D', '%3D');
+  const str = decodeURIComponent(newScene).replace('?', '');
+  const strArr = str.split('&').filter(item => item);
+  const result = {};
+  strArr.map(item => {
+    const key = item.split('=');
+    result[key[0]] = key[1];
+    return item;
+  });
+  return result;
+};
+
+/**
+ * storage存储 - 可以区分环境
+ */
+const ls = (key, value, opt = {}) => {
+  // common 是否区分不同环境，默认false
+  const diffEnv = !opt.common;
+  uni.setStorageSync(diffEnv ? `${env}_${key}` : key, value);
+};
+
+/**
+ * storage获取 - 可以区分环境
+ */
+const lsGet = (key, opt = {}) => {
+  // common 是否区分不同环境，默认false
+  const diffEnv = !opt.common;
+  return uni.getStorageSync(diffEnv ? `${env}_${key}` : key);
+};
+
+/**
+ * storage清除 - 可以区分环境
+ */
+const lsDel = (key, opt = {}) => {
+  // common 是否区分不同环境，默认false
+  const diffEnv = !opt.common;
+  return uni.removeStorageSync(diffEnv ? `${env}_${key}` : key);
+};
+module.exports = {
+  ls,
+  lsGet,
+  lsDel,
+  isLogin,
+  getScene,
+  pageJump,
+  backToPage,
+  refreshCurrentPage,
+  formatTime,
+  formatDate,
+  numberFormat,
+  getQueryParam
+};
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 11 */
+/*!*******************************!*\
+  !*** ./src/utils/validate.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/**
+ * 常用的校验
+ */
+
+// 手机号校验
+const isMobile = str => {
+  return /^1\d{10}$/.test(str);
+};
+
+// 邮箱校验
+const isEmail = str => {
+  return /^\S+?@\S+?\.\S+?$/.test(str);
+};
+
+// http链接校验
+const isHttpLink = str => {
+  return /^https?/.test(str);
+};
+module.exports = {
+  isEmail,
+  isMobile,
+  isHttpLink
+};
+
+/***/ }),
+/* 12 */
+/*!*************************!*\
+  !*** ./src/http/env.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+const conf = {
+  // 环境
+  env: "test",
+  // 测试环境跳 体验版
+  envVersion: Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : "trial",
+  // 接口调用API地址
+  baseNewUrl: Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : "https://user-test.imeik.com",
+  // iclub接口地址
+  baseIclubUrl: Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "test" ? Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : "https://iclub-backend-test.imeik.com"
+};
+module.exports = conf;
+
+/***/ }),
+/* 13 */
+/*!****************************!*\
+  !*** ./src/store/store.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
+var _vuex = _interopRequireDefault(__webpack_require__(/*! vuex */ 14));
+var _tasks = __webpack_require__(/*! @/http/tasks */ 15);
+var _wx = __webpack_require__(/*! @/http/wx.js */ 25);
+var _mine = __webpack_require__(/*! @/http/mine.js */ 26);
+var _common = __webpack_require__(/*! @/http/common */ 27);
+var _util = __webpack_require__(/*! @/utils/util */ 10);
+var _utils = __webpack_require__(/*! @/utils */ 17);
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+// import { checkFuliFlag } from "@/http/fuli";
+// import { getComment } from '@/http/content'
+
+_vue.default.use(_vuex.default);
+const store = new _vuex.default.Store({
+  state: {
+    commonConfig: {},
+    isLogin: !!(0, _util.lsGet)("iclubUserToken3"),
+    captchaFlag: false,
+    userInfo: {},
+    addressId: "",
+    commentList: [],
+    isTodayCheckIn: false,
+    // 今日签到状态
+    defaultAvatar: "",
+    balance: 0,
+    // 用户活力值
+    willExpiredBalance: 0,
+    // 即将过期活力值
+    // dictionaryTree: {}, // 数据字典
+    iclubDictoryTree: {},
+    // 数据字典
+    signTask: {},
+    // 签到任务
+    isSpecialEventRunning: false,
+    // 是否有活动在进行中
+    fuliFlag: false,
+    // 判断用户是否拥有过福利金
+    systemUpdate: false,
+    // 系统升级弹窗
+    // 分享code
+    shareCode: "",
+    // 赠卡code
+    shareCode1: "",
+    openId: "",
+    unionId: "",
+    hihiPageStart: false,
+    hihiInvitedEntry: false,
+    openIdHasSetted: false,
+    cityTree: []
+  },
+  getters: {
+    isLogin(state) {
+      return state.isLogin;
+    },
+    sms4(state) {
+      var _find, _find2;
+      return {
+        key: ((_find = (state.iclubDictoryTree.options || []).find(item => item.name === "sms_key")) === null || _find === void 0 ? void 0 : _find.sign) || "",
+        iv: ((_find2 = (state.iclubDictoryTree.options || []).find(item => item.name === "sms_iv")) === null || _find2 === void 0 ? void 0 : _find2.sign) || ""
+      };
+    },
+    eventInfo(state) {
+      var _find3, _find4;
+      return {
+        startTime: ((_find3 = (state.iclubDictoryTree.options || []).find(item => item.name === "activityStartTime")) === null || _find3 === void 0 ? void 0 : _find3.sign) || "",
+        endTime: ((_find4 = (state.iclubDictoryTree.options || []).find(item => item.name === "activityEndTime")) === null || _find4 === void 0 ? void 0 : _find4.sign) || ""
+      };
+    }
+  },
+  mutations: {
+    setDictionaryTree(state, payload) {
+      console.log("setDictionaryTree", payload);
+      //   state.dictionaryTree = payload
+      state.iclubDictoryTree = payload;
+    },
+    setFuliFlag(state, payload) {
+      state.fuliFlag = payload;
+    },
+    setIsLogin(state, payload) {
+      console.warn("setIsLogin::::", payload);
+      state.isLogin = payload;
+    },
+    setCommentList(state, payload) {
+      state.commentList = payload;
+    },
+    setUserInfo(state, payload) {
+      state.userInfo = payload;
+    },
+    setBalance(state, payload) {
+      state.balance = payload.integralBalance;
+      state.willExpiredBalance = payload.willExpiredIntegral;
+    },
+    setTodayCheckIn(state, payload) {
+      state.isTodayCheckIn = payload;
+    },
+    setSignTask(state, payload) {
+      state.signTask = payload;
+    },
+    setDefaultAvatar(state) {
+      const defaultAvatars = ["https://udstatic.imeik.com/pcUploads/1705285352902/1.png", "https://udstatic.imeik.com/pcUploads/1705285380205/2.png", "https://udstatic.imeik.com/pcUploads/1705285409154/3.png"];
+      const randomNumber = Math.floor(Math.random() * defaultAvatars.length);
+      state.defaultAvatar = defaultAvatars[randomNumber];
+    },
+    setConfig(state, payload) {
+      console.warn("load-config::::::::", payload);
+      state.commonConfig = payload;
+      if (payload.systemUpdate) {
+        // state.systemUpdate = true
+        state.systemUpdate = payload.systemUpdate;
+      }
+    },
+    setIsSpecialEventRunning(state, payload) {
+      state.isSpecialEventRunning = payload;
+    },
+    setCaptchaFlag(state, value) {
+      state.captchaFlag = value;
+    },
+    setSystemUpdate(state, value) {
+      state.systemUpdate = value;
+    },
+    // 设置分享码
+    storeShareCode(state, params) {
+      state.shareCode = params;
+    },
+    // 设置分享码
+    storeShareCode1(state, params) {
+      state.shareCode1 = params;
+    },
+    setAddressId(state, addressId) {
+      state.addressId = addressId;
+    },
+    setOpenIdSetted(state, value) {
+      state.openIdHasSetted = value;
+    },
+    setOpenId(state, {
+      unionid,
+      openid
+    }) {
+      var _state$userInfo, _fromPage;
+      state.openId = openid;
+      console.log("🚀 ~ setOpenId ~ openid:", openid);
+      state.unionId = unionid;
+      // 记录分享信息
+      let fromPage = getApp().globalData.shareLink || "/pages/home/index";
+      const inviteOpenId = getApp().globalData.inviteOpenId;
+      const inviteUserCode = getApp().globalData.inviteCode;
+      const inviteeOpenId = openid;
+      const inviteeUserCode = (_state$userInfo = state.userInfo) === null || _state$userInfo === void 0 ? void 0 : _state$userInfo.objectCode;
+      const shareTime = getApp().globalData.shareLinkTime;
+      if ((_fromPage = fromPage) !== null && _fromPage !== void 0 && _fromPage.includes("%")) {
+        fromPage = decodeURIComponent(fromPage);
+      }
+      // 两个相等代表自己点自己的分享
+      if (inviteOpenId === inviteeOpenId) {
+        return;
+      }
+      // 通过渠道二维码进来的小程序记录分享信息等
+      if (!getApp().globalData.userSource && inviteOpenId && !state.openIdHasSetted) {
+        console.error("----------------- mixinGetOpenId -----------------");
+        (0, _common.apiRecordShareInfo)({
+          channelCode: "",
+          fromPage,
+          inviteOpenId,
+          inviteUserCode,
+          inviteeOpenId,
+          inviteeUserCode,
+          shareTime
+        }).then(() => {
+          state.openIdHasSetted = true;
+        });
+      }
+    },
+    setHihiPageStart(state, hihiPageStart) {
+      state.hihiPageStart = hihiPageStart;
+    },
+    setHihiInvitedEntry(state, hihiInvitedEntry) {
+      state.hihiInvitedEntry = hihiInvitedEntry;
+    },
+    setCityTree(state, payload) {
+      state.cityTree = payload;
+    }
+  },
+  actions: {
+    getCityTree({
+      commit
+    }) {
+      console.error("getCityTree");
+      return new Promise(resolve => {
+        wx.request({
+          url: "https://udstatic.imeik.com/iclub/json/city.json",
+          success(res) {
+            commit("setCityTree", res.data.data);
+            resolve();
+          }
+        });
+      });
+      // cityTree().then((res) => {
+      //   commit('setCityTree', res)
+      // })
+    },
+    getConfig({
+      commit
+    }) {
+      wx.request({
+        url: `https://imeikud.oss-cn-beijing.aliyuncs.com/iclub/config${Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "prod" ? "" : "_test"}.json?v=${Math.random()}`,
+        success(res) {
+          console.log("setConfig-data", res.data);
+          commit("setConfig", res.data);
+        }
+      });
+    },
+    getDictTree({
+      commit
+    }) {
+      return new Promise(resolve => {
+        wx.request({
+          url: `https://imeikud.oss-cn-beijing.aliyuncs.com/iclub/json/tree${Object({"NODE_ENV":"test","VUE_APP_BASE_API":"https://user-test.imeik.com","VUE_APP_BASE_API_ICLUB":"https://iclub-backend-test.imeik.com","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_ENV_VERSION":"trial","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === "prod" ? "" : "_test"}.json`,
+          success(res) {
+            console.log("setConfig-tree", res.data);
+            commit("setDictionaryTree", res.data);
+            resolve();
+          }
+        });
+      });
+    },
+    async getPointBalance({
+      commit
+    }) {
+      const {
+        data
+      } = await (0, _tasks.getIntegralBalanceNew)();
+      console.log("data", data);
+      commit("setBalance", data);
+    },
+    async getUserInfo({
+      commit,
+      dispatch,
+      state
+    }) {
+      return new Promise(resolve => {
+        (0, _wx.userInfo)().then(res => {
+          commit("setUserInfo", res);
+          commit("setIsLogin", true);
+          dispatch("getSignTask");
+          dispatch("detectFuliFlag");
+          dispatch("getPointBalance");
+          (0, _util.ls)("userInfo", res);
+          // 如果没有unionId，上报
+          if (!res.unionid) {
+            //   dispatch('uploadUserUnionId')
+          }
+          resolve(res);
+        }).catch(() => {
+          commit("setIsLogin", false);
+          commit("setUserInfo", {});
+          resolve("");
+        });
+      });
+    },
+    uploadUserUnionId() {
+      uni.login({
+        success(data) {
+          if (data.errMsg === "login:ok") {
+            (0, _wx.wxUpdateOpenId)({
+              appId: "wx4cef4e6f8975a519",
+              code: data.code
+            }).then(res => {
+              console.log("update unionId成功", res);
+            }).catch(() => {});
+          }
+        },
+        fail(err) {
+          console.log("update unionId失败", err);
+        }
+      });
+    },
+    // async getComment({ commit }, contentCode) {
+    //   const result = await getComment({ page: 1, limit: 9999, contentCode })
+    //   commit('setCommentList', result.list || [])
+    // },
+    // detectFuliFlag({ commit }) {
+    //   // eslint-disable-next-line no-async-promise-executor
+    //   return new Promise(async (resolve) => {
+    //     const { data } = await checkFuliFlag();
+    //     console.log("!!!!!flag", data);
+    //     commit("setFuliFlag", data);
+    //     resolve(data);
+    //   });
+    // },
+    async getSignTask({
+      commit
+    }) {
+      // eslint-disable-next-line no-async-promise-executor
+      return new Promise(async resolve => {
+        try {
+          const [{
+            value: StatusData
+          }, {
+            value: TaskData
+          }] = await Promise.allSettled([(0, _tasks.getUserSignForOneWeek)(), (0, _tasks.getIntegralTask)()]);
+          commit("setSignTask", {
+            StatusData,
+            TaskData
+          });
+        } catch {} finally {
+          resolve(true);
+        }
+      });
+    },
+    // 判断是否是特殊活动,如果在活动期间，则首页弹窗活动广告
+    async getSpecialEventInfo({
+      commit,
+      state
+    }) {
+      var _state$iclubDictoryTr, _state$iclubDictoryTr2, _state$iclubDictoryTr3, _state$iclubDictoryTr4;
+      const startTime = ((_state$iclubDictoryTr = state.iclubDictoryTree.options) === null || _state$iclubDictoryTr === void 0 || (_state$iclubDictoryTr2 = _state$iclubDictoryTr.find) === null || _state$iclubDictoryTr2 === void 0 || (_state$iclubDictoryTr2 = _state$iclubDictoryTr2.call(_state$iclubDictoryTr, item => item.name === "activityStartTime")) === null || _state$iclubDictoryTr2 === void 0 ? void 0 : _state$iclubDictoryTr2.sign) || "";
+      const endTime = ((_state$iclubDictoryTr3 = state.iclubDictoryTree.options) === null || _state$iclubDictoryTr3 === void 0 || (_state$iclubDictoryTr4 = _state$iclubDictoryTr3.find) === null || _state$iclubDictoryTr4 === void 0 || (_state$iclubDictoryTr4 = _state$iclubDictoryTr4.call(_state$iclubDictoryTr3, item => item.name === "activityEndTime")) === null || _state$iclubDictoryTr4 === void 0 ? void 0 : _state$iclubDictoryTr4.sign) || "";
+      const currentTime = new Date();
+      // const currentDay = moment().format('yyyy-MM-DD')
+      // const cacheKey = 'showAd' + currentDay
+      // const cacheKey = 'showAd'
+      // const adCache = wx.getStorageSync(cacheKey)
+      // console.log('🚀 ~ getSpecialEventInfo ~ adCache:', adCache)
+      if (currentTime > new Date(startTime) && currentTime < new Date(endTime)) {
+        // if (!adCache) {
+        // wx.setStorageSync(cacheKey, 1)
+        commit("setIsSpecialEventRunning", true);
+        // }
+      }
+    },
+    setIntegral({
+      state,
+      dispatch
+    }, {
+      changeSource,
+      objectCode
+    }) {
+      const businessCode = objectCode || state.userInfo.objectCode;
+      if (!businessCode) return;
+      return new Promise(resolve => {
+        (0, _mine.iclubApiUserAddIntegral)({
+          changeSource,
+          businessCode
+        }).then(res => {
+          console.log("iclubApiUserAddIntegral", res);
+          dispatch("getPointBalance");
+          resolve(true);
+        });
+      });
+    }
+  }
+});
+var _default = exports.default = store;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 14 */
+/*!**************************************************************************************!*\
+  !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vuex3/dist/vuex.common.js ***!
+  \**************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {/*!
+ * vuex v3.6.2
+ * (c) 2021 Evan You
+ * @license MIT
+ */
+
+
+function applyMixin (Vue) {
+  var version = Number(Vue.version.split('.')[0]);
+
+  if (version >= 2) {
+    Vue.mixin({ beforeCreate: vuexInit });
+  } else {
+    // override init and inject vuex init procedure
+    // for 1.x backwards compatibility.
+    var _init = Vue.prototype._init;
+    Vue.prototype._init = function (options) {
+      if ( options === void 0 ) options = {};
+
+      options.init = options.init
+        ? [vuexInit].concat(options.init)
+        : vuexInit;
+      _init.call(this, options);
+    };
+  }
+
+  /**
+   * Vuex init hook, injected into each instances init hooks list.
+   */
+
+  function vuexInit () {
+    var options = this.$options;
+    // store injection
+    if (options.store) {
+      this.$store = typeof options.store === 'function'
+        ? options.store()
+        : options.store;
+    } else if (options.parent && options.parent.$store) {
+      this.$store = options.parent.$store;
+    }
+  }
+}
+
+var target = typeof window !== 'undefined'
+  ? window
+  : typeof global !== 'undefined'
+    ? global
+    : {};
+var devtoolHook = target.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+
+function devtoolPlugin (store) {
+  if (!devtoolHook) { return }
+
+  store._devtoolHook = devtoolHook;
+
+  devtoolHook.emit('vuex:init', store);
+
+  devtoolHook.on('vuex:travel-to-state', function (targetState) {
+    store.replaceState(targetState);
+  });
+
+  store.subscribe(function (mutation, state) {
+    devtoolHook.emit('vuex:mutation', mutation, state);
+  }, { prepend: true });
+
+  store.subscribeAction(function (action, state) {
+    devtoolHook.emit('vuex:action', action, state);
+  }, { prepend: true });
+}
+
+/**
+ * Get the first item that pass the test
+ * by second argument function
+ *
+ * @param {Array} list
+ * @param {Function} f
+ * @return {*}
+ */
+function find (list, f) {
+  return list.filter(f)[0]
+}
+
+/**
+ * Deep copy the given object considering circular structure.
+ * This function caches all nested objects and its copies.
+ * If it detects circular structure, use cached copy to avoid infinite loop.
+ *
+ * @param {*} obj
+ * @param {Array<Object>} cache
+ * @return {*}
+ */
+function deepCopy (obj, cache) {
+  if ( cache === void 0 ) cache = [];
+
+  // just return if obj is immutable value
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+
+  // if obj is hit, it is in circular structure
+  var hit = find(cache, function (c) { return c.original === obj; });
+  if (hit) {
+    return hit.copy
+  }
+
+  var copy = Array.isArray(obj) ? [] : {};
+  // put the copy into cache at first
+  // because we want to refer it in recursive deepCopy
+  cache.push({
+    original: obj,
+    copy: copy
+  });
+
+  Object.keys(obj).forEach(function (key) {
+    copy[key] = deepCopy(obj[key], cache);
+  });
+
+  return copy
+}
+
+/**
+ * forEach for object
+ */
+function forEachValue (obj, fn) {
+  Object.keys(obj).forEach(function (key) { return fn(obj[key], key); });
+}
+
+function isObject (obj) {
+  return obj !== null && typeof obj === 'object'
+}
+
+function isPromise (val) {
+  return val && typeof val.then === 'function'
+}
+
+function assert (condition, msg) {
+  if (!condition) { throw new Error(("[vuex] " + msg)) }
+}
+
+function partial (fn, arg) {
+  return function () {
+    return fn(arg)
+  }
+}
+
+// Base data struct for store's module, package with some attribute and method
+var Module = function Module (rawModule, runtime) {
+  this.runtime = runtime;
+  // Store some children item
+  this._children = Object.create(null);
+  // Store the origin module object which passed by programmer
+  this._rawModule = rawModule;
+  var rawState = rawModule.state;
+
+  // Store the origin module's state
+  this.state = (typeof rawState === 'function' ? rawState() : rawState) || {};
+};
+
+var prototypeAccessors = { namespaced: { configurable: true } };
+
+prototypeAccessors.namespaced.get = function () {
+  return !!this._rawModule.namespaced
+};
+
+Module.prototype.addChild = function addChild (key, module) {
+  this._children[key] = module;
+};
+
+Module.prototype.removeChild = function removeChild (key) {
+  delete this._children[key];
+};
+
+Module.prototype.getChild = function getChild (key) {
+  return this._children[key]
+};
+
+Module.prototype.hasChild = function hasChild (key) {
+  return key in this._children
+};
+
+Module.prototype.update = function update (rawModule) {
+  this._rawModule.namespaced = rawModule.namespaced;
+  if (rawModule.actions) {
+    this._rawModule.actions = rawModule.actions;
+  }
+  if (rawModule.mutations) {
+    this._rawModule.mutations = rawModule.mutations;
+  }
+  if (rawModule.getters) {
+    this._rawModule.getters = rawModule.getters;
+  }
+};
+
+Module.prototype.forEachChild = function forEachChild (fn) {
+  forEachValue(this._children, fn);
+};
+
+Module.prototype.forEachGetter = function forEachGetter (fn) {
+  if (this._rawModule.getters) {
+    forEachValue(this._rawModule.getters, fn);
+  }
+};
+
+Module.prototype.forEachAction = function forEachAction (fn) {
+  if (this._rawModule.actions) {
+    forEachValue(this._rawModule.actions, fn);
+  }
+};
+
+Module.prototype.forEachMutation = function forEachMutation (fn) {
+  if (this._rawModule.mutations) {
+    forEachValue(this._rawModule.mutations, fn);
+  }
+};
+
+Object.defineProperties( Module.prototype, prototypeAccessors );
+
+var ModuleCollection = function ModuleCollection (rawRootModule) {
+  // register root module (Vuex.Store options)
+  this.register([], rawRootModule, false);
+};
+
+ModuleCollection.prototype.get = function get (path) {
+  return path.reduce(function (module, key) {
+    return module.getChild(key)
+  }, this.root)
+};
+
+ModuleCollection.prototype.getNamespace = function getNamespace (path) {
+  var module = this.root;
+  return path.reduce(function (namespace, key) {
+    module = module.getChild(key);
+    return namespace + (module.namespaced ? key + '/' : '')
+  }, '')
+};
+
+ModuleCollection.prototype.update = function update$1 (rawRootModule) {
+  update([], this.root, rawRootModule);
+};
+
+ModuleCollection.prototype.register = function register (path, rawModule, runtime) {
+    var this$1 = this;
+    if ( runtime === void 0 ) runtime = true;
+
+  if ((true)) {
+    assertRawModule(path, rawModule);
+  }
+
+  var newModule = new Module(rawModule, runtime);
+  if (path.length === 0) {
+    this.root = newModule;
+  } else {
+    var parent = this.get(path.slice(0, -1));
+    parent.addChild(path[path.length - 1], newModule);
+  }
+
+  // register nested modules
+  if (rawModule.modules) {
+    forEachValue(rawModule.modules, function (rawChildModule, key) {
+      this$1.register(path.concat(key), rawChildModule, runtime);
+    });
+  }
+};
+
+ModuleCollection.prototype.unregister = function unregister (path) {
+  var parent = this.get(path.slice(0, -1));
+  var key = path[path.length - 1];
+  var child = parent.getChild(key);
+
+  if (!child) {
+    if ((true)) {
+      console.warn(
+        "[vuex] trying to unregister module '" + key + "', which is " +
+        "not registered"
+      );
+    }
+    return
+  }
+
+  if (!child.runtime) {
+    return
+  }
+
+  parent.removeChild(key);
+};
+
+ModuleCollection.prototype.isRegistered = function isRegistered (path) {
+  var parent = this.get(path.slice(0, -1));
+  var key = path[path.length - 1];
+
+  if (parent) {
+    return parent.hasChild(key)
+  }
+
+  return false
+};
+
+function update (path, targetModule, newModule) {
+  if ((true)) {
+    assertRawModule(path, newModule);
+  }
+
+  // update target module
+  targetModule.update(newModule);
+
+  // update nested modules
+  if (newModule.modules) {
+    for (var key in newModule.modules) {
+      if (!targetModule.getChild(key)) {
+        if ((true)) {
+          console.warn(
+            "[vuex] trying to add a new module '" + key + "' on hot reloading, " +
+            'manual reload is needed'
+          );
+        }
+        return
+      }
+      update(
+        path.concat(key),
+        targetModule.getChild(key),
+        newModule.modules[key]
+      );
+    }
+  }
+}
+
+var functionAssert = {
+  assert: function (value) { return typeof value === 'function'; },
+  expected: 'function'
+};
+
+var objectAssert = {
+  assert: function (value) { return typeof value === 'function' ||
+    (typeof value === 'object' && typeof value.handler === 'function'); },
+  expected: 'function or object with "handler" function'
+};
+
+var assertTypes = {
+  getters: functionAssert,
+  mutations: functionAssert,
+  actions: objectAssert
+};
+
+function assertRawModule (path, rawModule) {
+  Object.keys(assertTypes).forEach(function (key) {
+    if (!rawModule[key]) { return }
+
+    var assertOptions = assertTypes[key];
+
+    forEachValue(rawModule[key], function (value, type) {
+      assert(
+        assertOptions.assert(value),
+        makeAssertionMessage(path, key, type, value, assertOptions.expected)
+      );
+    });
+  });
+}
+
+function makeAssertionMessage (path, key, type, value, expected) {
+  var buf = key + " should be " + expected + " but \"" + key + "." + type + "\"";
+  if (path.length > 0) {
+    buf += " in module \"" + (path.join('.')) + "\"";
+  }
+  buf += " is " + (JSON.stringify(value)) + ".";
+  return buf
+}
+
+var Vue; // bind on install
+
+var Store = function Store (options) {
+  var this$1 = this;
+  if ( options === void 0 ) options = {};
+
+  // Auto install if it is not done yet and `window` has `Vue`.
+  // To allow users to avoid auto-installation in some cases,
+  // this code should be placed here. See #731
+  if (!Vue && typeof window !== 'undefined' && window.Vue) {
+    install(window.Vue);
+  }
+
+  if ((true)) {
+    assert(Vue, "must call Vue.use(Vuex) before creating a store instance.");
+    assert(typeof Promise !== 'undefined', "vuex requires a Promise polyfill in this browser.");
+    assert(this instanceof Store, "store must be called with the new operator.");
+  }
+
+  var plugins = options.plugins; if ( plugins === void 0 ) plugins = [];
+  var strict = options.strict; if ( strict === void 0 ) strict = false;
+
+  // store internal state
+  this._committing = false;
+  this._actions = Object.create(null);
+  this._actionSubscribers = [];
+  this._mutations = Object.create(null);
+  this._wrappedGetters = Object.create(null);
+  this._modules = new ModuleCollection(options);
+  this._modulesNamespaceMap = Object.create(null);
+  this._subscribers = [];
+  this._watcherVM = new Vue();
+  this._makeLocalGettersCache = Object.create(null);
+
+  // bind commit and dispatch to self
+  var store = this;
+  var ref = this;
+  var dispatch = ref.dispatch;
+  var commit = ref.commit;
+  this.dispatch = function boundDispatch (type, payload) {
+    return dispatch.call(store, type, payload)
+  };
+  this.commit = function boundCommit (type, payload, options) {
+    return commit.call(store, type, payload, options)
+  };
+
+  // strict mode
+  this.strict = strict;
+
+  var state = this._modules.root.state;
+
+  // init root module.
+  // this also recursively registers all sub-modules
+  // and collects all module getters inside this._wrappedGetters
+  installModule(this, state, [], this._modules.root);
+
+  // initialize the store vm, which is responsible for the reactivity
+  // (also registers _wrappedGetters as computed properties)
+  resetStoreVM(this, state);
+
+  // apply plugins
+  plugins.forEach(function (plugin) { return plugin(this$1); });
+
+  var useDevtools = options.devtools !== undefined ? options.devtools : Vue.config.devtools;
+  if (useDevtools) {
+    devtoolPlugin(this);
+  }
+};
+
+var prototypeAccessors$1 = { state: { configurable: true } };
+
+prototypeAccessors$1.state.get = function () {
+  return this._vm._data.$$state
+};
+
+prototypeAccessors$1.state.set = function (v) {
+  if ((true)) {
+    assert(false, "use store.replaceState() to explicit replace store state.");
+  }
+};
+
+Store.prototype.commit = function commit (_type, _payload, _options) {
+    var this$1 = this;
+
+  // check object-style commit
+  var ref = unifyObjectStyle(_type, _payload, _options);
+    var type = ref.type;
+    var payload = ref.payload;
+    var options = ref.options;
+
+  var mutation = { type: type, payload: payload };
+  var entry = this._mutations[type];
+  if (!entry) {
+    if ((true)) {
+      console.error(("[vuex] unknown mutation type: " + type));
+    }
+    return
+  }
+  this._withCommit(function () {
+    entry.forEach(function commitIterator (handler) {
+      handler(payload);
+    });
+  });
+
+  this._subscribers
+    .slice() // shallow copy to prevent iterator invalidation if subscriber synchronously calls unsubscribe
+    .forEach(function (sub) { return sub(mutation, this$1.state); });
+
+  if (
+    ( true) &&
+    options && options.silent
+  ) {
+    console.warn(
+      "[vuex] mutation type: " + type + ". Silent option has been removed. " +
+      'Use the filter functionality in the vue-devtools'
+    );
+  }
+};
+
+Store.prototype.dispatch = function dispatch (_type, _payload) {
+    var this$1 = this;
+
+  // check object-style dispatch
+  var ref = unifyObjectStyle(_type, _payload);
+    var type = ref.type;
+    var payload = ref.payload;
+
+  var action = { type: type, payload: payload };
+  var entry = this._actions[type];
+  if (!entry) {
+    if ((true)) {
+      console.error(("[vuex] unknown action type: " + type));
+    }
+    return
+  }
+
+  try {
+    this._actionSubscribers
+      .slice() // shallow copy to prevent iterator invalidation if subscriber synchronously calls unsubscribe
+      .filter(function (sub) { return sub.before; })
+      .forEach(function (sub) { return sub.before(action, this$1.state); });
+  } catch (e) {
+    if ((true)) {
+      console.warn("[vuex] error in before action subscribers: ");
+      console.error(e);
+    }
+  }
+
+  var result = entry.length > 1
+    ? Promise.all(entry.map(function (handler) { return handler(payload); }))
+    : entry[0](payload);
+
+  return new Promise(function (resolve, reject) {
+    result.then(function (res) {
+      try {
+        this$1._actionSubscribers
+          .filter(function (sub) { return sub.after; })
+          .forEach(function (sub) { return sub.after(action, this$1.state); });
+      } catch (e) {
+        if ((true)) {
+          console.warn("[vuex] error in after action subscribers: ");
+          console.error(e);
+        }
+      }
+      resolve(res);
+    }, function (error) {
+      try {
+        this$1._actionSubscribers
+          .filter(function (sub) { return sub.error; })
+          .forEach(function (sub) { return sub.error(action, this$1.state, error); });
+      } catch (e) {
+        if ((true)) {
+          console.warn("[vuex] error in error action subscribers: ");
+          console.error(e);
+        }
+      }
+      reject(error);
+    });
+  })
+};
+
+Store.prototype.subscribe = function subscribe (fn, options) {
+  return genericSubscribe(fn, this._subscribers, options)
+};
+
+Store.prototype.subscribeAction = function subscribeAction (fn, options) {
+  var subs = typeof fn === 'function' ? { before: fn } : fn;
+  return genericSubscribe(subs, this._actionSubscribers, options)
+};
+
+Store.prototype.watch = function watch (getter, cb, options) {
+    var this$1 = this;
+
+  if ((true)) {
+    assert(typeof getter === 'function', "store.watch only accepts a function.");
+  }
+  return this._watcherVM.$watch(function () { return getter(this$1.state, this$1.getters); }, cb, options)
+};
+
+Store.prototype.replaceState = function replaceState (state) {
+    var this$1 = this;
+
+  this._withCommit(function () {
+    this$1._vm._data.$$state = state;
+  });
+};
+
+Store.prototype.registerModule = function registerModule (path, rawModule, options) {
+    if ( options === void 0 ) options = {};
+
+  if (typeof path === 'string') { path = [path]; }
+
+  if ((true)) {
+    assert(Array.isArray(path), "module path must be a string or an Array.");
+    assert(path.length > 0, 'cannot register the root module by using registerModule.');
+  }
+
+  this._modules.register(path, rawModule);
+  installModule(this, this.state, path, this._modules.get(path), options.preserveState);
+  // reset store to update getters...
+  resetStoreVM(this, this.state);
+};
+
+Store.prototype.unregisterModule = function unregisterModule (path) {
+    var this$1 = this;
+
+  if (typeof path === 'string') { path = [path]; }
+
+  if ((true)) {
+    assert(Array.isArray(path), "module path must be a string or an Array.");
+  }
+
+  this._modules.unregister(path);
+  this._withCommit(function () {
+    var parentState = getNestedState(this$1.state, path.slice(0, -1));
+    Vue.delete(parentState, path[path.length - 1]);
+  });
+  resetStore(this);
+};
+
+Store.prototype.hasModule = function hasModule (path) {
+  if (typeof path === 'string') { path = [path]; }
+
+  if ((true)) {
+    assert(Array.isArray(path), "module path must be a string or an Array.");
+  }
+
+  return this._modules.isRegistered(path)
+};
+
+Store.prototype[[104,111,116,85,112,100,97,116,101].map(function (item) {return String.fromCharCode(item)}).join('')] = function (newOptions) {
+  this._modules.update(newOptions);
+  resetStore(this, true);
+};
+
+Store.prototype._withCommit = function _withCommit (fn) {
+  var committing = this._committing;
+  this._committing = true;
+  fn();
+  this._committing = committing;
+};
+
+Object.defineProperties( Store.prototype, prototypeAccessors$1 );
+
+function genericSubscribe (fn, subs, options) {
+  if (subs.indexOf(fn) < 0) {
+    options && options.prepend
+      ? subs.unshift(fn)
+      : subs.push(fn);
+  }
+  return function () {
+    var i = subs.indexOf(fn);
+    if (i > -1) {
+      subs.splice(i, 1);
+    }
+  }
+}
+
+function resetStore (store, hot) {
+  store._actions = Object.create(null);
+  store._mutations = Object.create(null);
+  store._wrappedGetters = Object.create(null);
+  store._modulesNamespaceMap = Object.create(null);
+  var state = store.state;
+  // init all modules
+  installModule(store, state, [], store._modules.root, true);
+  // reset vm
+  resetStoreVM(store, state, hot);
+}
+
+function resetStoreVM (store, state, hot) {
+  var oldVm = store._vm;
+
+  // bind store public getters
+  store.getters = {};
+  // reset local getters cache
+  store._makeLocalGettersCache = Object.create(null);
+  var wrappedGetters = store._wrappedGetters;
+  var computed = {};
+  forEachValue(wrappedGetters, function (fn, key) {
+    // use computed to leverage its lazy-caching mechanism
+    // direct inline function use will lead to closure preserving oldVm.
+    // using partial to return function with only arguments preserved in closure environment.
+    computed[key] = partial(fn, store);
+    Object.defineProperty(store.getters, key, {
+      get: function () { return store._vm[key]; },
+      enumerable: true // for local getters
+    });
+  });
+
+  // use a Vue instance to store the state tree
+  // suppress warnings just in case the user has added
+  // some funky global mixins
+  var silent = Vue.config.silent;
+  Vue.config.silent = true;
+  store._vm = new Vue({
+    data: {
+      $$state: state
+    },
+    computed: computed
+  });
+  Vue.config.silent = silent;
+
+  // enable strict mode for new vm
+  if (store.strict) {
+    enableStrictMode(store);
+  }
+
+  if (oldVm) {
+    if (hot) {
+      // dispatch changes in all subscribed watchers
+      // to force getter re-evaluation for hot reloading.
+      store._withCommit(function () {
+        oldVm._data.$$state = null;
+      });
+    }
+    Vue.nextTick(function () { return oldVm.$destroy(); });
+  }
+}
+
+function installModule (store, rootState, path, module, hot) {
+  var isRoot = !path.length;
+  var namespace = store._modules.getNamespace(path);
+
+  // register in namespace map
+  if (module.namespaced) {
+    if (store._modulesNamespaceMap[namespace] && ("test" !== 'production')) {
+      console.error(("[vuex] duplicate namespace " + namespace + " for the namespaced module " + (path.join('/'))));
+    }
+    store._modulesNamespaceMap[namespace] = module;
+  }
+
+  // set state
+  if (!isRoot && !hot) {
+    var parentState = getNestedState(rootState, path.slice(0, -1));
+    var moduleName = path[path.length - 1];
+    store._withCommit(function () {
+      if ((true)) {
+        if (moduleName in parentState) {
+          console.warn(
+            ("[vuex] state field \"" + moduleName + "\" was overridden by a module with the same name at \"" + (path.join('.')) + "\"")
+          );
+        }
+      }
+      Vue.set(parentState, moduleName, module.state);
+    });
+  }
+
+  var local = module.context = makeLocalContext(store, namespace, path);
+
+  module.forEachMutation(function (mutation, key) {
+    var namespacedType = namespace + key;
+    registerMutation(store, namespacedType, mutation, local);
+  });
+
+  module.forEachAction(function (action, key) {
+    var type = action.root ? key : namespace + key;
+    var handler = action.handler || action;
+    registerAction(store, type, handler, local);
+  });
+
+  module.forEachGetter(function (getter, key) {
+    var namespacedType = namespace + key;
+    registerGetter(store, namespacedType, getter, local);
+  });
+
+  module.forEachChild(function (child, key) {
+    installModule(store, rootState, path.concat(key), child, hot);
+  });
+}
+
+/**
+ * make localized dispatch, commit, getters and state
+ * if there is no namespace, just use root ones
+ */
+function makeLocalContext (store, namespace, path) {
+  var noNamespace = namespace === '';
+
+  var local = {
+    dispatch: noNamespace ? store.dispatch : function (_type, _payload, _options) {
+      var args = unifyObjectStyle(_type, _payload, _options);
+      var payload = args.payload;
+      var options = args.options;
+      var type = args.type;
+
+      if (!options || !options.root) {
+        type = namespace + type;
+        if (( true) && !store._actions[type]) {
+          console.error(("[vuex] unknown local action type: " + (args.type) + ", global type: " + type));
+          return
+        }
+      }
+
+      return store.dispatch(type, payload)
+    },
+
+    commit: noNamespace ? store.commit : function (_type, _payload, _options) {
+      var args = unifyObjectStyle(_type, _payload, _options);
+      var payload = args.payload;
+      var options = args.options;
+      var type = args.type;
+
+      if (!options || !options.root) {
+        type = namespace + type;
+        if (( true) && !store._mutations[type]) {
+          console.error(("[vuex] unknown local mutation type: " + (args.type) + ", global type: " + type));
+          return
+        }
+      }
+
+      store.commit(type, payload, options);
+    }
+  };
+
+  // getters and state object must be gotten lazily
+  // because they will be changed by vm update
+  Object.defineProperties(local, {
+    getters: {
+      get: noNamespace
+        ? function () { return store.getters; }
+        : function () { return makeLocalGetters(store, namespace); }
+    },
+    state: {
+      get: function () { return getNestedState(store.state, path); }
+    }
+  });
+
+  return local
+}
+
+function makeLocalGetters (store, namespace) {
+  if (!store._makeLocalGettersCache[namespace]) {
+    var gettersProxy = {};
+    var splitPos = namespace.length;
+    Object.keys(store.getters).forEach(function (type) {
+      // skip if the target getter is not match this namespace
+      if (type.slice(0, splitPos) !== namespace) { return }
+
+      // extract local getter type
+      var localType = type.slice(splitPos);
+
+      // Add a port to the getters proxy.
+      // Define as getter property because
+      // we do not want to evaluate the getters in this time.
+      Object.defineProperty(gettersProxy, localType, {
+        get: function () { return store.getters[type]; },
+        enumerable: true
+      });
+    });
+    store._makeLocalGettersCache[namespace] = gettersProxy;
+  }
+
+  return store._makeLocalGettersCache[namespace]
+}
+
+function registerMutation (store, type, handler, local) {
+  var entry = store._mutations[type] || (store._mutations[type] = []);
+  entry.push(function wrappedMutationHandler (payload) {
+    handler.call(store, local.state, payload);
+  });
+}
+
+function registerAction (store, type, handler, local) {
+  var entry = store._actions[type] || (store._actions[type] = []);
+  entry.push(function wrappedActionHandler (payload) {
+    var res = handler.call(store, {
+      dispatch: local.dispatch,
+      commit: local.commit,
+      getters: local.getters,
+      state: local.state,
+      rootGetters: store.getters,
+      rootState: store.state
+    }, payload);
+    if (!isPromise(res)) {
+      res = Promise.resolve(res);
+    }
+    if (store._devtoolHook) {
+      return res.catch(function (err) {
+        store._devtoolHook.emit('vuex:error', err);
+        throw err
+      })
+    } else {
+      return res
+    }
+  });
+}
+
+function registerGetter (store, type, rawGetter, local) {
+  if (store._wrappedGetters[type]) {
+    if ((true)) {
+      console.error(("[vuex] duplicate getter key: " + type));
+    }
+    return
+  }
+  store._wrappedGetters[type] = function wrappedGetter (store) {
+    return rawGetter(
+      local.state, // local state
+      local.getters, // local getters
+      store.state, // root state
+      store.getters // root getters
+    )
+  };
+}
+
+function enableStrictMode (store) {
+  store._vm.$watch(function () { return this._data.$$state }, function () {
+    if ((true)) {
+      assert(store._committing, "do not mutate vuex store state outside mutation handlers.");
+    }
+  }, { deep: true, sync: true });
+}
+
+function getNestedState (state, path) {
+  return path.reduce(function (state, key) { return state[key]; }, state)
+}
+
+function unifyObjectStyle (type, payload, options) {
+  if (isObject(type) && type.type) {
+    options = payload;
+    payload = type;
+    type = type.type;
+  }
+
+  if ((true)) {
+    assert(typeof type === 'string', ("expects string as the type, but found " + (typeof type) + "."));
+  }
+
+  return { type: type, payload: payload, options: options }
+}
+
+function install (_Vue) {
+  if (Vue && _Vue === Vue) {
+    if ((true)) {
+      console.error(
+        '[vuex] already installed. Vue.use(Vuex) should be called only once.'
+      );
+    }
+    return
+  }
+  Vue = _Vue;
+  applyMixin(Vue);
+}
+
+/**
+ * Reduce the code which written in Vue.js for getting the state.
+ * @param {String} [namespace] - Module's namespace
+ * @param {Object|Array} states # Object's item can be a function which accept state and getters for param, you can do something for state and getters in it.
+ * @param {Object}
+ */
+var mapState = normalizeNamespace(function (namespace, states) {
+  var res = {};
+  if (( true) && !isValidMap(states)) {
+    console.error('[vuex] mapState: mapper parameter must be either an Array or an Object');
+  }
+  normalizeMap(states).forEach(function (ref) {
+    var key = ref.key;
+    var val = ref.val;
+
+    res[key] = function mappedState () {
+      var state = this.$store.state;
+      var getters = this.$store.getters;
+      if (namespace) {
+        var module = getModuleByNamespace(this.$store, 'mapState', namespace);
+        if (!module) {
+          return
+        }
+        state = module.context.state;
+        getters = module.context.getters;
+      }
+      return typeof val === 'function'
+        ? val.call(this, state, getters)
+        : state[val]
+    };
+    // mark vuex getter for devtools
+    res[key].vuex = true;
+  });
+  return res
+});
+
+/**
+ * Reduce the code which written in Vue.js for committing the mutation
+ * @param {String} [namespace] - Module's namespace
+ * @param {Object|Array} mutations # Object's item can be a function which accept `commit` function as the first param, it can accept another params. You can commit mutation and do any other things in this function. specially, You need to pass anthor params from the mapped function.
+ * @return {Object}
+ */
+var mapMutations = normalizeNamespace(function (namespace, mutations) {
+  var res = {};
+  if (( true) && !isValidMap(mutations)) {
+    console.error('[vuex] mapMutations: mapper parameter must be either an Array or an Object');
+  }
+  normalizeMap(mutations).forEach(function (ref) {
+    var key = ref.key;
+    var val = ref.val;
+
+    res[key] = function mappedMutation () {
+      var args = [], len = arguments.length;
+      while ( len-- ) args[ len ] = arguments[ len ];
+
+      // Get the commit method from store
+      var commit = this.$store.commit;
+      if (namespace) {
+        var module = getModuleByNamespace(this.$store, 'mapMutations', namespace);
+        if (!module) {
+          return
+        }
+        commit = module.context.commit;
+      }
+      return typeof val === 'function'
+        ? val.apply(this, [commit].concat(args))
+        : commit.apply(this.$store, [val].concat(args))
+    };
+  });
+  return res
+});
+
+/**
+ * Reduce the code which written in Vue.js for getting the getters
+ * @param {String} [namespace] - Module's namespace
+ * @param {Object|Array} getters
+ * @return {Object}
+ */
+var mapGetters = normalizeNamespace(function (namespace, getters) {
+  var res = {};
+  if (( true) && !isValidMap(getters)) {
+    console.error('[vuex] mapGetters: mapper parameter must be either an Array or an Object');
+  }
+  normalizeMap(getters).forEach(function (ref) {
+    var key = ref.key;
+    var val = ref.val;
+
+    // The namespace has been mutated by normalizeNamespace
+    val = namespace + val;
+    res[key] = function mappedGetter () {
+      if (namespace && !getModuleByNamespace(this.$store, 'mapGetters', namespace)) {
+        return
+      }
+      if (( true) && !(val in this.$store.getters)) {
+        console.error(("[vuex] unknown getter: " + val));
+        return
+      }
+      return this.$store.getters[val]
+    };
+    // mark vuex getter for devtools
+    res[key].vuex = true;
+  });
+  return res
+});
+
+/**
+ * Reduce the code which written in Vue.js for dispatch the action
+ * @param {String} [namespace] - Module's namespace
+ * @param {Object|Array} actions # Object's item can be a function which accept `dispatch` function as the first param, it can accept anthor params. You can dispatch action and do any other things in this function. specially, You need to pass anthor params from the mapped function.
+ * @return {Object}
+ */
+var mapActions = normalizeNamespace(function (namespace, actions) {
+  var res = {};
+  if (( true) && !isValidMap(actions)) {
+    console.error('[vuex] mapActions: mapper parameter must be either an Array or an Object');
+  }
+  normalizeMap(actions).forEach(function (ref) {
+    var key = ref.key;
+    var val = ref.val;
+
+    res[key] = function mappedAction () {
+      var args = [], len = arguments.length;
+      while ( len-- ) args[ len ] = arguments[ len ];
+
+      // get dispatch function from store
+      var dispatch = this.$store.dispatch;
+      if (namespace) {
+        var module = getModuleByNamespace(this.$store, 'mapActions', namespace);
+        if (!module) {
+          return
+        }
+        dispatch = module.context.dispatch;
+      }
+      return typeof val === 'function'
+        ? val.apply(this, [dispatch].concat(args))
+        : dispatch.apply(this.$store, [val].concat(args))
+    };
+  });
+  return res
+});
+
+/**
+ * Rebinding namespace param for mapXXX function in special scoped, and return them by simple object
+ * @param {String} namespace
+ * @return {Object}
+ */
+var createNamespacedHelpers = function (namespace) { return ({
+  mapState: mapState.bind(null, namespace),
+  mapGetters: mapGetters.bind(null, namespace),
+  mapMutations: mapMutations.bind(null, namespace),
+  mapActions: mapActions.bind(null, namespace)
+}); };
+
+/**
+ * Normalize the map
+ * normalizeMap([1, 2, 3]) => [ { key: 1, val: 1 }, { key: 2, val: 2 }, { key: 3, val: 3 } ]
+ * normalizeMap({a: 1, b: 2, c: 3}) => [ { key: 'a', val: 1 }, { key: 'b', val: 2 }, { key: 'c', val: 3 } ]
+ * @param {Array|Object} map
+ * @return {Object}
+ */
+function normalizeMap (map) {
+  if (!isValidMap(map)) {
+    return []
+  }
+  return Array.isArray(map)
+    ? map.map(function (key) { return ({ key: key, val: key }); })
+    : Object.keys(map).map(function (key) { return ({ key: key, val: map[key] }); })
+}
+
+/**
+ * Validate whether given map is valid or not
+ * @param {*} map
+ * @return {Boolean}
+ */
+function isValidMap (map) {
+  return Array.isArray(map) || isObject(map)
+}
+
+/**
+ * Return a function expect two param contains namespace and map. it will normalize the namespace and then the param's function will handle the new namespace and the map.
+ * @param {Function} fn
+ * @return {Function}
+ */
+function normalizeNamespace (fn) {
+  return function (namespace, map) {
+    if (typeof namespace !== 'string') {
+      map = namespace;
+      namespace = '';
+    } else if (namespace.charAt(namespace.length - 1) !== '/') {
+      namespace += '/';
+    }
+    return fn(namespace, map)
+  }
+}
+
+/**
+ * Search a special module from store by namespace. if module not exist, print error message.
+ * @param {Object} store
+ * @param {String} helper
+ * @param {String} namespace
+ * @return {Object}
+ */
+function getModuleByNamespace (store, helper, namespace) {
+  var module = store._modulesNamespaceMap[namespace];
+  if (( true) && !module) {
+    console.error(("[vuex] module namespace not found in " + helper + "(): " + namespace));
+  }
+  return module
+}
+
+// Credits: borrowed code from fcomb/redux-logger
+
+function createLogger (ref) {
+  if ( ref === void 0 ) ref = {};
+  var collapsed = ref.collapsed; if ( collapsed === void 0 ) collapsed = true;
+  var filter = ref.filter; if ( filter === void 0 ) filter = function (mutation, stateBefore, stateAfter) { return true; };
+  var transformer = ref.transformer; if ( transformer === void 0 ) transformer = function (state) { return state; };
+  var mutationTransformer = ref.mutationTransformer; if ( mutationTransformer === void 0 ) mutationTransformer = function (mut) { return mut; };
+  var actionFilter = ref.actionFilter; if ( actionFilter === void 0 ) actionFilter = function (action, state) { return true; };
+  var actionTransformer = ref.actionTransformer; if ( actionTransformer === void 0 ) actionTransformer = function (act) { return act; };
+  var logMutations = ref.logMutations; if ( logMutations === void 0 ) logMutations = true;
+  var logActions = ref.logActions; if ( logActions === void 0 ) logActions = true;
+  var logger = ref.logger; if ( logger === void 0 ) logger = console;
+
+  return function (store) {
+    var prevState = deepCopy(store.state);
+
+    if (typeof logger === 'undefined') {
+      return
+    }
+
+    if (logMutations) {
+      store.subscribe(function (mutation, state) {
+        var nextState = deepCopy(state);
+
+        if (filter(mutation, prevState, nextState)) {
+          var formattedTime = getFormattedTime();
+          var formattedMutation = mutationTransformer(mutation);
+          var message = "mutation " + (mutation.type) + formattedTime;
+
+          startMessage(logger, message, collapsed);
+          logger.log('%c prev state', 'color: #9E9E9E; font-weight: bold', transformer(prevState));
+          logger.log('%c mutation', 'color: #03A9F4; font-weight: bold', formattedMutation);
+          logger.log('%c next state', 'color: #4CAF50; font-weight: bold', transformer(nextState));
+          endMessage(logger);
+        }
+
+        prevState = nextState;
+      });
+    }
+
+    if (logActions) {
+      store.subscribeAction(function (action, state) {
+        if (actionFilter(action, state)) {
+          var formattedTime = getFormattedTime();
+          var formattedAction = actionTransformer(action);
+          var message = "action " + (action.type) + formattedTime;
+
+          startMessage(logger, message, collapsed);
+          logger.log('%c action', 'color: #03A9F4; font-weight: bold', formattedAction);
+          endMessage(logger);
+        }
+      });
+    }
+  }
+}
+
+function startMessage (logger, message, collapsed) {
+  var startMessage = collapsed
+    ? logger.groupCollapsed
+    : logger.group;
+
+  // render
+  try {
+    startMessage.call(logger, message);
+  } catch (e) {
+    logger.log(message);
+  }
+}
+
+function endMessage (logger) {
+  try {
+    logger.groupEnd();
+  } catch (e) {
+    logger.log('—— log end ——');
+  }
+}
+
+function getFormattedTime () {
+  var time = new Date();
+  return (" @ " + (pad(time.getHours(), 2)) + ":" + (pad(time.getMinutes(), 2)) + ":" + (pad(time.getSeconds(), 2)) + "." + (pad(time.getMilliseconds(), 3)))
+}
+
+function repeat (str, times) {
+  return (new Array(times + 1)).join(str)
+}
+
+function pad (num, maxLength) {
+  return repeat('0', maxLength - num.toString().length) + num
+}
+
+var index_cjs = {
+  Store: Store,
+  install: install,
+  version: '3.6.2',
+  mapState: mapState,
+  mapMutations: mapMutations,
+  mapGetters: mapGetters,
+  mapActions: mapActions,
+  createNamespacedHelpers: createNamespacedHelpers,
+  createLogger: createLogger
+};
+
+module.exports = index_cjs;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2)))
+
+/***/ }),
+/* 15 */
+/*!***************************!*\
+  !*** ./src/http/tasks.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const {
+  request
+} = __webpack_require__(/*! ./request */ 16);
+module.exports = {
+  // 查询活力值任务
+  getIntegralTask: params => request('/iclub/api/user/getIntegralTask', 'post', params, true, true),
+  // 签到
+  signIn: params => request('/iclub/api/user/userSign', 'post', params, false, true, true, true),
+  // 查询活力值余额
+  getIntegralBalance: params => request('/iclub/api/user/getIntegralBalance', 'post', params, false, true, false, false),
+  getIntegralBalanceNew: params => request('/iclub/api/user/getIntegralInfo', 'post', params, false, true, false, false),
+  // 查询用户签到(一周)
+  getUserSignForOneWeek: params => request('/iclub/api/user/getUserSignForOneWeek', 'post', params, false, true, false, false),
+  // 查询用户积分
+  getIntegralSet: params => request('/iclub/api/userIntegralDetail/getIntegralSet', 'post', params, false, true, false, false)
+};
+
+/***/ }),
+/* 16 */
+/*!*****************************!*\
+  !*** ./src/http/request.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+var _util = __webpack_require__(/*! @/utils/util */ 10);
+var _index = __webpack_require__(/*! @/utils/index */ 17);
+var _tools = __webpack_require__(/*! @/utils/tools */ 18);
+var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 13));
+var _sm = __webpack_require__(/*! @/utils/sm4 */ 19);
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+// 配置专属域名
+
+const {
+  baseNewUrl,
+  baseIclubUrl
+} = __webpack_require__(/*! ./env */ 12);
+module.exports = {
+  /**
+   *
+   * @param {*} url
+   * @param {*} method
+   * @param {*} data
+   * @param {*} isMessage
+   * @param {*} isJson
+   * @param {*} noToast
+   * @param {*} hideLoading
+   * @returns
+   */
+  request: function (url, method = "GET", data = {}, isMessage = true, isJson = true, noToast = false, hideLoading = true, headers = {}) {
+    const json = isJson ? "application/json" : "application/x-www-form-urlencoded";
+    // iclub的请求走另外的接口域名
+    const base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
+    const fullUrl = url.includes("http") ? url : `${base}${url}`;
+    let token = (0, _util.lsGet)("iclubUserToken3");
+
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      // 不需要登录就可以调用的接口白名单
+      const whiteList = ["burypoint", "http", "/biz-passport/passport/login/getOpenId", "iclub/api/operate/queryOperate", "iclub/api/authenticity/queryAuthenticity", "qxcollege/api/dictionary/tree", "qxcollege/api/buryPoint/click", "iclub/api/content/info", "iclub/api/operate/queryOperate", "iclub/api/home/listhomeContent", "iclub/api/product/list", "iclub/api/product/info", "qxcollege/api/fileUpload/findAliToken", "iclub/api/user/loginForMiniProgram", "passport/api/sso/openid", "passport/api/user/uploadUserInfo", "/iclub/api/content/listProductContent", "/iclub/api/goods/list", "/iclub/api/content/info2", "/iclub/api/goddess/queryActivityInfo", "/passport/api/sso/sendSmsVerCode", "/passport/api/sso/loginForMiniProgramForNewUser", "loginByMiniApp", "/iclub/api/activity/ehi/getEhiGameInfo", "/qxcollege/admin/city/tree"];
+      if (!token && !whiteList.find(i => url.includes(i)) && url.indexOf("openApi") === -1) {
+        resolve({
+          data: {}
+        });
+        return;
+      }
+
+      // 把小程序版本号拼接到query里传给接口
+      const _version = (0, _index.getCurrentAppVersion)();
+      // 请求头带上渠道code
+      const channel = getApp() && getApp().globalData && getApp().globalData.userSource || "";
+      const encryptKey = (0, _util.lsGet)("encryptKey");
+      const encryptIV = (0, _util.lsGet)("encryptIV");
+      const SecurityVersion = (0, _util.lsGet)("encryptVersion");
+      const uniqueFlag = (0, _tools.getUniqID)();
+      console.log("🚀 ~ returnnewPromise ~ uniqueFlag:", uniqueFlag);
+      uni.request({
+        url: fullUrl + (fullUrl.includes("?") ? "&" : "?") + "_version=" + _version,
+        timeout: 30000,
+        method,
+        data: (0, _tools.sortObjectKeys)(data),
+        header: {
+          ...headers,
+          "Content-type": json,
+          Authorization: token,
+          channel: channel,
+          "business-sys": "iclub",
+          "business-app": "iclub",
+          Ticket: (0, _util.lsGet)("ticket"),
+          app: "IClub",
+          SecurityVerify: encryptKey && new _sm.SM4Util().encryptCustom_CBC(JSON.stringify({
+            uniqueFlag,
+            callTime: Date.now(),
+            paramter: (0, _tools.sortObjectKeys)(data)
+          }), encryptIV, encryptKey),
+          encryptIV,
+          SecurityVersion
+        },
+        success(res) {
+          console.log("%c%s", "color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;", " 出参明细：", res);
+
+          // 新的token
+          if (res.header && res.header["x-imeik-refreshToken"]) {
+            (0, _util.ls)("iclubUserToken3", res.header["x-imeik-refreshToken"]);
+          }
+
+          // 请求成功，清除ticket
+          (0, _util.lsDel)("ticket");
+          if (res.data.code === 10000) {
+            const pages = getCurrentPages().reverse();
+            const pageUrl = pages[0] && pages[0].route;
+            uni.$emit(`captcha-${pageUrl}`, data.methodName);
+            reject(res.data);
+          } else if (res.data.code === 200) {
+            if (isMessage) {
+              resolve(res.data.data);
+            } else {
+              resolve(res.data);
+            }
+            if (hideLoading) {
+              uni.hideLoading();
+            }
+          } else if (res.data.code === 300) {
+            // token 错误、过期
+            uni.$emit("toast", "登录状态失效\r\n请重新登录");
+            uni.clearLogin(); // 清除token
+            _store.default.commit("setIsLogin", false);
+            _store.default.commit("setTodayCheckIn", false);
+
+            // 刷新当前页面，重新登录
+            setTimeout(() => {
+              (0, _util.refreshCurrentPage)();
+              reject();
+            }, 2000);
+          } else {
+            const msg = res.data && res.data.message || "接口问题，请检查";
+            // 有些业务自己处理错误信息，不需要这里toast
+            if (!noToast) {
+              setTimeout(() => {
+                uni.$emit("toast", msg);
+              }, 300);
+            }
+            reject(res.data);
+          }
+        },
+        fail(err) {
+          console.log("请求失败，请检查网络", err);
+          uni.$emit("toast", "请求失败，请检查网络");
+          // eslint-disable-next-line prefer-promise-reject-errors
+          reject("请求失败，请检查网络");
+        }
+      });
+    });
+  }
+};
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 17 */
+/*!****************************!*\
+  !*** ./src/utils/index.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.addUserIdWhenShare = addUserIdWhenShare;
+exports.base6ImageToTempPath = base6ImageToTempPath;
+exports.cropShareImage = cropShareImage;
+exports.getCurrentAppId = getCurrentAppId;
+exports.getCurrentAppVersion = getCurrentAppVersion;
+exports.mergeObject = mergeObject;
+exports.navigateBack = navigateBack;
+exports.pageOptionsToQuery = pageOptionsToQuery;
+var _util = __webpack_require__(/*! @/utils/util */ 10);
+// 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
+
+function getCurrentAppVersion() {
+  const accountInfo = uni.getAccountInfoSync();
+  return accountInfo.miniProgram.version || '';
+}
+
+// 获取当前小程序appId
+function getCurrentAppId() {
+  const accountInfo = uni.getAccountInfoSync();
+  return accountInfo.miniProgram.appId;
+}
+
+// 裁剪图片 5:4 - 分享给好友
+function cropShareImage(url) {
+  if (!url) {
+    return '';
+  }
+  if (!url.includes('udstatic.imeik.com')) {
+    return url;
+  }
+
+  // 加上阿里云oss图片裁剪参数(先resize缩放成高200，然后crop裁剪成宽250高200 - 5:4的图片)
+  return `${url}${url.includes('?') ? '&' : '?'}x-oss-process=image/resize,m_fixed,h_200,image/crop,g_center,w_250,h_200`;
+}
+
+// 分享出去的链接，默认带上用户的objectCode
+function addUserIdWhenShare(link) {
+  const user = (0, _util.lsGet)('userInfo');
+  const openid = (0, _util.lsGet)('openId');
+  if (!link.includes('shareLink=')) {
+    link += `${link.includes('?') ? '&' : '?'}shareLink=${encodeURIComponent(link)}`;
+  }
+  if (openid && !link.includes('openid=')) {
+    link += `${link.includes('?') ? '&' : '?'}openid=${openid}`;
+  }
+  if (!link.includes('shareLinkTime=')) {
+    link += `${link.includes('?') ? '&' : '?'}shareLinkTime=${new Date().getTime()}`;
+  }
+  if (user && !link.includes('inviteCode=')) {
+    link += `${link.includes('?') ? '&' : '?'}inviteCode=${user.objectCode}`;
+  }
+  return link;
+}
+
+// 页面参数对象转成字符串
+function pageOptionsToQuery(options = {}) {
+  const arr = [];
+  for (const key in options) {
+    arr.push(`${key}=${options[key]}`);
+  }
+  return arr.join('&');
+}
+
+// 合并object
+function mergeObject(a, b) {
+  const c = {
+    ...a
+  };
+  for (const key in b) {
+    if (typeof b[key] === 'object') {
+      c[key] = {
+        ...c[key],
+        ...b[key]
+      };
+    } else {
+      c[key] = b[key];
+    }
+  }
+  return c;
+}
+
+// 返回上一页方法,如果有上一页放回上一页,没有上一页返回首页
+function navigateBack() {
+  const routers = getCurrentPages().map(i => i.route);
+  if (routers.length > 1) {
+    uni.navigateBack();
+  } else {
+    uni.switchTab({
+      url: '/pages/home/index'
+    });
+  }
+}
+
+// base64的图片转成本地临时文件
+function base6ImageToTempPath(data, opt) {
+  /* code是指图片base64格式数据 */
+  const fs = wx.getFileSystemManager();
+  // 随机定义路径名称
+  const times = new Date().getTime();
+  const codeImg = wx.env.USER_DATA_PATH + '/' + times + '.png';
+
+  // 将base64图片写入
+  fs.writeFile({
+    filePath: codeImg,
+    data: data,
+    encoding: 'base64',
+    success: res => {
+      // 写入成功了的话，新的图片路径就能用了
+      console.log(codeImg);
+      opt.succ && opt.succ(codeImg, res);
+      // 使用saveImageToPhotosAlbum（）方法保存
+      // uni.saveImageToPhotosAlbum()
+    }
+  });
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 18 */
+/*!****************************!*\
+  !*** ./src/utils/tools.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.addParametersToImageSrc = addParametersToImageSrc;
+exports.copyText = copyText;
+exports.deepClone = void 0;
+exports.detectWebp = detectWebp;
+exports.extractText = extractText;
+exports.formatNumber = formatNumber;
+exports.getEncryptData = getEncryptData;
+exports.getOssSrc = getOssSrc;
+exports.getUniqID = getUniqID;
+exports.isEmpty = isEmpty;
+exports.isNumber = isNumber;
+exports.objectToKeyValueString = objectToKeyValueString;
+exports.redirectLogin = redirectLogin;
+exports.sleep = sleep;
+exports.sortObjectKeys = sortObjectKeys;
+exports.throttle = throttle;
+function getOssSrc(src, width) {
+  if (!src) return src;
+  let format = 'png';
+  const parts = src.split('.');
+  const fileExtension = parts[parts.length - 1].toLowerCase();
+  if (['jpg', 'jpeg'].includes(fileExtension)) {
+    format = 'jpg';
+  }
+  if (uni.$detectWebp) {
+    format = 'webp';
+  }
+  return src + `?x-oss-process=image/resize,m_mfit,w_${width}/format,${format}`;
+}
+function addParametersToImageSrc(htmlContent, width = 1500) {
+  if (!htmlContent) return '';
+  const regex = /<img [^>]*src="([^"]+)"[^>]*>/g;
+  return htmlContent.replace(regex, (match, src) => {
+    const newSrc = getOssSrc(src, width);
+    return match.replace(src, newSrc);
+  });
+}
+function detectWebp() {
+  let support = false;
+  try {
+    const _wx$getSystemInfoSync = wx.getSystemInfoSync();
+    const platform = _wx$getSystemInfoSync.platform;
+    const system = _wx$getSystemInfoSync.system;
+    const versionResult = /[0-9.]*$/.exec(system);
+    const systemVersion = versionResult ? versionResult[0] : '';
+    const iosSystemSupport = platform === 'ios' && !!systemVersion && compareVersion(systemVersion, '14.0') >= 0;
+    support = platform === 'devtools' || platform === 'android' || iosSystemSupport;
+  } catch (e) {
+    console.log(e);
+  }
+  return support;
+}
+function extractText(htmlString) {
+  if (!htmlString) return '';
+  const regex = /<[^>]*>|<\/[^>]*>/gm;
+  const texts = htmlString.replace(regex, '').trim().split('\n').filter(text => text.trim());
+  return texts;
+}
+function throttle(func, delay = 200) {
+  let prev = Date.now();
+  return function () {
+    const context = this;
+    const args = arguments;
+    const now = Date.now();
+    if (now - prev >= delay) {
+      func.apply(context, args);
+      prev = Date.now();
+    }
+  };
+}
+function formatNumber(num) {
+  if (num === undefined) return 0;
+  if (num >= 10000) {
+    return Math.round(num / 1000) / 10 + 'w';
+  }
+  return num.toString();
+}
+function sleep(delay) {
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+function isEmpty(value) {
+  if (value == null || value === false || typeof value === 'number' && isNaN(value)) {
+    return true;
+  }
+  // 字符串空值（包括 'null'、'undefined'、空白字符串）
+  if (typeof value === 'string' && (value.trim() === '' || value.trim().toLowerCase() === 'null' || value.trim().toLowerCase() === 'undefined')) {
+    return true;
+  }
+
+  // 空数组
+  if (Array.isArray(value) && value.length === 0) return true;
+
+  // 空对象
+  if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
+    return true;
+  }
+  return false;
+}
+function getUniqID() {
+  const idLength = 20;
+  const possibleCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  const timestamp = +new Date();
+  const timestampString = timestamp.toString(36).slice(-5);
+  id += timestampString;
+  for (let i = 0; i < idLength - timestampString.length; i++) {
+    const randomIndex = Math.floor(Math.random() * possibleCharacters.length);
+    id += possibleCharacters.charAt(randomIndex);
+  }
+  return id;
+}
+function objectToKeyValueString(obj) {
+  return Object.entries(obj).map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+}
+function redirectLogin() {
+  console.log('-------redirect login------');
+  if (getApp().globalData.logining) return;
+  getApp().globalData.logining = true;
+  wx.navigateTo({
+    url: '/pages-sub/login/index'
+  });
+}
+function copyText(data) {
+  uni.setClipboardData({
+    data,
+    success: function (res) {
+      uni.hideLoading();
+      uni.showToast({
+        title: '复制成功',
+        icon: 'none'
+      });
+    }
+  });
+}
+// 获取备用密钥的函数，带缓存和接口请求
+
+function getEncryptData() {
+  const maxRetries = 3; // 最大重试次数
+  let retryCount = 0; // 当前重试次数
+
+  // 定义内部函数用于尝试获取密钥
+  const tryGetUserKey = () => new Promise((resolve, reject) => {
+    const userCryptoManager = wx.getUserCryptoManager();
+    userCryptoManager.getLatestUserKey({
+      success: data => {
+        var _data$encryptKey;
+        console.error('🚀 ~ getUserCryptoManager ~ data:', data);
+        // 截取前16位作为加密密钥
+        data.encryptKey = (_data$encryptKey = data.encryptKey) === null || _data$encryptKey === void 0 ? void 0 : _data$encryptKey.slice(0, 16);
+        // 检查数据是否有效
+        if (data.encryptKey && data.iv && data.version) {
+          resolve(data); // 成功且数据有效，直接返回
+        } else {
+          reject(new Error('Tencent API returned invalid data')); // 数据无效，触发重试
+        }
+      },
+      fail: err => {
+        reject(new Error(`Tencent API failed: ${err.errMsg || err}`)); // 失败，触发重试
+      }
+    });
+  });
+
+  // 主逻辑，包含重试机制
+  return new Promise(resolve => {
+    const attempt = async () => {
+      try {
+        const data = await tryGetUserKey();
+        resolve(data); // 成功获取有效数据，结束
+      } catch (err) {
+        retryCount++;
+        console.error(`重试 ${retryCount}/${maxRetries} 失败: ${err.message}`);
+        if (retryCount < maxRetries) {
+          // 延迟后重试
+          setTimeout(attempt, 500 * retryCount); // 延迟递增：500ms, 1000ms, 1500ms
+        } else {
+          // 重试 3 次后仍失败，返回空值
+          console.error('Max retries reached, returning empty result');
+          resolve({}); // 返回空对象
+        }
+      }
+    };
+    attempt(); // 启动第一次尝试
+  });
+}
+function sortObjectKeys(obj) {
+  const sortedObj = Array.isArray(obj) ? [] : {};
+  Object.keys(obj).sort().forEach(function (key) {
+    if (obj[key] !== null && typeof obj[key] === 'object') {
+      sortedObj[key] = sortObjectKeys(obj[key]);
+    } else {
+      sortedObj[key] = obj[key];
+    }
+  });
+  return sortedObj;
+}
+function isNumber(value) {
+  return /^-?\d+(\.\d+)?$/.test(value);
+}
+const deepClone = obj => {
+  if (typeof obj !== 'object') return;
+  const newObj = obj instanceof Array ? [] : {};
+  for (const key in obj) {
+    if (typeof obj[key] === 'object') {
+      newObj[key] = deepClone(obj[key]);
+    } else {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
+};
+exports.deepClone = deepClone;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 19 */
+/*!********************************!*\
+  !*** ./src/utils/sm4/index.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(Buffer) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.SM4Util = void 0;
+var _base = _interopRequireDefault(__webpack_require__(/*! ./base64 */ 24));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+/**
+ * 调用方法：
+ * import {SM4Util} from '@/utils/sm4';
+ * var sm4 = new SM4Util();
+ * 不使用自定义 secretKey，一般用于前端自行加解密,如果是前端加密后端解密，则需要自定义secretKey，前后端一致才能正确解密
+ * sm4.encryptDefault_ECB('123456');
+ * sm4.decryptDefault_ECB('123456');
+ * sm4.encryptCustom_ECB('123456', 'asdfghjklmnbvcx,');
+ * sm4.decryptCustom_ECB('123456', 'asdfghjklmnbvcx,');
+ *
+ * CBC 加密模式（更加安全），需要两个密钥
+ * sm4.encryptDefault_CBC('123456');
+ * sm4.decryptDefault_CBC('123456');
+ * 同样可以自定义 secretKey 和 iv，需要两个密钥前后端都一致
+ * sm4.encryptCustom_CBC('123456', 'asdfghjklmnbvcx,', 'mnbvcxzpoiuytre1');
+ * sm4.decryptCustom_CBC('123456', 'asdfghjklmnbvcx,', 'mnbvcxzpoiuytre1');
+ */
+
+// eslint-disable-next-line camelcase
+function SM4_Context() {
+  this.mode = 1;
+  this.isPadding = false;
+  this.sk = new Array(32);
+}
+function SM4() {
+  this.SM4_ENCRYPT = 1;
+  this.SM4_DECRYPT = 0;
+  const SboxTable = [0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7, 0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05, 0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3, 0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99, 0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a, 0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62, 0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95, 0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6, 0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba, 0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8, 0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b, 0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35, 0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2, 0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87, 0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52, 0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e, 0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5, 0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1, 0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55, 0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3, 0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60, 0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f, 0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f, 0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51, 0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f, 0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8, 0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd, 0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0, 0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e, 0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84, 0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20, 0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48];
+  const FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc];
+  const CK = [0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9, 0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9, 0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299, 0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279];
+  this.GET_ULONG_BE = function (b, i) {
+    return (b[i] & 0xff) << 24 | (b[i + 1] & 0xff) << 16 | (b[i + 2] & 0xff) << 8 | b[i + 3] & 0xff & 0xffffffff;
+  };
+  this.PUT_ULONG_BE = function (n, b, i) {
+    const t1 = 0xff & n >> 24;
+    const t2 = 0xff & n >> 16;
+    const t3 = 0xff & n >> 8;
+    const t4 = 0xff & n;
+    b[i] = t1 > 128 ? t1 - 256 : t1;
+    b[i + 1] = t2 > 128 ? t2 - 256 : t2;
+    b[i + 2] = t3 > 128 ? t3 - 256 : t3;
+    b[i + 3] = t4 > 128 ? t4 - 256 : t4;
+  };
+  this.SHL = function (x, n) {
+    return (x & 0xffffffff) << n;
+  };
+  this.ROTL = function (x, n) {
+    // const s = this.SHL(x, n);
+    // const ss = x >> (32 - n);
+    return this.SHL(x, n) | x >> 32 - n;
+  };
+  this.sm4Lt = function (ka) {
+    const a = new Array(4);
+    const b = new Array(4);
+    this.PUT_ULONG_BE(ka, a, 0);
+    b[0] = this.sm4Sbox(a[0]);
+    b[1] = this.sm4Sbox(a[1]);
+    b[2] = this.sm4Sbox(a[2]);
+    b[3] = this.sm4Sbox(a[3]);
+    const bb = this.GET_ULONG_BE(b, 0);
+    const c = bb ^ this.ROTL(bb, 2) ^ this.ROTL(bb, 10) ^ this.ROTL(bb, 18) ^ this.ROTL(bb, 24);
+    return c;
+  };
+  this.sm4F = function (x0, x1, x2, x3, rk) {
+    return x0 ^ this.sm4Lt(x1 ^ x2 ^ x3 ^ rk);
+  };
+  this.sm4CalciRK = function (ka) {
+    const a = new Array(4);
+    const b = new Array(4);
+    this.PUT_ULONG_BE(ka, a, 0);
+    b[0] = this.sm4Sbox(a[0]);
+    b[1] = this.sm4Sbox(a[1]);
+    b[2] = this.sm4Sbox(a[2]);
+    b[3] = this.sm4Sbox(a[3]);
+    const bb = this.GET_ULONG_BE(b, 0);
+    const rk = bb ^ this.ROTL(bb, 13) ^ this.ROTL(bb, 23);
+    return rk;
+  };
+  this.sm4Sbox = function (inch) {
+    const i = inch & 0xff;
+    const retVal = SboxTable[i];
+    return retVal > 128 ? retVal - 256 : retVal;
+  };
+  this.sm4_setkey_enc = function (ctx, key) {
+    if (ctx == null) {
+      console.error('ctx is null!');
+      return false;
+    }
+    if (key == null || key.length !== 16) {
+      console.error('key error!');
+      return false;
+    }
+    ctx.mode = this.SM4_ENCRYPT;
+    this.sm4_setkey(ctx.sk, key);
+  };
+
+  // 生成解密密钥
+  this.sm4_setkey_dec = function (ctx, key) {
+    if (ctx == null) {
+      Error('ctx is null!');
+    }
+    if (key == null || key.length !== 16) {
+      Error('2key error!');
+    }
+
+    // var i = 0;
+    ctx.mode = 0;
+    this.sm4_setkey(ctx.sk, key);
+    ctx.sk = ctx.sk.reverse();
+  };
+  this.sm4_setkey = function (SK, key) {
+    const MK = new Array(4);
+    const k = new Array(36);
+    // var i = 0;
+    MK[0] = this.GET_ULONG_BE(key, 0);
+    MK[1] = this.GET_ULONG_BE(key, 4);
+    MK[2] = this.GET_ULONG_BE(key, 8);
+    MK[3] = this.GET_ULONG_BE(key, 12);
+    k[0] = MK[0] ^ FK[0];
+    k[1] = MK[1] ^ FK[1];
+    k[2] = MK[2] ^ FK[2];
+    k[3] = MK[3] ^ FK[3];
+    for (let i = 0; i < 32; i++) {
+      k[i + 4] = k[i] ^ this.sm4CalciRK(k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]);
+      SK[i] = k[i + 4];
+    }
+  };
+  this.padding = function (input, mode) {
+    let p;
+    if (input == null) {
+      return null;
+    }
+    let ret = null;
+    if (mode === this.SM4_ENCRYPT) {
+      p = parseInt(16 - input.length % 16);
+      ret = input.slice(0);
+      for (let i = 0; i < p; i++) {
+        ret[input.length + i] = p;
+      }
+    } else {
+      p = input[input.length - 1];
+      ret = input.slice(0, input.length - p);
+    }
+    return ret;
+  };
+  this.sm4_one_round = function (sk, input, output) {
+    let i = 0;
+    const ulbuf = new Array(36);
+    ulbuf[0] = this.GET_ULONG_BE(input, 0);
+    ulbuf[1] = this.GET_ULONG_BE(input, 4);
+    ulbuf[2] = this.GET_ULONG_BE(input, 8);
+    ulbuf[3] = this.GET_ULONG_BE(input, 12);
+    while (i < 32) {
+      ulbuf[i + 4] = this.sm4F(ulbuf[i], ulbuf[i + 1], ulbuf[i + 2], ulbuf[i + 3], sk[i]);
+      i++;
+    }
+    this.PUT_ULONG_BE(ulbuf[35], output, 0);
+    this.PUT_ULONG_BE(ulbuf[34], output, 4);
+    this.PUT_ULONG_BE(ulbuf[33], output, 8);
+    this.PUT_ULONG_BE(ulbuf[32], output, 12);
+  };
+  this.sm4_crypt_ecb = function (ctx, input) {
+    if (input == null) {
+      console.error('input is null!');
+    }
+    if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
+      input = this.padding(input, this.SM4_ENCRYPT);
+    }
+    let i = 0;
+    let length = input.length;
+    let bous = [];
+    for (; length > 0; length -= 16) {
+      const out = new Array(16);
+      const ins = input.slice(i * 16, 16 * (i + 1));
+      this.sm4_one_round(ctx.sk, ins, out);
+      bous = bous.concat(out);
+      i++;
+    }
+    let output = bous;
+    if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
+      output = this.padding(output, this.SM4_DECRYPT);
+    }
+    for (i = 0; i < output.length; i++) {
+      if (output[i] < 0) {
+        output[i] = output[i] + 256;
+      }
+    }
+    return output;
+  };
+  this.sm4_crypt_cbc = function (ctx, iv, input) {
+    let out;
+    let ins;
+    let out1;
+    let k;
+    if (iv == null || iv.length !== 16) {
+      console.error('iv error!');
+    }
+    if (input == null) {
+      console.error('input is null!');
+    }
+    if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
+      input = this.padding(input, this.SM4_ENCRYPT);
+    }
+    let i = 0;
+    let length = input.length;
+    let bous = [];
+    if (ctx.mode === this.SM4_ENCRYPT) {
+      k = 0;
+      for (; length > 0; length -= 16) {
+        out = new Array(16);
+        out1 = new Array(16);
+        ins = input.slice(k * 16, 16 * (k + 1));
+        for (i = 0; i < 16; i++) {
+          out[i] = ins[i] ^ iv[i];
+        }
+        this.sm4_one_round(ctx.sk, out, out1);
+        iv = out1.slice(0, 16);
+        bous = bous.concat(out1);
+        k++;
+      }
+    } else {
+      let temp = [];
+      k = 0;
+      for (; length > 0; length -= 16) {
+        out = new Array(16);
+        out1 = new Array(16);
+        ins = input.slice(k * 16, 16 * (k + 1));
+        temp = ins.slice(0, 16);
+        this.sm4_one_round(ctx.sk, ins, out);
+        for (i = 0; i < 16; i++) {
+          out1[i] = out[i] ^ iv[i];
+        }
+        iv = temp.slice(0, 16);
+        bous = bous.concat(out1);
+        k++;
+      }
+    }
+    let output = bous;
+    if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
+      output = this.padding(output, this.SM4_DECRYPT);
+    }
+    for (i = 0; i < output.length; i++) {
+      if (output[i] < 0) {
+        output[i] = output[i] + 256;
+      }
+    }
+    return output;
+  };
+}
+const SM4Util = function (secretKey, iv) {
+  // 和后端secretKey一致才能正确解密，可自定义传入，如果不传，则使用下面的默认secretKey
+  this.secretKey = secretKey;
+  // 当时用CBC模式的时候，除了secretKey，还需要 iv，可自定义传入，如果不传，则使用下面的默认iv
+  this.iv = iv;
+  this.hexString = false;
+
+  // ECB模式加密，默认secretKey
+  this.encryptDefault_ECB = function (plainText) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(this.secretKey);
+      sm4.sm4_setkey_enc(ctx, keyBytes);
+      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
+      const cipherText = _base.default.fromByteArray(encrypted);
+      if (cipherText != null && cipherText.trim().length > 0) {
+        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
+      }
+      return cipherText;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  // ECB模式加密，自定义secretKey
+  this.encryptCustom_ECB = function (plainText, secretKey) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(secretKey);
+      sm4.sm4_setkey_enc(ctx, keyBytes);
+      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
+      const cipherText = _base.default.fromByteArray(encrypted);
+      if (cipherText != null && cipherText.trim().length > 0) {
+        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
+      }
+      return cipherText;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  // 解密_ECB，默认secretKey
+  this.decryptDefault_ECB = function (cipherText) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(this.secretKey);
+      sm4.sm4_setkey_dec(ctx, keyBytes);
+      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
+      return this.byteToString(decrypted);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  // 解密_ECB，自定义secretKey
+  this.decryptCustom_ECB = function (cipherText, secretKey) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(secretKey);
+      sm4.sm4_setkey_dec(ctx, keyBytes);
+      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
+      return this.byteToString(decrypted);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+
+  // CBC模式加密，默认 iv 和 secretKey
+  this.encryptDefault_CBC = function (plainText) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(this.secretKey);
+      const ivBytes = this.stringToByte(this.iv);
+      sm4.sm4_setkey_enc(ctx, keyBytes);
+      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
+      const cipherText = _base.default.fromByteArray(encrypted);
+      if (cipherText != null && cipherText.trim().length > 0) {
+        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
+      }
+      return cipherText;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  function removePadding(buffer) {
+    const padding = buffer[buffer.length - 1];
+    if (padding < 1 || padding > 16) {
+      // 不是标准的PKCS#7填充，可能不需要移除填充
+      return buffer;
+    }
+    // 检查填充是否有效
+    for (let i = 0; i < padding; i++) {
+      if (buffer[buffer.length - 1 - i] !== padding) {
+        // 填充无效，可能不是PKCS#7填充
+        return buffer;
+      }
+    }
+    // 移除填充
+    return buffer.slice(0, buffer.length - padding);
+  }
+
+  // CBC模式加密，自定义 iv 和 secretKey
+  this.encryptCustom_CBC = function (plainText, iv, secretKey) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(secretKey);
+      const ivBytes = this.stringToByte(iv);
+      sm4.sm4_setkey_enc(ctx, keyBytes);
+      console.warn('------请求加密参数------', plainText);
+      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
+      const cipherText = _base.default.fromByteArray(encrypted);
+      if (cipherText != null && cipherText.trim().length > 0) {
+        cipherText.replace(/(\s*|\t|\r|\n)/g, '');
+      }
+      return cipherText;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  // 解密_CBC，默认 iv 和 secretKey
+  this.decryptDefault_CBC = function (cipherText, iv, secretKey) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(secretKey);
+      const ivBytes = this.stringToByte(iv);
+      sm4.sm4_setkey_dec(ctx, keyBytes);
+      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
+      return this.byteToString(decrypted);
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  // 解密_CBC，自定义 iv 和 secretKey
+  this.decryptCustom_CBC = function (cipherText, iv, secretKey) {
+    try {
+      const sm4 = new SM4();
+      const ctx = new SM4_Context();
+      ctx.isPadding = true;
+      ctx.mode = sm4.SM4_ENCRYPT;
+      const keyBytes = this.stringToByte(secretKey);
+      const ivBytes = this.stringToByte(iv);
+      sm4.sm4_setkey_dec(ctx, keyBytes);
+      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
+      let text = removePadding(decrypted);
+      text = this.byteToString(text);
+      text = Buffer.from(text).toString('utf-8');
+      return text;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  };
+  this.stringToByte = function (str) {
+    const bytes = [];
+    let c;
+    const len = str.length;
+    for (let i = 0; i < len; i++) {
+      c = str.charCodeAt(i);
+      if (c >= 0x010000 && c <= 0x10ffff) {
+        bytes.push(c >> 18 & 0x07 | 0xf0);
+        bytes.push(c >> 12 & 0x3f | 0x80);
+        bytes.push(c >> 6 & 0x3f | 0x80);
+        bytes.push(c & 0x3f | 0x80);
+      } else if (c >= 0x000800 && c <= 0x00ffff) {
+        bytes.push(c >> 12 & 0x0f | 0xe0);
+        bytes.push(c >> 6 & 0x3f | 0x80);
+        bytes.push(c & 0x3f | 0x80);
+      } else if (c >= 0x000080 && c <= 0x0007ff) {
+        bytes.push(c >> 6 & 0x1f | 0xc0);
+        bytes.push(c & 0x3f | 0x80);
+      } else {
+        bytes.push(c & 0xff);
+      }
+    }
+    return bytes;
+  };
+  this.byteToString = function (arr) {
+    if (typeof arr === 'string') {
+      return arr;
+    }
+    let str = '';
+    const _arr = arr;
+    for (let i = 0; i < _arr.length; i++) {
+      const one = _arr[i].toString(2);
+      const v = one.match(/^1+?(?=0)/);
+      if (v && one.length === 8) {
+        const bytesLength = v[0].length;
+        let store = _arr[i].toString(2).slice(7 - bytesLength);
+        for (let st = 1; st < bytesLength; st++) {
+          store += _arr[st + i].toString(2).slice(2);
+        }
+        str += String.fromCharCode(parseInt(store, 2));
+        i += bytesLength - 1;
+      } else {
+        str += String.fromCharCode(_arr[i]);
+      }
+    }
+    return str;
+  };
+};
+exports.SM4Util = SM4Util;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/buffer/index.js */ 20).Buffer))
+
+/***/ }),
+/* 20 */
+/*!**************************************!*\
+  !*** ./node_modules/buffer/index.js ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <http://feross.org>
+ * @license  MIT
+ */
+/* eslint-disable no-proto */
+
+
+
+var base64 = __webpack_require__(/*! base64-js */ 21)
+var ieee754 = __webpack_require__(/*! ieee754 */ 22)
+var isArray = __webpack_require__(/*! isarray */ 23)
+
+exports.Buffer = Buffer
+exports.SlowBuffer = SlowBuffer
+exports.INSPECT_MAX_BYTES = 50
+
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
+Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
+  ? global.TYPED_ARRAY_SUPPORT
+  : typedArraySupport()
+
+/*
+ * Export kMaxLength after typed array support is determined.
+ */
+exports.kMaxLength = kMaxLength()
+
+function typedArraySupport () {
+  try {
+    var arr = new Uint8Array(1)
+    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
+    return arr.foo() === 42 && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+  } catch (e) {
+    return false
+  }
+}
+
+function kMaxLength () {
+  return Buffer.TYPED_ARRAY_SUPPORT
+    ? 0x7fffffff
+    : 0x3fffffff
+}
+
+function createBuffer (that, length) {
+  if (kMaxLength() < length) {
+    throw new RangeError('Invalid typed array length')
+  }
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = new Uint8Array(length)
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    if (that === null) {
+      that = new Buffer(length)
+    }
+    that.length = length
+  }
+
+  return that
+}
+
+/**
+ * The Buffer constructor returns instances of `Uint8Array` that have their
+ * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+ * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+ * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+ * returns a single octet.
+ *
+ * The `Uint8Array` prototype remains unmodified.
+ */
+
+function Buffer (arg, encodingOrOffset, length) {
+  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
+    return new Buffer(arg, encodingOrOffset, length)
+  }
+
+  // Common case.
+  if (typeof arg === 'number') {
+    if (typeof encodingOrOffset === 'string') {
+      throw new Error(
+        'If encoding is specified then the first argument must be a string'
+      )
+    }
+    return allocUnsafe(this, arg)
+  }
+  return from(this, arg, encodingOrOffset, length)
+}
+
+Buffer.poolSize = 8192 // not used by this implementation
+
+// TODO: Legacy, not needed anymore. Remove in next major version.
+Buffer._augment = function (arr) {
+  arr.__proto__ = Buffer.prototype
+  return arr
+}
+
+function from (that, value, encodingOrOffset, length) {
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number')
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return fromArrayBuffer(that, value, encodingOrOffset, length)
+  }
+
+  if (typeof value === 'string') {
+    return fromString(that, value, encodingOrOffset)
+  }
+
+  return fromObject(that, value)
+}
+
+/**
+ * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+ * if value is a number.
+ * Buffer.from(str[, encoding])
+ * Buffer.from(array)
+ * Buffer.from(buffer)
+ * Buffer.from(arrayBuffer[, byteOffset[, length]])
+ **/
+Buffer.from = function (value, encodingOrOffset, length) {
+  return from(null, value, encodingOrOffset, length)
+}
+
+if (Buffer.TYPED_ARRAY_SUPPORT) {
+  Buffer.prototype.__proto__ = Uint8Array.prototype
+  Buffer.__proto__ = Uint8Array
+  if (typeof Symbol !== 'undefined' && Symbol.species &&
+      Buffer[Symbol.species] === Buffer) {
+    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
+    Object.defineProperty(Buffer, Symbol.species, {
+      value: null,
+      configurable: true
+    })
+  }
+}
+
+function assertSize (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('"size" argument must be a number')
+  } else if (size < 0) {
+    throw new RangeError('"size" argument must not be negative')
+  }
+}
+
+function alloc (that, size, fill, encoding) {
+  assertSize(size)
+  if (size <= 0) {
+    return createBuffer(that, size)
+  }
+  if (fill !== undefined) {
+    // Only pay attention to encoding if it's a string. This
+    // prevents accidentally sending in a number that would
+    // be interpretted as a start offset.
+    return typeof encoding === 'string'
+      ? createBuffer(that, size).fill(fill, encoding)
+      : createBuffer(that, size).fill(fill)
+  }
+  return createBuffer(that, size)
+}
+
+/**
+ * Creates a new filled Buffer instance.
+ * alloc(size[, fill[, encoding]])
+ **/
+Buffer.alloc = function (size, fill, encoding) {
+  return alloc(null, size, fill, encoding)
+}
+
+function allocUnsafe (that, size) {
+  assertSize(size)
+  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < size; ++i) {
+      that[i] = 0
+    }
+  }
+  return that
+}
+
+/**
+ * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+ * */
+Buffer.allocUnsafe = function (size) {
+  return allocUnsafe(null, size)
+}
+/**
+ * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+ */
+Buffer.allocUnsafeSlow = function (size) {
+  return allocUnsafe(null, size)
+}
+
+function fromString (that, string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8'
+  }
+
+  if (!Buffer.isEncoding(encoding)) {
+    throw new TypeError('"encoding" must be a valid string encoding')
+  }
+
+  var length = byteLength(string, encoding) | 0
+  that = createBuffer(that, length)
+
+  var actual = that.write(string, encoding)
+
+  if (actual !== length) {
+    // Writing a hex string, for example, that contains invalid characters will
+    // cause everything after the first invalid character to be ignored. (e.g.
+    // 'abxxcd' will be treated as 'ab')
+    that = that.slice(0, actual)
+  }
+
+  return that
+}
+
+function fromArrayLike (that, array) {
+  var length = array.length < 0 ? 0 : checked(array.length) | 0
+  that = createBuffer(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array, byteOffset, length) {
+  array.byteLength // this throws if `array` is not a valid ArrayBuffer
+
+  if (byteOffset < 0 || array.byteLength < byteOffset) {
+    throw new RangeError('\'offset\' is out of bounds')
+  }
+
+  if (array.byteLength < byteOffset + (length || 0)) {
+    throw new RangeError('\'length\' is out of bounds')
+  }
+
+  if (byteOffset === undefined && length === undefined) {
+    array = new Uint8Array(array)
+  } else if (length === undefined) {
+    array = new Uint8Array(array, byteOffset)
+  } else {
+    array = new Uint8Array(array, byteOffset, length)
+  }
+
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = array
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromArrayLike(that, array)
+  }
+  return that
+}
+
+function fromObject (that, obj) {
+  if (Buffer.isBuffer(obj)) {
+    var len = checked(obj.length) | 0
+    that = createBuffer(that, len)
+
+    if (that.length === 0) {
+      return that
+    }
+
+    obj.copy(that, 0, 0, len)
+    return that
+  }
+
+  if (obj) {
+    if ((typeof ArrayBuffer !== 'undefined' &&
+        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
+      if (typeof obj.length !== 'number' || isnan(obj.length)) {
+        return createBuffer(that, 0)
+      }
+      return fromArrayLike(that, obj)
+    }
+
+    if (obj.type === 'Buffer' && isArray(obj.data)) {
+      return fromArrayLike(that, obj.data)
+    }
+  }
+
+  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
+}
+
+function checked (length) {
+  // Note: cannot use `length < kMaxLength()` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
+  if (length >= kMaxLength()) {
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
+  }
+  return length | 0
+}
+
+function SlowBuffer (length) {
+  if (+length != length) { // eslint-disable-line eqeqeq
+    length = 0
+  }
+  return Buffer.alloc(+length)
+}
+
+Buffer.isBuffer = function isBuffer (b) {
+  return !!(b != null && b._isBuffer)
+}
+
+Buffer.compare = function compare (a, b) {
+  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+    throw new TypeError('Arguments must be Buffers')
+  }
+
+  if (a === b) return 0
+
+  var x = a.length
+  var y = b.length
+
+  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
+    if (a[i] !== b[i]) {
+      x = a[i]
+      y = b[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+Buffer.isEncoding = function isEncoding (encoding) {
+  switch (String(encoding).toLowerCase()) {
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'latin1':
+    case 'binary':
+    case 'base64':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return true
+    default:
+      return false
+  }
+}
+
+Buffer.concat = function concat (list, length) {
+  if (!isArray(list)) {
+    throw new TypeError('"list" argument must be an Array of Buffers')
+  }
+
+  if (list.length === 0) {
+    return Buffer.alloc(0)
+  }
+
+  var i
+  if (length === undefined) {
+    length = 0
+    for (i = 0; i < list.length; ++i) {
+      length += list[i].length
+    }
+  }
+
+  var buffer = Buffer.allocUnsafe(length)
+  var pos = 0
+  for (i = 0; i < list.length; ++i) {
+    var buf = list[i]
+    if (!Buffer.isBuffer(buf)) {
+      throw new TypeError('"list" argument must be an Array of Buffers')
+    }
+    buf.copy(buffer, pos)
+    pos += buf.length
+  }
+  return buffer
+}
+
+function byteLength (string, encoding) {
+  if (Buffer.isBuffer(string)) {
+    return string.length
+  }
+  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
+      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
+    return string.byteLength
+  }
+  if (typeof string !== 'string') {
+    string = '' + string
+  }
+
+  var len = string.length
+  if (len === 0) return 0
+
+  // Use a for loop to avoid recursion
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'ascii':
+      case 'latin1':
+      case 'binary':
+        return len
+      case 'utf8':
+      case 'utf-8':
+      case undefined:
+        return utf8ToBytes(string).length
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return len * 2
+      case 'hex':
+        return len >>> 1
+      case 'base64':
+        return base64ToBytes(string).length
+      default:
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+Buffer.byteLength = byteLength
+
+function slowToString (encoding, start, end) {
+  var loweredCase = false
+
+  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+  // property of a typed array.
+
+  // This behaves neither like String nor Uint8Array in that we set start/end
+  // to their upper/lower bounds if the value passed is out of range.
+  // undefined is handled specially as per ECMA-262 6th Edition,
+  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+  if (start === undefined || start < 0) {
+    start = 0
+  }
+  // Return early if start > this.length. Done here to prevent potential uint32
+  // coercion fail below.
+  if (start > this.length) {
+    return ''
+  }
+
+  if (end === undefined || end > this.length) {
+    end = this.length
+  }
+
+  if (end <= 0) {
+    return ''
+  }
+
+  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+  end >>>= 0
+  start >>>= 0
+
+  if (end <= start) {
+    return ''
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  while (true) {
+    switch (encoding) {
+      case 'hex':
+        return hexSlice(this, start, end)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Slice(this, start, end)
+
+      case 'ascii':
+        return asciiSlice(this, start, end)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Slice(this, start, end)
+
+      case 'base64':
+        return base64Slice(this, start, end)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return utf16leSlice(this, start, end)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = (encoding + '').toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+// Buffer instances.
+Buffer.prototype._isBuffer = true
+
+function swap (b, n, m) {
+  var i = b[n]
+  b[n] = b[m]
+  b[m] = i
+}
+
+Buffer.prototype.swap16 = function swap16 () {
+  var len = this.length
+  if (len % 2 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 16-bits')
+  }
+  for (var i = 0; i < len; i += 2) {
+    swap(this, i, i + 1)
+  }
+  return this
+}
+
+Buffer.prototype.swap32 = function swap32 () {
+  var len = this.length
+  if (len % 4 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 32-bits')
+  }
+  for (var i = 0; i < len; i += 4) {
+    swap(this, i, i + 3)
+    swap(this, i + 1, i + 2)
+  }
+  return this
+}
+
+Buffer.prototype.swap64 = function swap64 () {
+  var len = this.length
+  if (len % 8 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 64-bits')
+  }
+  for (var i = 0; i < len; i += 8) {
+    swap(this, i, i + 7)
+    swap(this, i + 1, i + 6)
+    swap(this, i + 2, i + 5)
+    swap(this, i + 3, i + 4)
+  }
+  return this
+}
+
+Buffer.prototype.toString = function toString () {
+  var length = this.length | 0
+  if (length === 0) return ''
+  if (arguments.length === 0) return utf8Slice(this, 0, length)
+  return slowToString.apply(this, arguments)
+}
+
+Buffer.prototype.equals = function equals (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return true
+  return Buffer.compare(this, b) === 0
+}
+
+Buffer.prototype.inspect = function inspect () {
+  var str = ''
+  var max = exports.INSPECT_MAX_BYTES
+  if (this.length > 0) {
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+    if (this.length > max) str += ' ... '
+  }
+  return '<Buffer ' + str + '>'
+}
+
+Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+  if (!Buffer.isBuffer(target)) {
+    throw new TypeError('Argument must be a Buffer')
+  }
+
+  if (start === undefined) {
+    start = 0
+  }
+  if (end === undefined) {
+    end = target ? target.length : 0
+  }
+  if (thisStart === undefined) {
+    thisStart = 0
+  }
+  if (thisEnd === undefined) {
+    thisEnd = this.length
+  }
+
+  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+    throw new RangeError('out of range index')
+  }
+
+  if (thisStart >= thisEnd && start >= end) {
+    return 0
+  }
+  if (thisStart >= thisEnd) {
+    return -1
+  }
+  if (start >= end) {
+    return 1
+  }
+
+  start >>>= 0
+  end >>>= 0
+  thisStart >>>= 0
+  thisEnd >>>= 0
+
+  if (this === target) return 0
+
+  var x = thisEnd - thisStart
+  var y = end - start
+  var len = Math.min(x, y)
+
+  var thisCopy = this.slice(thisStart, thisEnd)
+  var targetCopy = target.slice(start, end)
+
+  for (var i = 0; i < len; ++i) {
+    if (thisCopy[i] !== targetCopy[i]) {
+      x = thisCopy[i]
+      y = targetCopy[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+//
+// Arguments:
+// - buffer - a Buffer to search
+// - val - a string, Buffer, or number
+// - byteOffset - an index into `buffer`; will be clamped to an int32
+// - encoding - an optional encoding, relevant is val is a string
+// - dir - true for indexOf, false for lastIndexOf
+function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+  // Empty buffer means no match
+  if (buffer.length === 0) return -1
+
+  // Normalize byteOffset
+  if (typeof byteOffset === 'string') {
+    encoding = byteOffset
+    byteOffset = 0
+  } else if (byteOffset > 0x7fffffff) {
+    byteOffset = 0x7fffffff
+  } else if (byteOffset < -0x80000000) {
+    byteOffset = -0x80000000
+  }
+  byteOffset = +byteOffset  // Coerce to Number.
+  if (isNaN(byteOffset)) {
+    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+    byteOffset = dir ? 0 : (buffer.length - 1)
+  }
+
+  // Normalize byteOffset: negative offsets start from the end of the buffer
+  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
+  if (byteOffset >= buffer.length) {
+    if (dir) return -1
+    else byteOffset = buffer.length - 1
+  } else if (byteOffset < 0) {
+    if (dir) byteOffset = 0
+    else return -1
+  }
+
+  // Normalize val
+  if (typeof val === 'string') {
+    val = Buffer.from(val, encoding)
+  }
+
+  // Finally, search either indexOf (if dir is true) or lastIndexOf
+  if (Buffer.isBuffer(val)) {
+    // Special case: looking for empty string/buffer always fails
+    if (val.length === 0) {
+      return -1
+    }
+    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+  } else if (typeof val === 'number') {
+    val = val & 0xFF // Search for a byte value [0-255]
+    if (Buffer.TYPED_ARRAY_SUPPORT &&
+        typeof Uint8Array.prototype.indexOf === 'function') {
+      if (dir) {
+        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+      } else {
+        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+      }
+    }
+    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+  }
+
+  throw new TypeError('val must be string, number or Buffer')
+}
+
+function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+  var indexSize = 1
+  var arrLength = arr.length
+  var valLength = val.length
+
+  if (encoding !== undefined) {
+    encoding = String(encoding).toLowerCase()
+    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+        encoding === 'utf16le' || encoding === 'utf-16le') {
+      if (arr.length < 2 || val.length < 2) {
+        return -1
+      }
+      indexSize = 2
+      arrLength /= 2
+      valLength /= 2
+      byteOffset /= 2
+    }
+  }
+
+  function read (buf, i) {
+    if (indexSize === 1) {
+      return buf[i]
+    } else {
+      return buf.readUInt16BE(i * indexSize)
+    }
+  }
+
+  var i
+  if (dir) {
+    var foundIndex = -1
+    for (i = byteOffset; i < arrLength; i++) {
+      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+        if (foundIndex === -1) foundIndex = i
+        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+      } else {
+        if (foundIndex !== -1) i -= i - foundIndex
+        foundIndex = -1
+      }
+    }
+  } else {
+    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
+    for (i = byteOffset; i >= 0; i--) {
+      var found = true
+      for (var j = 0; j < valLength; j++) {
+        if (read(arr, i + j) !== read(val, j)) {
+          found = false
+          break
+        }
+      }
+      if (found) return i
+    }
+  }
+
+  return -1
+}
+
+Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+  return this.indexOf(val, byteOffset, encoding) !== -1
+}
+
+Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+}
+
+Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+}
+
+function hexWrite (buf, string, offset, length) {
+  offset = Number(offset) || 0
+  var remaining = buf.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length
+  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
+
+  if (length > strLen / 2) {
+    length = strLen / 2
+  }
+  for (var i = 0; i < length; ++i) {
+    var parsed = parseInt(string.substr(i * 2, 2), 16)
+    if (isNaN(parsed)) return i
+    buf[offset + i] = parsed
+  }
+  return i
+}
+
+function utf8Write (buf, string, offset, length) {
+  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+function asciiWrite (buf, string, offset, length) {
+  return blitBuffer(asciiToBytes(string), buf, offset, length)
+}
+
+function latin1Write (buf, string, offset, length) {
+  return asciiWrite(buf, string, offset, length)
+}
+
+function base64Write (buf, string, offset, length) {
+  return blitBuffer(base64ToBytes(string), buf, offset, length)
+}
+
+function ucs2Write (buf, string, offset, length) {
+  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+Buffer.prototype.write = function write (string, offset, length, encoding) {
+  // Buffer#write(string)
+  if (offset === undefined) {
+    encoding = 'utf8'
+    length = this.length
+    offset = 0
+  // Buffer#write(string, encoding)
+  } else if (length === undefined && typeof offset === 'string') {
+    encoding = offset
+    length = this.length
+    offset = 0
+  // Buffer#write(string, offset[, length][, encoding])
+  } else if (isFinite(offset)) {
+    offset = offset | 0
+    if (isFinite(length)) {
+      length = length | 0
+      if (encoding === undefined) encoding = 'utf8'
+    } else {
+      encoding = length
+      length = undefined
+    }
+  // legacy write(string, encoding, offset, length) - remove in v0.13
+  } else {
+    throw new Error(
+      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+    )
+  }
+
+  var remaining = this.length - offset
+  if (length === undefined || length > remaining) length = remaining
+
+  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+    throw new RangeError('Attempt to write outside buffer bounds')
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'hex':
+        return hexWrite(this, string, offset, length)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Write(this, string, offset, length)
+
+      case 'ascii':
+        return asciiWrite(this, string, offset, length)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Write(this, string, offset, length)
+
+      case 'base64':
+        // Warning: maxLength not taken into account in base64Write
+        return base64Write(this, string, offset, length)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return ucs2Write(this, string, offset, length)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+Buffer.prototype.toJSON = function toJSON () {
+  return {
+    type: 'Buffer',
+    data: Array.prototype.slice.call(this._arr || this, 0)
+  }
+}
+
+function base64Slice (buf, start, end) {
+  if (start === 0 && end === buf.length) {
+    return base64.fromByteArray(buf)
+  } else {
+    return base64.fromByteArray(buf.slice(start, end))
+  }
+}
+
+function utf8Slice (buf, start, end) {
+  end = Math.min(buf.length, end)
+  var res = []
+
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
+    }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
+  }
+
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
+}
+
+function asciiSlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i] & 0x7F)
+  }
+  return ret
+}
+
+function latin1Slice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i])
+  }
+  return ret
+}
+
+function hexSlice (buf, start, end) {
+  var len = buf.length
+
+  if (!start || start < 0) start = 0
+  if (!end || end < 0 || end > len) end = len
+
+  var out = ''
+  for (var i = start; i < end; ++i) {
+    out += toHex(buf[i])
+  }
+  return out
+}
+
+function utf16leSlice (buf, start, end) {
+  var bytes = buf.slice(start, end)
+  var res = ''
+  for (var i = 0; i < bytes.length; i += 2) {
+    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+  }
+  return res
+}
+
+Buffer.prototype.slice = function slice (start, end) {
+  var len = this.length
+  start = ~~start
+  end = end === undefined ? len : ~~end
+
+  if (start < 0) {
+    start += len
+    if (start < 0) start = 0
+  } else if (start > len) {
+    start = len
+  }
+
+  if (end < 0) {
+    end += len
+    if (end < 0) end = 0
+  } else if (end > len) {
+    end = len
+  }
+
+  if (end < start) end = start
+
+  var newBuf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    newBuf = this.subarray(start, end)
+    newBuf.__proto__ = Buffer.prototype
+  } else {
+    var sliceLen = end - start
+    newBuf = new Buffer(sliceLen, undefined)
+    for (var i = 0; i < sliceLen; ++i) {
+      newBuf[i] = this[i + start]
+    }
+  }
+
+  return newBuf
+}
+
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+function checkOffset (offset, ext, length) {
+  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+}
+
+Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    checkOffset(offset, byteLength, this.length)
+  }
+
+  var val = this[offset + --byteLength]
+  var mul = 1
+  while (byteLength > 0 && (mul *= 0x100)) {
+    val += this[offset + --byteLength] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  return this[offset]
+}
+
+Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return this[offset] | (this[offset + 1] << 8)
+}
+
+Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return (this[offset] << 8) | this[offset + 1]
+}
+
+Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return ((this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16)) +
+      (this[offset + 3] * 0x1000000)
+}
+
+Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] * 0x1000000) +
+    ((this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    this[offset + 3])
+}
+
+Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var i = byteLength
+  var mul = 1
+  var val = this[offset + --i]
+  while (i > 0 && (mul *= 0x100)) {
+    val += this[offset + --i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  if (!(this[offset] & 0x80)) return (this[offset])
+  return ((0xff - this[offset] + 1) * -1)
+}
+
+Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset] | (this[offset + 1] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset + 1] | (this[offset] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset]) |
+    (this[offset + 1] << 8) |
+    (this[offset + 2] << 16) |
+    (this[offset + 3] << 24)
+}
+
+Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] << 24) |
+    (this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    (this[offset + 3])
+}
+
+Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, true, 23, 4)
+}
+
+Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, false, 23, 4)
+}
+
+Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, true, 52, 8)
+}
+
+Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, false, 52, 8)
+}
+
+function checkInt (buf, value, offset, ext, max, min) {
+  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+}
+
+Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var mul = 1
+  var i = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+function objectWriteUInt16 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
+    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+      (littleEndian ? i : 1 - i) * 8
+  }
+}
+
+Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+function objectWriteUInt32 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffffffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
+    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset + 3] = (value >>> 24)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 1] = (value >>> 8)
+    this[offset] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = 0
+  var mul = 1
+  var sub = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  var sub = 0
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  if (value < 0) value = 0xff + value + 1
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 3] = (value >>> 24)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (value < 0) value = 0xffffffff + value + 1
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+function checkIEEE754 (buf, value, offset, ext, max, min) {
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+  if (offset < 0) throw new RangeError('Index out of range')
+}
+
+function writeFloat (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+  return offset + 4
+}
+
+Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, false, noAssert)
+}
+
+function writeDouble (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+  return offset + 8
+}
+
+Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, false, noAssert)
+}
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+  if (!start) start = 0
+  if (!end && end !== 0) end = this.length
+  if (targetStart >= target.length) targetStart = target.length
+  if (!targetStart) targetStart = 0
+  if (end > 0 && end < start) end = start
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0
+  if (target.length === 0 || this.length === 0) return 0
+
+  // Fatal error conditions
+  if (targetStart < 0) {
+    throw new RangeError('targetStart out of bounds')
+  }
+  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
+  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+  // Are we oob?
+  if (end > this.length) end = this.length
+  if (target.length - targetStart < end - start) {
+    end = target.length - targetStart + start
+  }
+
+  var len = end - start
+  var i
+
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; --i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; ++i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else {
+    Uint8Array.prototype.set.call(
+      target,
+      this.subarray(start, start + len),
+      targetStart
+    )
+  }
+
+  return len
+}
+
+// Usage:
+//    buffer.fill(number[, offset[, end]])
+//    buffer.fill(buffer[, offset[, end]])
+//    buffer.fill(string[, offset[, end]][, encoding])
+Buffer.prototype.fill = function fill (val, start, end, encoding) {
+  // Handle string cases:
+  if (typeof val === 'string') {
+    if (typeof start === 'string') {
+      encoding = start
+      start = 0
+      end = this.length
+    } else if (typeof end === 'string') {
+      encoding = end
+      end = this.length
+    }
+    if (val.length === 1) {
+      var code = val.charCodeAt(0)
+      if (code < 256) {
+        val = code
+      }
+    }
+    if (encoding !== undefined && typeof encoding !== 'string') {
+      throw new TypeError('encoding must be a string')
+    }
+    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+      throw new TypeError('Unknown encoding: ' + encoding)
+    }
+  } else if (typeof val === 'number') {
+    val = val & 255
+  }
+
+  // Invalid ranges are not set to a default, so can range check early.
+  if (start < 0 || this.length < start || this.length < end) {
+    throw new RangeError('Out of range index')
+  }
+
+  if (end <= start) {
+    return this
+  }
+
+  start = start >>> 0
+  end = end === undefined ? this.length : end >>> 0
+
+  if (!val) val = 0
+
+  var i
+  if (typeof val === 'number') {
+    for (i = start; i < end; ++i) {
+      this[i] = val
+    }
+  } else {
+    var bytes = Buffer.isBuffer(val)
+      ? val
+      : utf8ToBytes(new Buffer(val, encoding).toString())
+    var len = bytes.length
+    for (i = 0; i < end - start; ++i) {
+      this[i + start] = bytes[i % len]
+    }
+  }
+
+  return this
+}
+
+// HELPER FUNCTIONS
+// ================
+
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
+
+function base64clean (str) {
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+  // Node converts strings with length < 2 to ''
+  if (str.length < 2) return ''
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+  while (str.length % 4 !== 0) {
+    str = str + '='
+  }
+  return str
+}
+
+function stringtrim (str) {
+  if (str.trim) return str.trim()
+  return str.replace(/^\s+|\s+$/g, '')
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+function utf8ToBytes (string, units) {
+  units = units || Infinity
+  var codePoint
+  var length = string.length
+  var leadSurrogate = null
+  var bytes = []
+
+  for (var i = 0; i < length; ++i) {
+    codePoint = string.charCodeAt(i)
+
+    // is surrogate component
+    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+      // last char was a lead
+      if (!leadSurrogate) {
+        // no lead yet
+        if (codePoint > 0xDBFF) {
+          // unexpected trail
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        } else if (i + 1 === length) {
+          // unpaired lead
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
+      }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
+    } else if (leadSurrogate) {
+      // valid bmp char, but last char was a lead
+      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+    }
+
+    leadSurrogate = null
+
+    // encode utf8
+    if (codePoint < 0x80) {
+      if ((units -= 1) < 0) break
+      bytes.push(codePoint)
+    } else if (codePoint < 0x800) {
+      if ((units -= 2) < 0) break
+      bytes.push(
+        codePoint >> 0x6 | 0xC0,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x10000) {
+      if ((units -= 3) < 0) break
+      bytes.push(
+        codePoint >> 0xC | 0xE0,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x110000) {
+      if ((units -= 4) < 0) break
+      bytes.push(
+        codePoint >> 0x12 | 0xF0,
+        codePoint >> 0xC & 0x3F | 0x80,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else {
+      throw new Error('Invalid code point')
+    }
+  }
+
+  return bytes
+}
+
+function asciiToBytes (str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push(str.charCodeAt(i) & 0xFF)
+  }
+  return byteArray
+}
+
+function utf16leToBytes (str, units) {
+  var c, hi, lo
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    if ((units -= 2) < 0) break
+
+    c = str.charCodeAt(i)
+    hi = c >> 8
+    lo = c % 256
+    byteArray.push(lo)
+    byteArray.push(hi)
+  }
+
+  return byteArray
+}
+
+function base64ToBytes (str) {
+  return base64.toByteArray(base64clean(str))
+}
+
+function blitBuffer (src, dst, offset, length) {
+  for (var i = 0; i < length; ++i) {
+    if ((i + offset >= dst.length) || (i >= src.length)) break
+    dst[i + offset] = src[i]
+  }
+  return i
+}
+
+function isnan (val) {
+  return val !== val // eslint-disable-line no-self-compare
+}
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 2)))
+
+/***/ }),
+/* 21 */
+/*!*****************************************!*\
+  !*** ./node_modules/base64-js/index.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.byteLength = byteLength
+exports.toByteArray = toByteArray
+exports.fromByteArray = fromByteArray
+
+var lookup = []
+var revLookup = []
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+for (var i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i]
+  revLookup[code.charCodeAt(i)] = i
+}
+
+// Support decoding URL-safe base64 strings, as Node.js does.
+// See: https://en.wikipedia.org/wiki/Base64#URL_applications
+revLookup['-'.charCodeAt(0)] = 62
+revLookup['_'.charCodeAt(0)] = 63
+
+function getLens (b64) {
+  var len = b64.length
+
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4')
+  }
+
+  // Trim off extra bytes after placeholder bytes are found
+  // See: https://github.com/beatgammit/base64-js/issues/42
+  var validLen = b64.indexOf('=')
+  if (validLen === -1) validLen = len
+
+  var placeHoldersLen = validLen === len
+    ? 0
+    : 4 - (validLen % 4)
+
+  return [validLen, placeHoldersLen]
+}
+
+// base64 is 4/3 + up to two characters of the original data
+function byteLength (b64) {
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function _byteLength (b64, validLen, placeHoldersLen) {
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function toByteArray (b64) {
+  var tmp
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+
+  var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen))
+
+  var curByte = 0
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  var len = placeHoldersLen > 0
+    ? validLen - 4
+    : validLen
+
+  var i
+  for (i = 0; i < len; i += 4) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 18) |
+      (revLookup[b64.charCodeAt(i + 1)] << 12) |
+      (revLookup[b64.charCodeAt(i + 2)] << 6) |
+      revLookup[b64.charCodeAt(i + 3)]
+    arr[curByte++] = (tmp >> 16) & 0xFF
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 2) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 2) |
+      (revLookup[b64.charCodeAt(i + 1)] >> 4)
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 1) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 10) |
+      (revLookup[b64.charCodeAt(i + 1)] << 4) |
+      (revLookup[b64.charCodeAt(i + 2)] >> 2)
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  return arr
+}
+
+function tripletToBase64 (num) {
+  return lookup[num >> 18 & 0x3F] +
+    lookup[num >> 12 & 0x3F] +
+    lookup[num >> 6 & 0x3F] +
+    lookup[num & 0x3F]
+}
+
+function encodeChunk (uint8, start, end) {
+  var tmp
+  var output = []
+  for (var i = start; i < end; i += 3) {
+    tmp =
+      ((uint8[i] << 16) & 0xFF0000) +
+      ((uint8[i + 1] << 8) & 0xFF00) +
+      (uint8[i + 2] & 0xFF)
+    output.push(tripletToBase64(tmp))
+  }
+  return output.join('')
+}
+
+function fromByteArray (uint8) {
+  var tmp
+  var len = uint8.length
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+  var parts = []
+  var maxChunkLength = 16383 // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 2] +
+      lookup[(tmp << 4) & 0x3F] +
+      '=='
+    )
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 10] +
+      lookup[(tmp >> 4) & 0x3F] +
+      lookup[(tmp << 2) & 0x3F] +
+      '='
+    )
+  }
+
+  return parts.join('')
+}
+
+
+/***/ }),
+/* 22 */
+/*!***************************************!*\
+  !*** ./node_modules/ieee754/index.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = ((value * c) - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+
+/***/ }),
+/* 23 */
+/*!***************************************!*\
+  !*** ./node_modules/isarray/index.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
+
+
+/***/ }),
+/* 24 */
+/*!*********************************!*\
+  !*** ./src/utils/sm4/base64.js ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var require;var require;/* eslint-disable */
+;
+(function (a) {
+  if (true) module.exports = a();else { var b; }
+})(function () {
+  return function () {
+    function b(d, e, g) {
+      function a(j, i) {
+        if (!e[j]) {
+          if (!d[j]) {
+            var f = 'function' == typeof require && require;
+            if (!i && f) return require(j, !0);
+            if (h) return h(j, !0);
+            var c = new Error("Cannot find module '" + j + "'");
+            throw c.code = 'MODULE_NOT_FOUND', c;
+          }
+          var k = e[j] = {
+            exports: {}
+          };
+          d[j][0].call(k.exports, function (b) {
+            var c = d[j][1][b];
+            return a(c || b);
+          }, k, k.exports, b, d, e, g);
+        }
+        return e[j].exports;
+      }
+      for (var h = 'function' == typeof require && require, c = 0; c < g.length; c++) a(g[c]);
+      return a;
+    }
+    return b;
+  }()({
+    '/': [function (a, b, c) {
+      'use strict';
+
+      function d(a) {
+        var b = a.length;
+        if (0 < b % 4) throw new Error('Invalid string. Length must be a multiple of 4');
+        var c = a.indexOf('=');
+        -1 === c && (c = b);
+        var d = c === b ? 0 : 4 - c % 4;
+        return [c, d];
+      }
+      function e(a, b, c) {
+        return 3 * (b + c) / 4 - c;
+      }
+      function f(a) {
+        var b,
+          c,
+          f = d(a),
+          g = f[0],
+          h = f[1],
+          j = new m(e(a, g, h)),
+          k = 0,
+          n = 0 < h ? g - 4 : g;
+        for (c = 0; c < n; c += 4) b = l[a.charCodeAt(c)] << 18 | l[a.charCodeAt(c + 1)] << 12 | l[a.charCodeAt(c + 2)] << 6 | l[a.charCodeAt(c + 3)], j[k++] = 255 & b >> 16, j[k++] = 255 & b >> 8, j[k++] = 255 & b;
+        return 2 === h && (b = l[a.charCodeAt(c)] << 2 | l[a.charCodeAt(c + 1)] >> 4, j[k++] = 255 & b), 1 === h && (b = l[a.charCodeAt(c)] << 10 | l[a.charCodeAt(c + 1)] << 4 | l[a.charCodeAt(c + 2)] >> 2, j[k++] = 255 & b >> 8, j[k++] = 255 & b), j;
+      }
+      function g(a) {
+        return k[63 & a >> 18] + k[63 & a >> 12] + k[63 & a >> 6] + k[63 & a];
+      }
+      function h(a, b, c) {
+        for (var d, e = [], f = b; f < c; f += 3) d = (16711680 & a[f] << 16) + (65280 & a[f + 1] << 8) + (255 & a[f + 2]), e.push(g(d));
+        return e.join('');
+      }
+      function j(a) {
+        for (var b, c = a.length, d = c % 3, e = [], f = 16383, g = 0, j = c - d; g < j; g += f) e.push(h(a, g, g + f > j ? j : g + f));
+        return 1 === d ? (b = a[c - 1], e.push(k[b >> 2] + k[63 & b << 4] + '==')) : 2 === d && (b = (a[c - 2] << 8) + a[c - 1], e.push(k[b >> 10] + k[63 & b >> 4] + k[63 & b << 2] + '=')), e.join('');
+      }
+      ;
+      c.byteLength = function (a) {
+        var b = d(a),
+          c = b[0],
+          e = b[1];
+        return 3 * (c + e) / 4 - e;
+      }, c.toByteArray = f, c.fromByteArray = j;
+      for (var k = [], l = [], m = 'undefined' == typeof Uint8Array ? Array : Uint8Array, n = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', o = 0, p = n.length; o < p; ++o) k[o] = n[o], l[n.charCodeAt(o)] = o;
+      l[45] = 62, l[95] = 63;
+    }, {}]
+  }, {}, [])('/');
+});
+
+/***/ }),
+/* 25 */
+/*!************************!*\
+  !*** ./src/http/wx.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const {
+  request
+} = __webpack_require__(/*! ./request */ 16);
+module.exports = {
+  wxGetOpenId: params => request("/biz-passport/passport/login/getOpenId", "POST", params, true, true, false, true, {
+    "business-app": "iclub",
+    "business-sys": "iclub"
+  }),
+  // 获取用户信息
+  userInfo: data => request("/iclub/api/user/queryUserInfo", "post", data, true, true),
+  // 刷新token
+  refreshToken: data => request("/biz-passport/passport/auth/refreshToken", "post", data, true, true),
+  // 更新iclub的头像和昵称
+  iclubApiUserEditUserInfo: params => request("/iclub/api/user/editUserInfo", "POST", params, true, true),
+  getCodeByPhone: params => request("/passport/api/sso/sendSmsVerCode", "POST", params, true, true),
+  // 新用户登录
+  loginForMiniProgramForNewUser: params => request("/passport/api/sso/loginForMiniProgramForNewUser", "POST", params, true, true),
+  // 统一登录后用户注册接口
+  userRegister: data => request("/iclub/api/user/register", "POST", data, true, true),
+  xlogin: data => request("/biz-passport/passport/login/loginByMiniApp", "POST", data, true, true),
+  setEncryptKey: data => request("/biz-passport/passport/auth/refreshUserEncryptKey", "POST", data, true, true)
+};
+
+/***/ }),
+/* 26 */
+/*!**************************!*\
+  !*** ./src/http/mine.js ***!
+  \**************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const {
+  request
+} = __webpack_require__(/*! ./request */ 16);
+module.exports = {
+  // 查询用户收藏
+  // 查询我的评论列表
+  ibtApiContentCommentQueryMyComment: val => request('/ibt/api/contentcomment/queryMyComment', 'GET', val, true),
+  // 删除评论
+  ibtApiContentCommentDelete: data => request('/ibt/api/contentcomment/deleteContentComment', 'POST', data, false, true),
+  // 新增地址
+  iclubApiUserReceiveAddressAdd: data => request('/iclub/api/userReceiveAddress/add', 'POST', data, false, true),
+  // 编辑地址
+  iclubApiUserReceiveAddressEdit: data => request('/iclub/api/userReceiveAddress/edit', 'POST', data, false, true),
+  // 删除地址
+  iclubApiUserReceiveAddressDelete: data => request('/iclub/api/userReceiveAddress/delete', 'POST', data, false, true),
+  // 用户地址详情
+  // iclubApiUserReceiveAddressGet: (objectCode) => request(`/iclub/api/userReceiveAddress/get/${objectCode}`, 'GET', {}, true),
+  iclubApiUserReceiveAddressGet: data => request('/iclub/api/userReceiveAddress/detail', 'POST', data, true, true),
+  // 用户地址列表
+  // iclubApiUserReceiveAddressList: () => request('/iclub/api/userReceiveAddress/list', 'GET', { limit: 100, page: 1 }, true),
+  iclubApiUserReceiveAddressList: data => request('/iclub/api/userReceiveAddress/listNew', 'POST', data, true),
+  // 批量管理
+  iclubApiUserReceiveAddressManage: data => request('/iclub/api/userReceiveAddress/receiveAddressManage', 'POST', data, false, true),
+  // 增加活力值
+  iclubApiUserAddIntegral: data => request('/iclub/api/user/addIntegral', 'POST', data, false, true, true),
+  // 我的点赞列表
+  iclubApiUserContentUpvoteList: params => request('/iclub/api/content/upvoteList', 'GET', params, true),
+  // 点赞-取消点赞
+  iclubApiContentUpVote: data => request('/iclub/api/content/upvote', 'POST', data, false, true),
+  // 我的收藏列表
+  iclubApiUserContentCollectList: params => request('/iclub/api/content/collectList', 'GET', params, true),
+  // 收藏-取消收藏
+  iclubApiContentCollect: data => request('/iclub/api/content/collect', 'POST', data, false, true),
+  // 开始考试
+  iclubApiExamStartExam: data => request('/iclub/api/exam/startExam', 'POST', data, false, true, true),
+  // 试卷提交
+  iclubApiExamStartSubmitPaper: data => request('/iclub/api/exam/submitPaper', 'POST', data, false, true),
+  // 考试结果页面
+  iclubApiExamGetExamResultInfo: code => request(`/iclub/api/exam/getExamResultInfo/${code}`, 'GET', {}, true)
+};
+
+/***/ }),
+/* 27 */
+/*!****************************!*\
+  !*** ./src/http/common.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const {
+  request
+} = __webpack_require__(/*! ./request */ 16);
+module.exports = {
+  // 数据埋点
+  // apiBuryPointClick: (data) => request('/qxcollege/api/buryPoint/click', 'POST', data, true, true, true),
+  apiBuryPointClick: data => request("/base/burypoint/pageEventReport", "POST", data, true, true, true),
+  // 小程序码生成
+  apiQRCode: data => request("/biz-passport/api/qrCode/createQrCode", "POST", data, true, true, false, false),
+  apiRecordShareInfo: data => request("/iclub/openApi/user/userShareForClick", "POST", data, true, true, false, false),
+  cityTree: data => request("/iclub/openApi/common/city", "POST", data, true)
+};
+
+/***/ }),
+/* 28 */
+/*!******************************!*\
+  !*** ./src/utils/request.js ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+var _encyption = __webpack_require__(/*! ./encyption.js */ 29);
+/**
+ * @files 请求方法封装
+ */
+// 首次打开初始化信息
+
+/**
+ * REQUEST 拦截
+ */
+
+function reqIntercept(config) {
+  console.log('%c%s', 'color: red; background: yellow; font-family: Micirosft Yahei; font-size: 24px;', ' 入参明细：');
+  console.log(JSON.parse(JSON.stringify(config)));
+  if (!uni.userInfo.isLoading) {
+    // 开启Loading状态
+    // wx.setUserInfo({
+    //     isLoading: true
+    // })
+    // // 开启Loading
+    // wx.showLoading({
+    //     title: '请稍候...'
+    // })
+  } // 判断给数据加密
+
+  if (config.data && config.data.isEncry) {
+    Reflect.deleteProperty(config.data, 'isEncry');
+    config.data = {
+      requestData: (0, _encyption.Encrypt)(JSON.stringify(config.data))
+    };
+  } // DO SOMETHING...
+
+  return config;
+}
+/**
+ * RESPONSE 拦截
+ */
+
+function resIntercept(result) {
+  // 处理异常JSON字符串
+  const retData = result;
+  if (typeof retData.data === 'string') {
+    try {
+      retData.data = JSON.parse(retData.data);
+    } catch {}
+  } // 输出日志
+
+  console.log('%c%s', 'color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;', ' 出参明细：');
+  console.log(retData);
+  if (uni.userInfo.isLoading) {
+    // 隐藏Loading
+    // wx.hideLoading();
+    // // 关闭Loading状态
+    // wx.setUserInfo({
+    //     isLoading: false
+    // })
+  } // 判断是否需要回调
+
+  return retData;
+}
+/**
+ * 异常拦截
+ */
+
+function catchHandle(err) {
+  // 判断解密
+  const retErr = err; // 输出日志
+
+  console.log('%c%s', 'color: white; background: red; font-family: Micirosft Yahei; font-size: 24px;', ' 出参明细：');
+  console.log(retErr); // 隐藏Loading
+
+  uni.hideLoading(); // 抛出异常到页面
+
+  const errMsg = err.data && err.data.message || (() => {
+    switch (err.errMsg) {
+      case 'request:fail timeout':
+        return '请求超时';
+      case 'request:fail url not in domain list':
+      case 'uploadFile:fail createUploadTask:fail url not in domain list':
+        return '域名不在白名单';
+      default:
+        return '网络错误';
+    }
+  })(); // 认证失败 重新登录
+
+  try {
+    if (retErr.data.code === 500 && retErr.data.data === 'Full authentication is required to access this resource') {
+      // 清除用户信息
+      uni.clearUserInfo();
+      uni.cToast({
+        title: '登录已过期，请重新登录'
+      }); // 记录当前路由
+
+      uni.cacheBeforeRoute();
+      uni.toLogin();
+    }
+  } catch (e) {}
+  uni.cToast({
+    title: errMsg
+  });
+  return err;
+}
+/**
+ * 合并请求参数
+ */
+
+function mergeParams(options) {
+  // 合并请求头 header
+  try {
+    const curToken = {
+      Authorization: uni.userInfo.token
+    };
+    const header = Object.assign(curToken, options.header);
+    if (uni.userInfo.token !== 'Bearer ') options.header = header; // 拼装 url
+
+    if (options.url.match(/https?:\/\//g)) {
+      console.log('ss');
+    } else {
+      options.url = uni.userInfo.baseUrl + options.url;
+    }
+  } catch (e) {
+    console.log(e);
+  } // 返回参数
+
+  return options;
+}
+/**
+ * 特殊处理JSON字符串
+ */
+
+function handleJSONStr(result) {
+  try {
+    // 判断返回数据是否为加密
+    if (typeof result.data !== 'object') {
+      result.data = JSON.parse((0, _encyption.Decrypt)(result.data));
+    }
+    return result;
+  } catch (e) {
+    try {
+      result.data = JSON.parse(result.data);
+      return JSON.parse(result);
+    } catch (e) {
+      return result;
+    }
+  }
+}
+/**
+ * GET 请求封装
+ */
+
+uni.get = (options = {}) => {
+  const obj = {
+    method: 'GET',
+    ...mergeParams(options)
+  };
+  const config = reqIntercept(obj);
+  sendData(config);
+};
+/**
+ * POST 请求封装
+ */
+
+uni.post = (options = {}) => {
+  const obj = {
+    method: 'POST',
+    ...mergeParams(options)
+  };
+  const config = reqIntercept(obj);
+  sendData(config);
+};
+/**
+ * PUT 请求封装
+ */
+
+uni.put = (options = {}) => {
+  const obj = {
+    method: 'PUT',
+    ...mergeParams(options)
+  };
+  const config = reqIntercept(obj);
+  sendData(config);
+};
+/**
+ * DELETE 请求封装
+ */
+
+uni.del = (options = {}) => {
+  const obj = {
+    method: 'DELETE',
+    ...mergeParams(options)
+  };
+  const config = reqIntercept(obj);
+  sendData(config);
+};
+/**
+ * POST 文件上传
+ */
+
+uni.upload = (options = {}) => {
+  const obj = {
+    method: 'POST',
+    ...mergeParams(options)
+  };
+  const config = reqIntercept(obj);
+  sendData(config, true, options.sourceSrc);
+};
+/**
+ * aliOSS 文件上传
+ */
+
+uni.aliOssUpload = (options = {}) => {
+  // 请求加密信息
+  uni.get({
+    url: 'sys/common/getSign/' + uni.userInfo.aliOssDir,
+    success(res) {
+      const data = res.data.data;
+      const fileKey = new Date().getTime() + '_' + options.file.url.split('http://tmp/')[1]; // 上传文件
+
+      uni.upload({
+        url: uni.userInfo.aliOssUrl,
+        filePath: options.file.url,
+        name: 'file',
+        header: {
+          'Content-Type': 'multipart/form-data'
+        },
+        formData: {
+          name: fileKey,
+          key: uni.userInfo.aliOssDir + '/' + fileKey,
+          policy: data.policy,
+          Signature: data.signature,
+          OSSAccessKeyId: data.accessId,
+          success_action_status: '200'
+        },
+        sourceSrc: uni.userInfo.aliOssUrl + '/' + uni.userInfo.aliOssDir + '/' + fileKey,
+        ...options // success: function (res) {
+        //     let sourceSrc = wx.userInfo.aliOssUrl + '/' + wx.userInfo.aliOssDir + '/' + fileKey;
+        //     options.success && options.success(sourceSrc);
+        // },
+        // fail: function () {
+        //     wx.cToast({ title: '上传失败' });
+        // }
+      });
+    }
+  });
+};
+/**
+ * 发送数据
+ */
+
+function sendData(config, isUpd, filePath) {
+  const success = config.success;
+  const fail = config.fail;
+  if (isUpd) {
+    uni.uploadFile(Object.assign(config, {
+      success(res) {
+        const resData = handleJSONStr(res);
+        if (filePath) console.log(resData.statusCode);
+        if (resData.statusCode === 200 && resData.data.code >= 200 && resData.data.code < 300 || resData.data.code === undefined) {
+          if (filePath) {
+            resData.data = {};
+            resData.data.url = filePath;
+          }
+          success && success(resIntercept(resData));
+        } else {
+          const retHandle = catchHandle(resData);
+          fail && fail(retHandle);
+        }
+      },
+      fail(err) {
+        const errData = handleJSONStr(err);
+        fail && fail(catchHandle(errData));
+      }
+    }));
+  } else {
+    uni.request(Object.assign(config, {
+      success(res) {
+        const resData = handleJSONStr(res);
+        if (resData.statusCode === 200 && resData.data.code >= 200 && resData.data.code < 300 || resData.data.code === undefined) {
+          success && success(resIntercept(resData));
+        } else {
+          const retHandle = catchHandle(resData);
+          fail && fail(retHandle);
+        }
+      },
+      fail(err) {
+        const errData = handleJSONStr(err);
+        const retHandle = catchHandle(errData);
+        fail && fail(catchHandle(retHandle));
+      }
+    }));
+  }
+}
+/**
+ * 显示弹层提示
+ */
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 29 */
+/*!********************************!*\
+  !*** ./src/utils/encyption.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Decrypt = Decrypt;
+exports.Encrypt = Encrypt;
+var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+// import CryptoJS from '../miniprogram_npm/crypto-js/index'; // 默认的 KEY 与 iv 与后端保持一致 ，不采用后端传值密钥
+// 默认的 KEY 与 iv 与后端保持一致 ，不采用后端传值密钥
+
+const KEY = _cryptoJs.default.enc.Utf8.parse('www.imeikzdk.com'); // 密钥
+
+const IV = _cryptoJs.default.enc.Utf8.parse('www.imeikzdk.com'); // 偏移量
+
+/**
+ * AES加密 ：字符串 key iv  返回base64
+ */
+
+function Encrypt(word, keyStr, ivStr) {
+  let key = KEY;
+  let iv = IV;
+  if (keyStr) {
+    key = _cryptoJs.default.enc.Utf8.parse(keyStr);
+    iv = _cryptoJs.default.enc.Utf8.parse(ivStr);
+  }
+  const srcs = _cryptoJs.default.enc.Utf8.parse(word);
+  const encrypted = _cryptoJs.default.AES.encrypt(srcs, key, {
+    iv: iv,
+    mode: _cryptoJs.default.mode.CBC,
+    padding: _cryptoJs.default.pad.ZeroPadding
+  });
+  return _cryptoJs.default.enc.Base64.stringify(encrypted.ciphertext);
+}
+/**
+ * AES 解密 ：字符串 key iv  返回base64
+ *
+ */
+
+function Decrypt(word, keyStr, ivStr) {
+  let key = KEY;
+  let iv = IV;
+  if (keyStr) {
+    key = _cryptoJs.default.enc.Utf8.parse(keyStr);
+    iv = _cryptoJs.default.enc.Utf8.parse(ivStr);
+  }
+  const base64 = _cryptoJs.default.enc.Base64.parse(word);
+  const src = _cryptoJs.default.enc.Base64.stringify(base64);
+  const decrypt = _cryptoJs.default.AES.decrypt(src, key, {
+    iv: iv,
+    mode: _cryptoJs.default.mode.CBC,
+    padding: _cryptoJs.default.pad.ZeroPadding
+  });
+  const decryptedStr = decrypt.toString(_cryptoJs.default.enc.Utf8);
+  return decryptedStr.toString();
+}
+
+/***/ }),
+/* 30 */
+/*!*****************************************!*\
+  !*** ./node_modules/crypto-js/index.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory, undef) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31), __webpack_require__(/*! ./x64-core */ 33), __webpack_require__(/*! ./lib-typedarrays */ 34), __webpack_require__(/*! ./enc-utf16 */ 35), __webpack_require__(/*! ./enc-base64 */ 36), __webpack_require__(/*! ./enc-base64url */ 37), __webpack_require__(/*! ./md5 */ 38), __webpack_require__(/*! ./sha1 */ 39), __webpack_require__(/*! ./sha256 */ 40), __webpack_require__(/*! ./sha224 */ 41), __webpack_require__(/*! ./sha512 */ 42), __webpack_require__(/*! ./sha384 */ 43), __webpack_require__(/*! ./sha3 */ 44), __webpack_require__(/*! ./ripemd160 */ 45), __webpack_require__(/*! ./hmac */ 46), __webpack_require__(/*! ./pbkdf2 */ 47), __webpack_require__(/*! ./evpkdf */ 48), __webpack_require__(/*! ./cipher-core */ 49), __webpack_require__(/*! ./mode-cfb */ 50), __webpack_require__(/*! ./mode-ctr */ 51), __webpack_require__(/*! ./mode-ctr-gladman */ 52), __webpack_require__(/*! ./mode-ofb */ 53), __webpack_require__(/*! ./mode-ecb */ 54), __webpack_require__(/*! ./pad-ansix923 */ 55), __webpack_require__(/*! ./pad-iso10126 */ 56), __webpack_require__(/*! ./pad-iso97971 */ 57), __webpack_require__(/*! ./pad-zeropadding */ 58), __webpack_require__(/*! ./pad-nopadding */ 59), __webpack_require__(/*! ./format-hex */ 60), __webpack_require__(/*! ./aes */ 61), __webpack_require__(/*! ./tripledes */ 62), __webpack_require__(/*! ./rc4 */ 63), __webpack_require__(/*! ./rabbit */ 64), __webpack_require__(/*! ./rabbit-legacy */ 65), __webpack_require__(/*! ./blowfish */ 66));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	return CryptoJS;
+
+}));
+
+/***/ }),
+/* 31 */
+/*!****************************************!*\
+  !*** ./node_modules/crypto-js/core.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory();
+	}
+	else {}
+}(this, function () {
+
+	/*globals window, global, require*/
+
+	/**
+	 * CryptoJS core components.
+	 */
+	var CryptoJS = CryptoJS || (function (Math, undefined) {
+
+	    var crypto;
+
+	    // Native crypto from window (Browser)
+	    if (typeof window !== 'undefined' && window.crypto) {
+	        crypto = window.crypto;
+	    }
+
+	    // Native crypto in web worker (Browser)
+	    if (typeof self !== 'undefined' && self.crypto) {
+	        crypto = self.crypto;
+	    }
+
+	    // Native crypto from worker
+	    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+	        crypto = globalThis.crypto;
+	    }
+
+	    // Native (experimental IE 11) crypto from window (Browser)
+	    if (!crypto && typeof window !== 'undefined' && window.msCrypto) {
+	        crypto = window.msCrypto;
+	    }
+
+	    // Native crypto from global (NodeJS)
+	    if (!crypto && typeof global !== 'undefined' && global.crypto) {
+	        crypto = global.crypto;
+	    }
+
+	    // Native crypto import via require (NodeJS)
+	    if (!crypto && "function" === 'function') {
+	        try {
+	            crypto = __webpack_require__(/*! crypto */ 32);
+	        } catch (err) {}
+	    }
+
+	    /*
+	     * Cryptographically secure pseudorandom number generator
+	     *
+	     * As Math.random() is cryptographically not safe to use
+	     */
+	    var cryptoSecureRandomInt = function () {
+	        if (crypto) {
+	            // Use getRandomValues method (Browser)
+	            if (typeof crypto.getRandomValues === 'function') {
+	                try {
+	                    return crypto.getRandomValues(new Uint32Array(1))[0];
+	                } catch (err) {}
+	            }
+
+	            // Use randomBytes method (NodeJS)
+	            if (typeof crypto.randomBytes === 'function') {
+	                try {
+	                    return crypto.randomBytes(4).readInt32LE();
+	                } catch (err) {}
+	            }
+	        }
+
+	        throw new Error('Native crypto module could not be used to get secure random number.');
+	    };
+
+	    /*
+	     * Local polyfill of Object.create
+
+	     */
+	    var create = Object.create || (function () {
+	        function F() {}
+
+	        return function (obj) {
+	            var subtype;
+
+	            F.prototype = obj;
+
+	            subtype = new F();
+
+	            F.prototype = null;
+
+	            return subtype;
+	        };
+	    }());
+
+	    /**
+	     * CryptoJS namespace.
+	     */
+	    var C = {};
+
+	    /**
+	     * Library namespace.
+	     */
+	    var C_lib = C.lib = {};
+
+	    /**
+	     * Base object for prototypal inheritance.
+	     */
+	    var Base = C_lib.Base = (function () {
+
+
+	        return {
+	            /**
+	             * Creates a new object that inherits from this object.
+	             *
+	             * @param {Object} overrides Properties to copy into the new object.
+	             *
+	             * @return {Object} The new object.
+	             *
+	             * @static
+	             *
+	             * @example
+	             *
+	             *     var MyType = CryptoJS.lib.Base.extend({
+	             *         field: 'value',
+	             *
+	             *         method: function () {
+	             *         }
+	             *     });
+	             */
+	            extend: function (overrides) {
+	                // Spawn
+	                var subtype = create(this);
+
+	                // Augment
+	                if (overrides) {
+	                    subtype.mixIn(overrides);
+	                }
+
+	                // Create default initializer
+	                if (!subtype.hasOwnProperty('init') || this.init === subtype.init) {
+	                    subtype.init = function () {
+	                        subtype.$super.init.apply(this, arguments);
+	                    };
+	                }
+
+	                // Initializer's prototype is the subtype object
+	                subtype.init.prototype = subtype;
+
+	                // Reference supertype
+	                subtype.$super = this;
+
+	                return subtype;
+	            },
+
+	            /**
+	             * Extends this object and runs the init method.
+	             * Arguments to create() will be passed to init().
+	             *
+	             * @return {Object} The new object.
+	             *
+	             * @static
+	             *
+	             * @example
+	             *
+	             *     var instance = MyType.create();
+	             */
+	            create: function () {
+	                var instance = this.extend();
+	                instance.init.apply(instance, arguments);
+
+	                return instance;
+	            },
+
+	            /**
+	             * Initializes a newly created object.
+	             * Override this method to add some logic when your objects are created.
+	             *
+	             * @example
+	             *
+	             *     var MyType = CryptoJS.lib.Base.extend({
+	             *         init: function () {
+	             *             // ...
+	             *         }
+	             *     });
+	             */
+	            init: function () {
+	            },
+
+	            /**
+	             * Copies properties into this object.
+	             *
+	             * @param {Object} properties The properties to mix in.
+	             *
+	             * @example
+	             *
+	             *     MyType.mixIn({
+	             *         field: 'value'
+	             *     });
+	             */
+	            mixIn: function (properties) {
+	                for (var propertyName in properties) {
+	                    if (properties.hasOwnProperty(propertyName)) {
+	                        this[propertyName] = properties[propertyName];
+	                    }
+	                }
+
+	                // IE won't copy toString using the loop above
+	                if (properties.hasOwnProperty('toString')) {
+	                    this.toString = properties.toString;
+	                }
+	            },
+
+	            /**
+	             * Creates a copy of this object.
+	             *
+	             * @return {Object} The clone.
+	             *
+	             * @example
+	             *
+	             *     var clone = instance.clone();
+	             */
+	            clone: function () {
+	                return this.init.prototype.extend(this);
+	            }
+	        };
+	    }());
+
+	    /**
+	     * An array of 32-bit words.
+	     *
+	     * @property {Array} words The array of 32-bit words.
+	     * @property {number} sigBytes The number of significant bytes in this word array.
+	     */
+	    var WordArray = C_lib.WordArray = Base.extend({
+	        /**
+	         * Initializes a newly created word array.
+	         *
+	         * @param {Array} words (Optional) An array of 32-bit words.
+	         * @param {number} sigBytes (Optional) The number of significant bytes in the words.
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.lib.WordArray.create();
+	         *     var wordArray = CryptoJS.lib.WordArray.create([0x00010203, 0x04050607]);
+	         *     var wordArray = CryptoJS.lib.WordArray.create([0x00010203, 0x04050607], 6);
+	         */
+	        init: function (words, sigBytes) {
+	            words = this.words = words || [];
+
+	            if (sigBytes != undefined) {
+	                this.sigBytes = sigBytes;
+	            } else {
+	                this.sigBytes = words.length * 4;
+	            }
+	        },
+
+	        /**
+	         * Converts this word array to a string.
+	         *
+	         * @param {Encoder} encoder (Optional) The encoding strategy to use. Default: CryptoJS.enc.Hex
+	         *
+	         * @return {string} The stringified word array.
+	         *
+	         * @example
+	         *
+	         *     var string = wordArray + '';
+	         *     var string = wordArray.toString();
+	         *     var string = wordArray.toString(CryptoJS.enc.Utf8);
+	         */
+	        toString: function (encoder) {
+	            return (encoder || Hex).stringify(this);
+	        },
+
+	        /**
+	         * Concatenates a word array to this word array.
+	         *
+	         * @param {WordArray} wordArray The word array to append.
+	         *
+	         * @return {WordArray} This word array.
+	         *
+	         * @example
+	         *
+	         *     wordArray1.concat(wordArray2);
+	         */
+	        concat: function (wordArray) {
+	            // Shortcuts
+	            var thisWords = this.words;
+	            var thatWords = wordArray.words;
+	            var thisSigBytes = this.sigBytes;
+	            var thatSigBytes = wordArray.sigBytes;
+
+	            // Clamp excess bits
+	            this.clamp();
+
+	            // Concat
+	            if (thisSigBytes % 4) {
+	                // Copy one byte at a time
+	                for (var i = 0; i < thatSigBytes; i++) {
+	                    var thatByte = (thatWords[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+	                    thisWords[(thisSigBytes + i) >>> 2] |= thatByte << (24 - ((thisSigBytes + i) % 4) * 8);
+	                }
+	            } else {
+	                // Copy one word at a time
+	                for (var j = 0; j < thatSigBytes; j += 4) {
+	                    thisWords[(thisSigBytes + j) >>> 2] = thatWords[j >>> 2];
+	                }
+	            }
+	            this.sigBytes += thatSigBytes;
+
+	            // Chainable
+	            return this;
+	        },
+
+	        /**
+	         * Removes insignificant bits.
+	         *
+	         * @example
+	         *
+	         *     wordArray.clamp();
+	         */
+	        clamp: function () {
+	            // Shortcuts
+	            var words = this.words;
+	            var sigBytes = this.sigBytes;
+
+	            // Clamp
+	            words[sigBytes >>> 2] &= 0xffffffff << (32 - (sigBytes % 4) * 8);
+	            words.length = Math.ceil(sigBytes / 4);
+	        },
+
+	        /**
+	         * Creates a copy of this word array.
+	         *
+	         * @return {WordArray} The clone.
+	         *
+	         * @example
+	         *
+	         *     var clone = wordArray.clone();
+	         */
+	        clone: function () {
+	            var clone = Base.clone.call(this);
+	            clone.words = this.words.slice(0);
+
+	            return clone;
+	        },
+
+	        /**
+	         * Creates a word array filled with random bytes.
+	         *
+	         * @param {number} nBytes The number of random bytes to generate.
+	         *
+	         * @return {WordArray} The random word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.lib.WordArray.random(16);
+	         */
+	        random: function (nBytes) {
+	            var words = [];
+
+	            for (var i = 0; i < nBytes; i += 4) {
+	                words.push(cryptoSecureRandomInt());
+	            }
+
+	            return new WordArray.init(words, nBytes);
+	        }
+	    });
+
+	    /**
+	     * Encoder namespace.
+	     */
+	    var C_enc = C.enc = {};
+
+	    /**
+	     * Hex encoding strategy.
+	     */
+	    var Hex = C_enc.Hex = {
+	        /**
+	         * Converts a word array to a hex string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The hex string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var hexString = CryptoJS.enc.Hex.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+
+	            // Convert
+	            var hexChars = [];
+	            for (var i = 0; i < sigBytes; i++) {
+	                var bite = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+	                hexChars.push((bite >>> 4).toString(16));
+	                hexChars.push((bite & 0x0f).toString(16));
+	            }
+
+	            return hexChars.join('');
+	        },
+
+	        /**
+	         * Converts a hex string to a word array.
+	         *
+	         * @param {string} hexStr The hex string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Hex.parse(hexString);
+	         */
+	        parse: function (hexStr) {
+	            // Shortcut
+	            var hexStrLength = hexStr.length;
+
+	            // Convert
+	            var words = [];
+	            for (var i = 0; i < hexStrLength; i += 2) {
+	                words[i >>> 3] |= parseInt(hexStr.substr(i, 2), 16) << (24 - (i % 8) * 4);
+	            }
+
+	            return new WordArray.init(words, hexStrLength / 2);
+	        }
+	    };
+
+	    /**
+	     * Latin1 encoding strategy.
+	     */
+	    var Latin1 = C_enc.Latin1 = {
+	        /**
+	         * Converts a word array to a Latin1 string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The Latin1 string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var latin1String = CryptoJS.enc.Latin1.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+
+	            // Convert
+	            var latin1Chars = [];
+	            for (var i = 0; i < sigBytes; i++) {
+	                var bite = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+	                latin1Chars.push(String.fromCharCode(bite));
+	            }
+
+	            return latin1Chars.join('');
+	        },
+
+	        /**
+	         * Converts a Latin1 string to a word array.
+	         *
+	         * @param {string} latin1Str The Latin1 string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Latin1.parse(latin1String);
+	         */
+	        parse: function (latin1Str) {
+	            // Shortcut
+	            var latin1StrLength = latin1Str.length;
+
+	            // Convert
+	            var words = [];
+	            for (var i = 0; i < latin1StrLength; i++) {
+	                words[i >>> 2] |= (latin1Str.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
+	            }
+
+	            return new WordArray.init(words, latin1StrLength);
+	        }
+	    };
+
+	    /**
+	     * UTF-8 encoding strategy.
+	     */
+	    var Utf8 = C_enc.Utf8 = {
+	        /**
+	         * Converts a word array to a UTF-8 string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The UTF-8 string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var utf8String = CryptoJS.enc.Utf8.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            try {
+	                return decodeURIComponent(escape(Latin1.stringify(wordArray)));
+	            } catch (e) {
+	                throw new Error('Malformed UTF-8 data');
+	            }
+	        },
+
+	        /**
+	         * Converts a UTF-8 string to a word array.
+	         *
+	         * @param {string} utf8Str The UTF-8 string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Utf8.parse(utf8String);
+	         */
+	        parse: function (utf8Str) {
+	            return Latin1.parse(unescape(encodeURIComponent(utf8Str)));
+	        }
+	    };
+
+	    /**
+	     * Abstract buffered block algorithm template.
+	     *
+	     * The property blockSize must be implemented in a concrete subtype.
+	     *
+	     * @property {number} _minBufferSize The number of blocks that should be kept unprocessed in the buffer. Default: 0
+	     */
+	    var BufferedBlockAlgorithm = C_lib.BufferedBlockAlgorithm = Base.extend({
+	        /**
+	         * Resets this block algorithm's data buffer to its initial state.
+	         *
+	         * @example
+	         *
+	         *     bufferedBlockAlgorithm.reset();
+	         */
+	        reset: function () {
+	            // Initial values
+	            this._data = new WordArray.init();
+	            this._nDataBytes = 0;
+	        },
+
+	        /**
+	         * Adds new data to this block algorithm's buffer.
+	         *
+	         * @param {WordArray|string} data The data to append. Strings are converted to a WordArray using UTF-8.
+	         *
+	         * @example
+	         *
+	         *     bufferedBlockAlgorithm._append('data');
+	         *     bufferedBlockAlgorithm._append(wordArray);
+	         */
+	        _append: function (data) {
+	            // Convert string to WordArray, else assume WordArray already
+	            if (typeof data == 'string') {
+	                data = Utf8.parse(data);
+	            }
+
+	            // Append
+	            this._data.concat(data);
+	            this._nDataBytes += data.sigBytes;
+	        },
+
+	        /**
+	         * Processes available data blocks.
+	         *
+	         * This method invokes _doProcessBlock(offset), which must be implemented by a concrete subtype.
+	         *
+	         * @param {boolean} doFlush Whether all blocks and partial blocks should be processed.
+	         *
+	         * @return {WordArray} The processed data.
+	         *
+	         * @example
+	         *
+	         *     var processedData = bufferedBlockAlgorithm._process();
+	         *     var processedData = bufferedBlockAlgorithm._process(!!'flush');
+	         */
+	        _process: function (doFlush) {
+	            var processedWords;
+
+	            // Shortcuts
+	            var data = this._data;
+	            var dataWords = data.words;
+	            var dataSigBytes = data.sigBytes;
+	            var blockSize = this.blockSize;
+	            var blockSizeBytes = blockSize * 4;
+
+	            // Count blocks ready
+	            var nBlocksReady = dataSigBytes / blockSizeBytes;
+	            if (doFlush) {
+	                // Round up to include partial blocks
+	                nBlocksReady = Math.ceil(nBlocksReady);
+	            } else {
+	                // Round down to include only full blocks,
+	                // less the number of blocks that must remain in the buffer
+	                nBlocksReady = Math.max((nBlocksReady | 0) - this._minBufferSize, 0);
+	            }
+
+	            // Count words ready
+	            var nWordsReady = nBlocksReady * blockSize;
+
+	            // Count bytes ready
+	            var nBytesReady = Math.min(nWordsReady * 4, dataSigBytes);
+
+	            // Process blocks
+	            if (nWordsReady) {
+	                for (var offset = 0; offset < nWordsReady; offset += blockSize) {
+	                    // Perform concrete-algorithm logic
+	                    this._doProcessBlock(dataWords, offset);
+	                }
+
+	                // Remove processed words
+	                processedWords = dataWords.splice(0, nWordsReady);
+	                data.sigBytes -= nBytesReady;
+	            }
+
+	            // Return processed words
+	            return new WordArray.init(processedWords, nBytesReady);
+	        },
+
+	        /**
+	         * Creates a copy of this object.
+	         *
+	         * @return {Object} The clone.
+	         *
+	         * @example
+	         *
+	         *     var clone = bufferedBlockAlgorithm.clone();
+	         */
+	        clone: function () {
+	            var clone = Base.clone.call(this);
+	            clone._data = this._data.clone();
+
+	            return clone;
+	        },
+
+	        _minBufferSize: 0
+	    });
+
+	    /**
+	     * Abstract hasher template.
+	     *
+	     * @property {number} blockSize The number of 32-bit words this hasher operates on. Default: 16 (512 bits)
+	     */
+	    var Hasher = C_lib.Hasher = BufferedBlockAlgorithm.extend({
+	        /**
+	         * Configuration options.
+	         */
+	        cfg: Base.extend(),
+
+	        /**
+	         * Initializes a newly created hasher.
+	         *
+	         * @param {Object} cfg (Optional) The configuration options to use for this hash computation.
+	         *
+	         * @example
+	         *
+	         *     var hasher = CryptoJS.algo.SHA256.create();
+	         */
+	        init: function (cfg) {
+	            // Apply config defaults
+	            this.cfg = this.cfg.extend(cfg);
+
+	            // Set initial values
+	            this.reset();
+	        },
+
+	        /**
+	         * Resets this hasher to its initial state.
+	         *
+	         * @example
+	         *
+	         *     hasher.reset();
+	         */
+	        reset: function () {
+	            // Reset data buffer
+	            BufferedBlockAlgorithm.reset.call(this);
+
+	            // Perform concrete-hasher logic
+	            this._doReset();
+	        },
+
+	        /**
+	         * Updates this hasher with a message.
+	         *
+	         * @param {WordArray|string} messageUpdate The message to append.
+	         *
+	         * @return {Hasher} This hasher.
+	         *
+	         * @example
+	         *
+	         *     hasher.update('message');
+	         *     hasher.update(wordArray);
+	         */
+	        update: function (messageUpdate) {
+	            // Append
+	            this._append(messageUpdate);
+
+	            // Update the hash
+	            this._process();
+
+	            // Chainable
+	            return this;
+	        },
+
+	        /**
+	         * Finalizes the hash computation.
+	         * Note that the finalize operation is effectively a destructive, read-once operation.
+	         *
+	         * @param {WordArray|string} messageUpdate (Optional) A final message update.
+	         *
+	         * @return {WordArray} The hash.
+	         *
+	         * @example
+	         *
+	         *     var hash = hasher.finalize();
+	         *     var hash = hasher.finalize('message');
+	         *     var hash = hasher.finalize(wordArray);
+	         */
+	        finalize: function (messageUpdate) {
+	            // Final message update
+	            if (messageUpdate) {
+	                this._append(messageUpdate);
+	            }
+
+	            // Perform concrete-hasher logic
+	            var hash = this._doFinalize();
+
+	            return hash;
+	        },
+
+	        blockSize: 512/32,
+
+	        /**
+	         * Creates a shortcut function to a hasher's object interface.
+	         *
+	         * @param {Hasher} hasher The hasher to create a helper for.
+	         *
+	         * @return {Function} The shortcut function.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var SHA256 = CryptoJS.lib.Hasher._createHelper(CryptoJS.algo.SHA256);
+	         */
+	        _createHelper: function (hasher) {
+	            return function (message, cfg) {
+	                return new hasher.init(cfg).finalize(message);
+	            };
+	        },
+
+	        /**
+	         * Creates a shortcut function to the HMAC's object interface.
+	         *
+	         * @param {Hasher} hasher The hasher to use in this HMAC helper.
+	         *
+	         * @return {Function} The shortcut function.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var HmacSHA256 = CryptoJS.lib.Hasher._createHmacHelper(CryptoJS.algo.SHA256);
+	         */
+	        _createHmacHelper: function (hasher) {
+	            return function (message, key) {
+	                return new C_algo.HMAC.init(hasher, key).finalize(message);
+	            };
+	        }
+	    });
+
+	    /**
+	     * Algorithm namespace.
+	     */
+	    var C_algo = C.algo = {};
+
+	    return C;
+	}(Math));
+
+
+	return CryptoJS;
+
+}));
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/global.js */ 2)))
+
+/***/ }),
+/* 32 */
+/*!************************!*\
+  !*** crypto (ignored) ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
+
+/***/ }),
+/* 33 */
+/*!********************************************!*\
+  !*** ./node_modules/crypto-js/x64-core.js ***!
+  \********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function (undefined) {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var Base = C_lib.Base;
+	    var X32WordArray = C_lib.WordArray;
+
+	    /**
+	     * x64 namespace.
+	     */
+	    var C_x64 = C.x64 = {};
+
+	    /**
+	     * A 64-bit word.
+	     */
+	    var X64Word = C_x64.Word = Base.extend({
+	        /**
+	         * Initializes a newly created 64-bit word.
+	         *
+	         * @param {number} high The high 32 bits.
+	         * @param {number} low The low 32 bits.
+	         *
+	         * @example
+	         *
+	         *     var x64Word = CryptoJS.x64.Word.create(0x00010203, 0x04050607);
+	         */
+	        init: function (high, low) {
+	            this.high = high;
+	            this.low = low;
+	        }
+
+	        /**
+	         * Bitwise NOTs this word.
+	         *
+	         * @return {X64Word} A new x64-Word object after negating.
+	         *
+	         * @example
+	         *
+	         *     var negated = x64Word.not();
+	         */
+	        // not: function () {
+	            // var high = ~this.high;
+	            // var low = ~this.low;
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Bitwise ANDs this word with the passed word.
+	         *
+	         * @param {X64Word} word The x64-Word to AND with this word.
+	         *
+	         * @return {X64Word} A new x64-Word object after ANDing.
+	         *
+	         * @example
+	         *
+	         *     var anded = x64Word.and(anotherX64Word);
+	         */
+	        // and: function (word) {
+	            // var high = this.high & word.high;
+	            // var low = this.low & word.low;
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Bitwise ORs this word with the passed word.
+	         *
+	         * @param {X64Word} word The x64-Word to OR with this word.
+	         *
+	         * @return {X64Word} A new x64-Word object after ORing.
+	         *
+	         * @example
+	         *
+	         *     var ored = x64Word.or(anotherX64Word);
+	         */
+	        // or: function (word) {
+	            // var high = this.high | word.high;
+	            // var low = this.low | word.low;
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Bitwise XORs this word with the passed word.
+	         *
+	         * @param {X64Word} word The x64-Word to XOR with this word.
+	         *
+	         * @return {X64Word} A new x64-Word object after XORing.
+	         *
+	         * @example
+	         *
+	         *     var xored = x64Word.xor(anotherX64Word);
+	         */
+	        // xor: function (word) {
+	            // var high = this.high ^ word.high;
+	            // var low = this.low ^ word.low;
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Shifts this word n bits to the left.
+	         *
+	         * @param {number} n The number of bits to shift.
+	         *
+	         * @return {X64Word} A new x64-Word object after shifting.
+	         *
+	         * @example
+	         *
+	         *     var shifted = x64Word.shiftL(25);
+	         */
+	        // shiftL: function (n) {
+	            // if (n < 32) {
+	                // var high = (this.high << n) | (this.low >>> (32 - n));
+	                // var low = this.low << n;
+	            // } else {
+	                // var high = this.low << (n - 32);
+	                // var low = 0;
+	            // }
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Shifts this word n bits to the right.
+	         *
+	         * @param {number} n The number of bits to shift.
+	         *
+	         * @return {X64Word} A new x64-Word object after shifting.
+	         *
+	         * @example
+	         *
+	         *     var shifted = x64Word.shiftR(7);
+	         */
+	        // shiftR: function (n) {
+	            // if (n < 32) {
+	                // var low = (this.low >>> n) | (this.high << (32 - n));
+	                // var high = this.high >>> n;
+	            // } else {
+	                // var low = this.high >>> (n - 32);
+	                // var high = 0;
+	            // }
+
+	            // return X64Word.create(high, low);
+	        // },
+
+	        /**
+	         * Rotates this word n bits to the left.
+	         *
+	         * @param {number} n The number of bits to rotate.
+	         *
+	         * @return {X64Word} A new x64-Word object after rotating.
+	         *
+	         * @example
+	         *
+	         *     var rotated = x64Word.rotL(25);
+	         */
+	        // rotL: function (n) {
+	            // return this.shiftL(n).or(this.shiftR(64 - n));
+	        // },
+
+	        /**
+	         * Rotates this word n bits to the right.
+	         *
+	         * @param {number} n The number of bits to rotate.
+	         *
+	         * @return {X64Word} A new x64-Word object after rotating.
+	         *
+	         * @example
+	         *
+	         *     var rotated = x64Word.rotR(7);
+	         */
+	        // rotR: function (n) {
+	            // return this.shiftR(n).or(this.shiftL(64 - n));
+	        // },
+
+	        /**
+	         * Adds this word with the passed word.
+	         *
+	         * @param {X64Word} word The x64-Word to add with this word.
+	         *
+	         * @return {X64Word} A new x64-Word object after adding.
+	         *
+	         * @example
+	         *
+	         *     var added = x64Word.add(anotherX64Word);
+	         */
+	        // add: function (word) {
+	            // var low = (this.low + word.low) | 0;
+	            // var carry = (low >>> 0) < (this.low >>> 0) ? 1 : 0;
+	            // var high = (this.high + word.high + carry) | 0;
+
+	            // return X64Word.create(high, low);
+	        // }
+	    });
+
+	    /**
+	     * An array of 64-bit words.
+	     *
+	     * @property {Array} words The array of CryptoJS.x64.Word objects.
+	     * @property {number} sigBytes The number of significant bytes in this word array.
+	     */
+	    var X64WordArray = C_x64.WordArray = Base.extend({
+	        /**
+	         * Initializes a newly created word array.
+	         *
+	         * @param {Array} words (Optional) An array of CryptoJS.x64.Word objects.
+	         * @param {number} sigBytes (Optional) The number of significant bytes in the words.
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.x64.WordArray.create();
+	         *
+	         *     var wordArray = CryptoJS.x64.WordArray.create([
+	         *         CryptoJS.x64.Word.create(0x00010203, 0x04050607),
+	         *         CryptoJS.x64.Word.create(0x18191a1b, 0x1c1d1e1f)
+	         *     ]);
+	         *
+	         *     var wordArray = CryptoJS.x64.WordArray.create([
+	         *         CryptoJS.x64.Word.create(0x00010203, 0x04050607),
+	         *         CryptoJS.x64.Word.create(0x18191a1b, 0x1c1d1e1f)
+	         *     ], 10);
+	         */
+	        init: function (words, sigBytes) {
+	            words = this.words = words || [];
+
+	            if (sigBytes != undefined) {
+	                this.sigBytes = sigBytes;
+	            } else {
+	                this.sigBytes = words.length * 8;
+	            }
+	        },
+
+	        /**
+	         * Converts this 64-bit word array to a 32-bit word array.
+	         *
+	         * @return {CryptoJS.lib.WordArray} This word array's data as a 32-bit word array.
+	         *
+	         * @example
+	         *
+	         *     var x32WordArray = x64WordArray.toX32();
+	         */
+	        toX32: function () {
+	            // Shortcuts
+	            var x64Words = this.words;
+	            var x64WordsLength = x64Words.length;
+
+	            // Convert
+	            var x32Words = [];
+	            for (var i = 0; i < x64WordsLength; i++) {
+	                var x64Word = x64Words[i];
+	                x32Words.push(x64Word.high);
+	                x32Words.push(x64Word.low);
+	            }
+
+	            return X32WordArray.create(x32Words, this.sigBytes);
+	        },
+
+	        /**
+	         * Creates a copy of this word array.
+	         *
+	         * @return {X64WordArray} The clone.
+	         *
+	         * @example
+	         *
+	         *     var clone = x64WordArray.clone();
+	         */
+	        clone: function () {
+	            var clone = Base.clone.call(this);
+
+	            // Clone "words" array
+	            var words = clone.words = this.words.slice(0);
+
+	            // Clone each X64Word object
+	            var wordsLength = words.length;
+	            for (var i = 0; i < wordsLength; i++) {
+	                words[i] = words[i].clone();
+	            }
+
+	            return clone;
+	        }
+	    });
+	}());
+
+
+	return CryptoJS;
+
+}));
+
+/***/ }),
+/* 34 */
+/*!***************************************************!*\
+  !*** ./node_modules/crypto-js/lib-typedarrays.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Check if typed arrays are supported
+	    if (typeof ArrayBuffer != 'function') {
+	        return;
+	    }
+
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+
+	    // Reference original init
+	    var superInit = WordArray.init;
+
+	    // Augment WordArray.init to handle typed arrays
+	    var subInit = WordArray.init = function (typedArray) {
+	        // Convert buffers to uint8
+	        if (typedArray instanceof ArrayBuffer) {
+	            typedArray = new Uint8Array(typedArray);
+	        }
+
+	        // Convert other array views to uint8
+	        if (
+	            typedArray instanceof Int8Array ||
+	            (typeof Uint8ClampedArray !== "undefined" && typedArray instanceof Uint8ClampedArray) ||
+	            typedArray instanceof Int16Array ||
+	            typedArray instanceof Uint16Array ||
+	            typedArray instanceof Int32Array ||
+	            typedArray instanceof Uint32Array ||
+	            typedArray instanceof Float32Array ||
+	            typedArray instanceof Float64Array
+	        ) {
+	            typedArray = new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength);
+	        }
+
+	        // Handle Uint8Array
+	        if (typedArray instanceof Uint8Array) {
+	            // Shortcut
+	            var typedArrayByteLength = typedArray.byteLength;
+
+	            // Extract bytes
+	            var words = [];
+	            for (var i = 0; i < typedArrayByteLength; i++) {
+	                words[i >>> 2] |= typedArray[i] << (24 - (i % 4) * 8);
+	            }
+
+	            // Initialize this word array
+	            superInit.call(this, words, typedArrayByteLength);
+	        } else {
+	            // Else call normal init
+	            superInit.apply(this, arguments);
+	        }
+	    };
+
+	    subInit.prototype = WordArray;
+	}());
+
+
+	return CryptoJS.lib.WordArray;
+
+}));
+
+/***/ }),
+/* 35 */
+/*!*********************************************!*\
+  !*** ./node_modules/crypto-js/enc-utf16.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+	    var C_enc = C.enc;
+
+	    /**
+	     * UTF-16 BE encoding strategy.
+	     */
+	    var Utf16BE = C_enc.Utf16 = C_enc.Utf16BE = {
+	        /**
+	         * Converts a word array to a UTF-16 BE string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The UTF-16 BE string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var utf16String = CryptoJS.enc.Utf16.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+
+	            // Convert
+	            var utf16Chars = [];
+	            for (var i = 0; i < sigBytes; i += 2) {
+	                var codePoint = (words[i >>> 2] >>> (16 - (i % 4) * 8)) & 0xffff;
+	                utf16Chars.push(String.fromCharCode(codePoint));
+	            }
+
+	            return utf16Chars.join('');
+	        },
+
+	        /**
+	         * Converts a UTF-16 BE string to a word array.
+	         *
+	         * @param {string} utf16Str The UTF-16 BE string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Utf16.parse(utf16String);
+	         */
+	        parse: function (utf16Str) {
+	            // Shortcut
+	            var utf16StrLength = utf16Str.length;
+
+	            // Convert
+	            var words = [];
+	            for (var i = 0; i < utf16StrLength; i++) {
+	                words[i >>> 1] |= utf16Str.charCodeAt(i) << (16 - (i % 2) * 16);
+	            }
+
+	            return WordArray.create(words, utf16StrLength * 2);
+	        }
+	    };
+
+	    /**
+	     * UTF-16 LE encoding strategy.
+	     */
+	    C_enc.Utf16LE = {
+	        /**
+	         * Converts a word array to a UTF-16 LE string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The UTF-16 LE string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var utf16Str = CryptoJS.enc.Utf16LE.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+
+	            // Convert
+	            var utf16Chars = [];
+	            for (var i = 0; i < sigBytes; i += 2) {
+	                var codePoint = swapEndian((words[i >>> 2] >>> (16 - (i % 4) * 8)) & 0xffff);
+	                utf16Chars.push(String.fromCharCode(codePoint));
+	            }
+
+	            return utf16Chars.join('');
+	        },
+
+	        /**
+	         * Converts a UTF-16 LE string to a word array.
+	         *
+	         * @param {string} utf16Str The UTF-16 LE string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Utf16LE.parse(utf16Str);
+	         */
+	        parse: function (utf16Str) {
+	            // Shortcut
+	            var utf16StrLength = utf16Str.length;
+
+	            // Convert
+	            var words = [];
+	            for (var i = 0; i < utf16StrLength; i++) {
+	                words[i >>> 1] |= swapEndian(utf16Str.charCodeAt(i) << (16 - (i % 2) * 16));
+	            }
+
+	            return WordArray.create(words, utf16StrLength * 2);
+	        }
+	    };
+
+	    function swapEndian(word) {
+	        return ((word << 8) & 0xff00ff00) | ((word >>> 8) & 0x00ff00ff);
+	    }
+	}());
+
+
+	return CryptoJS.enc.Utf16;
+
+}));
+
+/***/ }),
+/* 36 */
+/*!**********************************************!*\
+  !*** ./node_modules/crypto-js/enc-base64.js ***!
+  \**********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+	    var C_enc = C.enc;
+
+	    /**
+	     * Base64 encoding strategy.
+	     */
+	    var Base64 = C_enc.Base64 = {
+	        /**
+	         * Converts a word array to a Base64 string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @return {string} The Base64 string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var base64String = CryptoJS.enc.Base64.stringify(wordArray);
+	         */
+	        stringify: function (wordArray) {
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+	            var map = this._map;
+
+	            // Clamp excess bits
+	            wordArray.clamp();
+
+	            // Convert
+	            var base64Chars = [];
+	            for (var i = 0; i < sigBytes; i += 3) {
+	                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
+	                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
+	                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
+
+	                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
+
+	                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
+	                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
+	                }
+	            }
+
+	            // Add padding
+	            var paddingChar = map.charAt(64);
+	            if (paddingChar) {
+	                while (base64Chars.length % 4) {
+	                    base64Chars.push(paddingChar);
+	                }
+	            }
+
+	            return base64Chars.join('');
+	        },
+
+	        /**
+	         * Converts a Base64 string to a word array.
+	         *
+	         * @param {string} base64Str The Base64 string.
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Base64.parse(base64String);
+	         */
+	        parse: function (base64Str) {
+	            // Shortcuts
+	            var base64StrLength = base64Str.length;
+	            var map = this._map;
+	            var reverseMap = this._reverseMap;
+
+	            if (!reverseMap) {
+	                    reverseMap = this._reverseMap = [];
+	                    for (var j = 0; j < map.length; j++) {
+	                        reverseMap[map.charCodeAt(j)] = j;
+	                    }
+	            }
+
+	            // Ignore padding
+	            var paddingChar = map.charAt(64);
+	            if (paddingChar) {
+	                var paddingIndex = base64Str.indexOf(paddingChar);
+	                if (paddingIndex !== -1) {
+	                    base64StrLength = paddingIndex;
+	                }
+	            }
+
+	            // Convert
+	            return parseLoop(base64Str, base64StrLength, reverseMap);
+
+	        },
+
+	        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+	    };
+
+	    function parseLoop(base64Str, base64StrLength, reverseMap) {
+	      var words = [];
+	      var nBytes = 0;
+	      for (var i = 0; i < base64StrLength; i++) {
+	          if (i % 4) {
+	              var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
+	              var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
+	              var bitsCombined = bits1 | bits2;
+	              words[nBytes >>> 2] |= bitsCombined << (24 - (nBytes % 4) * 8);
+	              nBytes++;
+	          }
+	      }
+	      return WordArray.create(words, nBytes);
+	    }
+	}());
+
+
+	return CryptoJS.enc.Base64;
+
+}));
+
+/***/ }),
+/* 37 */
+/*!*************************************************!*\
+  !*** ./node_modules/crypto-js/enc-base64url.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+	    var C_enc = C.enc;
+
+	    /**
+	     * Base64url encoding strategy.
+	     */
+	    var Base64url = C_enc.Base64url = {
+	        /**
+	         * Converts a word array to a Base64url string.
+	         *
+	         * @param {WordArray} wordArray The word array.
+	         *
+	         * @param {boolean} urlSafe Whether to use url safe
+	         *
+	         * @return {string} The Base64url string.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var base64String = CryptoJS.enc.Base64url.stringify(wordArray);
+	         */
+	        stringify: function (wordArray, urlSafe) {
+	            if (urlSafe === undefined) {
+	                urlSafe = true
+	            }
+	            // Shortcuts
+	            var words = wordArray.words;
+	            var sigBytes = wordArray.sigBytes;
+	            var map = urlSafe ? this._safe_map : this._map;
+
+	            // Clamp excess bits
+	            wordArray.clamp();
+
+	            // Convert
+	            var base64Chars = [];
+	            for (var i = 0; i < sigBytes; i += 3) {
+	                var byte1 = (words[i >>> 2]       >>> (24 - (i % 4) * 8))       & 0xff;
+	                var byte2 = (words[(i + 1) >>> 2] >>> (24 - ((i + 1) % 4) * 8)) & 0xff;
+	                var byte3 = (words[(i + 2) >>> 2] >>> (24 - ((i + 2) % 4) * 8)) & 0xff;
+
+	                var triplet = (byte1 << 16) | (byte2 << 8) | byte3;
+
+	                for (var j = 0; (j < 4) && (i + j * 0.75 < sigBytes); j++) {
+	                    base64Chars.push(map.charAt((triplet >>> (6 * (3 - j))) & 0x3f));
+	                }
+	            }
+
+	            // Add padding
+	            var paddingChar = map.charAt(64);
+	            if (paddingChar) {
+	                while (base64Chars.length % 4) {
+	                    base64Chars.push(paddingChar);
+	                }
+	            }
+
+	            return base64Chars.join('');
+	        },
+
+	        /**
+	         * Converts a Base64url string to a word array.
+	         *
+	         * @param {string} base64Str The Base64url string.
+	         *
+	         * @param {boolean} urlSafe Whether to use url safe
+	         *
+	         * @return {WordArray} The word array.
+	         *
+	         * @static
+	         *
+	         * @example
+	         *
+	         *     var wordArray = CryptoJS.enc.Base64url.parse(base64String);
+	         */
+	        parse: function (base64Str, urlSafe) {
+	            if (urlSafe === undefined) {
+	                urlSafe = true
+	            }
+
+	            // Shortcuts
+	            var base64StrLength = base64Str.length;
+	            var map = urlSafe ? this._safe_map : this._map;
+	            var reverseMap = this._reverseMap;
+
+	            if (!reverseMap) {
+	                reverseMap = this._reverseMap = [];
+	                for (var j = 0; j < map.length; j++) {
+	                    reverseMap[map.charCodeAt(j)] = j;
+	                }
+	            }
+
+	            // Ignore padding
+	            var paddingChar = map.charAt(64);
+	            if (paddingChar) {
+	                var paddingIndex = base64Str.indexOf(paddingChar);
+	                if (paddingIndex !== -1) {
+	                    base64StrLength = paddingIndex;
+	                }
+	            }
+
+	            // Convert
+	            return parseLoop(base64Str, base64StrLength, reverseMap);
+
+	        },
+
+	        _map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
+	        _safe_map: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',
+	    };
+
+	    function parseLoop(base64Str, base64StrLength, reverseMap) {
+	        var words = [];
+	        var nBytes = 0;
+	        for (var i = 0; i < base64StrLength; i++) {
+	            if (i % 4) {
+	                var bits1 = reverseMap[base64Str.charCodeAt(i - 1)] << ((i % 4) * 2);
+	                var bits2 = reverseMap[base64Str.charCodeAt(i)] >>> (6 - (i % 4) * 2);
+	                var bitsCombined = bits1 | bits2;
+	                words[nBytes >>> 2] |= bitsCombined << (24 - (nBytes % 4) * 8);
+	                nBytes++;
+	            }
+	        }
+	        return WordArray.create(words, nBytes);
+	    }
+	}());
+
+
+	return CryptoJS.enc.Base64url;
+
+}));
+
+/***/ }),
+/* 38 */
+/*!***************************************!*\
+  !*** ./node_modules/crypto-js/md5.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function (Math) {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+	    var Hasher = C_lib.Hasher;
+	    var C_algo = C.algo;
+
+	    // Constants table
+	    var T = [];
+
+	    // Compute constants
+	    (function () {
+	        for (var i = 0; i < 64; i++) {
+	            T[i] = (Math.abs(Math.sin(i + 1)) * 0x100000000) | 0;
+	        }
+	    }());
+
+	    /**
+	     * MD5 hash algorithm.
+	     */
+	    var MD5 = C_algo.MD5 = Hasher.extend({
+	        _doReset: function () {
+	            this._hash = new WordArray.init([
+	                0x67452301, 0xefcdab89,
+	                0x98badcfe, 0x10325476
+	            ]);
+	        },
+
+	        _doProcessBlock: function (M, offset) {
+	            // Swap endian
+	            for (var i = 0; i < 16; i++) {
+	                // Shortcuts
+	                var offset_i = offset + i;
+	                var M_offset_i = M[offset_i];
+
+	                M[offset_i] = (
+	                    (((M_offset_i << 8)  | (M_offset_i >>> 24)) & 0x00ff00ff) |
+	                    (((M_offset_i << 24) | (M_offset_i >>> 8))  & 0xff00ff00)
+	                );
+	            }
+
+	            // Shortcuts
+	            var H = this._hash.words;
+
+	            var M_offset_0  = M[offset + 0];
+	            var M_offset_1  = M[offset + 1];
+	            var M_offset_2  = M[offset + 2];
+	            var M_offset_3  = M[offset + 3];
+	            var M_offset_4  = M[offset + 4];
+	            var M_offset_5  = M[offset + 5];
+	            var M_offset_6  = M[offset + 6];
+	            var M_offset_7  = M[offset + 7];
+	            var M_offset_8  = M[offset + 8];
+	            var M_offset_9  = M[offset + 9];
+	            var M_offset_10 = M[offset + 10];
+	            var M_offset_11 = M[offset + 11];
+	            var M_offset_12 = M[offset + 12];
+	            var M_offset_13 = M[offset + 13];
+	            var M_offset_14 = M[offset + 14];
+	            var M_offset_15 = M[offset + 15];
+
+	            // Working variables
+	            var a = H[0];
+	            var b = H[1];
+	            var c = H[2];
+	            var d = H[3];
+
+	            // Computation
+	            a = FF(a, b, c, d, M_offset_0,  7,  T[0]);
+	            d = FF(d, a, b, c, M_offset_1,  12, T[1]);
+	            c = FF(c, d, a, b, M_offset_2,  17, T[2]);
+	            b = FF(b, c, d, a, M_offset_3,  22, T[3]);
+	            a = FF(a, b, c, d, M_offset_4,  7,  T[4]);
+	            d = FF(d, a, b, c, M_offset_5,  12, T[5]);
+	            c = FF(c, d, a, b, M_offset_6,  17, T[6]);
+	            b = FF(b, c, d, a, M_offset_7,  22, T[7]);
+	            a = FF(a, b, c, d, M_offset_8,  7,  T[8]);
+	            d = FF(d, a, b, c, M_offset_9,  12, T[9]);
+	            c = FF(c, d, a, b, M_offset_10, 17, T[10]);
+	            b = FF(b, c, d, a, M_offset_11, 22, T[11]);
+	            a = FF(a, b, c, d, M_offset_12, 7,  T[12]);
+	            d = FF(d, a, b, c, M_offset_13, 12, T[13]);
+	            c = FF(c, d, a, b, M_offset_14, 17, T[14]);
+	            b = FF(b, c, d, a, M_offset_15, 22, T[15]);
+
+	            a = GG(a, b, c, d, M_offset_1,  5,  T[16]);
+	            d = GG(d, a, b, c, M_offset_6,  9,  T[17]);
+	            c = GG(c, d, a, b, M_offset_11, 14, T[18]);
+	            b = GG(b, c, d, a, M_offset_0,  20, T[19]);
+	            a = GG(a, b, c, d, M_offset_5,  5,  T[20]);
+	            d = GG(d, a, b, c, M_offset_10, 9,  T[21]);
+	            c = GG(c, d, a, b, M_offset_15, 14, T[22]);
+	            b = GG(b, c, d, a, M_offset_4,  20, T[23]);
+	            a = GG(a, b, c, d, M_offset_9,  5,  T[24]);
+	            d = GG(d, a, b, c, M_offset_14, 9,  T[25]);
+	            c = GG(c, d, a, b, M_offset_3,  14, T[26]);
+	            b = GG(b, c, d, a, M_offset_8,  20, T[27]);
+	            a = GG(a, b, c, d, M_offset_13, 5,  T[28]);
+	            d = GG(d, a, b, c, M_offset_2,  9,  T[29]);
+	            c = GG(c, d, a, b, M_offset_7,  14, T[30]);
+	            b = GG(b, c, d, a, M_offset_12, 20, T[31]);
+
+	            a = HH(a, b, c, d, M_offset_5,  4,  T[32]);
+	            d = HH(d, a, b, c, M_offset_8,  11, T[33]);
+	            c = HH(c, d, a, b, M_offset_11, 16, T[34]);
+	            b = HH(b, c, d, a, M_offset_14, 23, T[35]);
+	            a = HH(a, b, c, d, M_offset_1,  4,  T[36]);
+	            d = HH(d, a, b, c, M_offset_4,  11, T[37]);
+	            c = HH(c, d, a, b, M_offset_7,  16, T[38]);
+	            b = HH(b, c, d, a, M_offset_10, 23, T[39]);
+	            a = HH(a, b, c, d, M_offset_13, 4,  T[40]);
+	            d = HH(d, a, b, c, M_offset_0,  11, T[41]);
+	            c = HH(c, d, a, b, M_offset_3,  16, T[42]);
+	            b = HH(b, c, d, a, M_offset_6,  23, T[43]);
+	            a = HH(a, b, c, d, M_offset_9,  4,  T[44]);
+	            d = HH(d, a, b, c, M_offset_12, 11, T[45]);
+	            c = HH(c, d, a, b, M_offset_15, 16, T[46]);
+	            b = HH(b, c, d, a, M_offset_2,  23, T[47]);
+
+	            a = II(a, b, c, d, M_offset_0,  6,  T[48]);
+	            d = II(d, a, b, c, M_offset_7,  10, T[49]);
+	            c = II(c, d, a, b, M_offset_14, 15, T[50]);
+	            b = II(b, c, d, a, M_offset_5,  21, T[51]);
+	            a = II(a, b, c, d, M_offset_12, 6,  T[52]);
+	            d = II(d, a, b, c, M_offset_3,  10, T[53]);
+	            c = II(c, d, a, b, M_offset_10, 15, T[54]);
+	            b = II(b, c, d, a, M_offset_1,  21, T[55]);
+	            a = II(a, b, c, d, M_offset_8,  6,  T[56]);
+	            d = II(d, a, b, c, M_offset_15, 10, T[57]);
+	            c = II(c, d, a, b, M_offset_6,  15, T[58]);
+	            b = II(b, c, d, a, M_offset_13, 21, T[59]);
+	            a = II(a, b, c, d, M_offset_4,  6,  T[60]);
+	            d = II(d, a, b, c, M_offset_11, 10, T[61]);
+	            c = II(c, d, a, b, M_offset_2,  15, T[62]);
+	            b = II(b, c, d, a, M_offset_9,  21, T[63]);
+
+	            // Intermediate hash value
+	            H[0] = (H[0] + a) | 0;
+	            H[1] = (H[1] + b) | 0;
+	            H[2] = (H[2] + c) | 0;
+	            H[3] = (H[3] + d) | 0;
+	        },
+
+	        _doFinalize: function () {
+	            // Shortcuts
+	            var data = this._data;
+	            var dataWords = data.words;
+
+	            var nBitsTotal = this._nDataBytes * 8;
+	            var nBitsLeft = data.sigBytes * 8;
+
+	            // Add padding
+	            dataWords[nBitsLeft >>> 5] |= 0x80 << (24 - nBitsLeft % 32);
+
+	            var nBitsTotalH = Math.floor(nBitsTotal / 0x100000000);
+	            var nBitsTotalL = nBitsTotal;
+	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 15] = (
+	                (((nBitsTotalH << 8)  | (nBitsTotalH >>> 24)) & 0x00ff00ff) |
+	                (((nBitsTotalH << 24) | (nBitsTotalH >>> 8))  & 0xff00ff00)
+	            );
+	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 14] = (
+	                (((nBitsTotalL << 8)  | (nBitsTotalL >>> 24)) & 0x00ff00ff) |
+	                (((nBitsTotalL << 24) | (nBitsTotalL >>> 8))  & 0xff00ff00)
+	            );
+
+	            data.sigBytes = (dataWords.length + 1) * 4;
+
+	            // Hash final blocks
+	            this._process();
+
+	            // Shortcuts
+	            var hash = this._hash;
+	            var H = hash.words;
+
+	            // Swap endian
+	            for (var i = 0; i < 4; i++) {
+	                // Shortcut
+	                var H_i = H[i];
+
+	                H[i] = (((H_i << 8)  | (H_i >>> 24)) & 0x00ff00ff) |
+	                       (((H_i << 24) | (H_i >>> 8))  & 0xff00ff00);
+	            }
+
+	            // Return final computed hash
+	            return hash;
+	        },
+
+	        clone: function () {
+	            var clone = Hasher.clone.call(this);
+	            clone._hash = this._hash.clone();
+
+	            return clone;
+	        }
+	    });
+
+	    function FF(a, b, c, d, x, s, t) {
+	        var n = a + ((b & c) | (~b & d)) + x + t;
+	        return ((n << s) | (n >>> (32 - s))) + b;
+	    }
+
+	    function GG(a, b, c, d, x, s, t) {
+	        var n = a + ((b & d) | (c & ~d)) + x + t;
+	        return ((n << s) | (n >>> (32 - s))) + b;
+	    }
+
+	    function HH(a, b, c, d, x, s, t) {
+	        var n = a + (b ^ c ^ d) + x + t;
+	        return ((n << s) | (n >>> (32 - s))) + b;
+	    }
+
+	    function II(a, b, c, d, x, s, t) {
+	        var n = a + (c ^ (b | ~d)) + x + t;
+	        return ((n << s) | (n >>> (32 - s))) + b;
+	    }
+
+	    /**
+	     * Shortcut function to the hasher's object interface.
+	     *
+	     * @param {WordArray|string} message The message to hash.
+	     *
+	     * @return {WordArray} The hash.
+	     *
+	     * @static
+	     *
+	     * @example
+	     *
+	     *     var hash = CryptoJS.MD5('message');
+	     *     var hash = CryptoJS.MD5(wordArray);
+	     */
+	    C.MD5 = Hasher._createHelper(MD5);
+
+	    /**
+	     * Shortcut function to the HMAC's object interface.
+	     *
+	     * @param {WordArray|string} message The message to hash.
+	     * @param {WordArray|string} key The secret key.
+	     *
+	     * @return {WordArray} The HMAC.
+	     *
+	     * @static
+	     *
+	     * @example
+	     *
+	     *     var hmac = CryptoJS.HmacMD5(message, key);
+	     */
+	    C.HmacMD5 = Hasher._createHmacHelper(MD5);
+	}(Math));
+
+
+	return CryptoJS.MD5;
+
+}));
+
+/***/ }),
+/* 39 */
+/*!****************************************!*\
+  !*** ./node_modules/crypto-js/sha1.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+;(function (root, factory) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var WordArray = C_lib.WordArray;
+	    var Hasher = C_lib.Hasher;
+	    var C_algo = C.algo;
+
+	    // Reusable object
+	    var W = [];
+
+	    /**
+	     * SHA-1 hash algorithm.
+	     */
+	    var SHA1 = C_algo.SHA1 = Hasher.extend({
+	        _doReset: function () {
+	            this._hash = new WordArray.init([
+	                0x67452301, 0xefcdab89,
+	                0x98badcfe, 0x10325476,
+	                0xc3d2e1f0
+	            ]);
+	        },
+
+	        _doProcessBlock: function (M, offset) {
+	            // Shortcut
+	            var H = this._hash.words;
+
+	            // Working variables
+	            var a = H[0];
+	            var b = H[1];
+	            var c = H[2];
+	            var d = H[3];
+	            var e = H[4];
+
+	            // Computation
+	            for (var i = 0; i < 80; i++) {
+	                if (i < 16) {
+	                    W[i] = M[offset + i] | 0;
+	                } else {
+	                    var n = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
+	                    W[i] = (n << 1) | (n >>> 31);
+	                }
+
+	                var t = ((a << 5) | (a >>> 27)) + e + W[i];
+	                if (i < 20) {
+	                    t += ((b & c) | (~b & d)) + 0x5a827999;
+	                } else if (i < 40) {
+	                    t += (b ^ c ^ d) + 0x6ed9eba1;
+	                } else if (i < 60) {
+	                    t += ((b & c) | (b & d) | (c & d)) - 0x70e44324;
+	                } else /* if (i < 80) */ {
+	                    t += (b ^ c ^ d) - 0x359d3e2a;
+	                }
+
+	                e = d;
+	                d = c;
+	                c = (b << 30) | (b >>> 2);
+	                b = a;
+	                a = t;
+	            }
+
+	            // Intermediate hash value
+	            H[0] = (H[0] + a) | 0;
+	            H[1] = (H[1] + b) | 0;
+	            H[2] = (H[2] + c) | 0;
+	            H[3] = (H[3] + d) | 0;
+	            H[4] = (H[4] + e) | 0;
+	        },
+
+	        _doFinalize: function () {
+	            // Shortcuts
+	            var data = this._data;
+	            var dataWords = data.words;
+
+	            var nBitsTotal = this._nDataBytes * 8;
+	            var nBitsLeft = data.sigBytes * 8;
+
+	            // Add padding
+	            dataWords[nBitsLeft >>> 5] |= 0x80 << (24 - nBitsLeft % 32);
+	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 14] = Math.floor(nBitsTotal / 0x100000000);
+	            dataWords[(((nBitsLeft + 64) >>> 9) << 4) + 15] = nBitsTotal;
+	            data.sigBytes = dataWords.length * 4;
+
+	            // Hash final blocks
+	            this._process();
+
+	            // Return final computed hash
+	            return this._hash;
+	        },
+
+	        clone: function () {
+	            var clone = Hasher.clone.call(this);
+	            clone._hash = this._hash.clone();
+
+	            return clone;
+	        }
+	    });
+
+	    /**
+	     * Shortcut function to the hasher's object interface.
+	     *
+	     * @param {WordArray|string} message The message to hash.
+	     *
+	     * @return {WordArray} The hash.
+	     *
+	     * @static
+	     *
+	     * @example
+	     *
+	     *     var hash = CryptoJS.SHA1('message');
+	     *     var hash = CryptoJS.SHA1(wordArray);
+	     */
+	    C.SHA1 = Hasher._createHelper(SHA1);
+
+	    /**
+	     * Shortcut function to the HMAC's object interface.
+	     *
+	     * @param {WordArray|string} message The message to hash.
+	     * @param {WordArray|string} key The secret key.
+	     *
+	     * @return {WordArray} The HMAC.
+	     *
+	     * @static
+	     *
+	     * @example
+	     *
+	     *     var hmac = CryptoJS.HmacSHA1(message, key);
+	     */
+	    C.HmacSHA1 = Hasher._createHmacHelper(SHA1);
+	}());
+
+
+	return CryptoJS.SHA1;
+
+}));
+
+/***/ }),
+/* 40 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/sha256.js ***!
   \******************************************/
@@ -21878,8 +16832,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 41:
+/* 41 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/sha224.js ***!
   \******************************************/
@@ -21961,8 +16914,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 42:
+/* 42 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/sha512.js ***!
   \******************************************/
@@ -22290,8 +17242,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 43:
+/* 43 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/sha384.js ***!
   \******************************************/
@@ -22376,8 +17327,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 44:
+/* 44 */
 /*!****************************************!*\
   !*** ./node_modules/crypto-js/sha3.js ***!
   \****************************************/
@@ -22705,8 +17655,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 45:
+/* 45 */
 /*!*********************************************!*\
   !*** ./node_modules/crypto-js/ripemd160.js ***!
   \*********************************************/
@@ -22975,8 +17924,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 46:
+/* 46 */
 /*!****************************************!*\
   !*** ./node_modules/crypto-js/hmac.js ***!
   \****************************************/
@@ -23121,8 +18069,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 47:
+/* 47 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/pbkdf2.js ***!
   \******************************************/
@@ -23132,7 +18079,7 @@ internalMixin(Vue);
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31), __webpack_require__(/*! ./sha1 */ 39), __webpack_require__(/*! ./hmac */ 46));
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31), __webpack_require__(/*! ./sha256 */ 40), __webpack_require__(/*! ./hmac */ 46));
 	}
 	else {}
 }(this, function (CryptoJS) {
@@ -23144,7 +18091,7 @@ internalMixin(Vue);
 	    var Base = C_lib.Base;
 	    var WordArray = C_lib.WordArray;
 	    var C_algo = C.algo;
-	    var SHA1 = C_algo.SHA1;
+	    var SHA256 = C_algo.SHA256;
 	    var HMAC = C_algo.HMAC;
 
 	    /**
@@ -23155,13 +18102,13 @@ internalMixin(Vue);
 	         * Configuration options.
 	         *
 	         * @property {number} keySize The key size in words to generate. Default: 4 (128 bits)
-	         * @property {Hasher} hasher The hasher to use. Default: SHA1
-	         * @property {number} iterations The number of iterations to perform. Default: 1
+	         * @property {Hasher} hasher The hasher to use. Default: SHA256
+	         * @property {number} iterations The number of iterations to perform. Default: 250000
 	         */
 	        cfg: Base.extend({
 	            keySize: 128/32,
-	            hasher: SHA1,
-	            iterations: 1
+	            hasher: SHA256,
+	            iterations: 250000
 	        }),
 
 	        /**
@@ -23269,8 +18216,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 48:
+/* 48 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/evpkdf.js ***!
   \******************************************/
@@ -23406,8 +18352,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 49:
+/* 49 */
 /*!***********************************************!*\
   !*** ./node_modules/crypto-js/cipher-core.js ***!
   \***********************************************/
@@ -24189,14 +19134,19 @@ internalMixin(Vue);
 	         *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32);
 	         *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32, 'saltsalt');
 	         */
-	        execute: function (password, keySize, ivSize, salt) {
+	        execute: function (password, keySize, ivSize, salt, hasher) {
 	            // Generate random salt
 	            if (!salt) {
 	                salt = WordArray.random(64/8);
 	            }
 
 	            // Derive key and IV
-	            var key = EvpKDF.create({ keySize: keySize + ivSize }).compute(password, salt);
+	            if (!hasher) {
+	                var key = EvpKDF.create({ keySize: keySize + ivSize }).compute(password, salt);
+	            } else {
+	                var key = EvpKDF.create({ keySize: keySize + ivSize, hasher: hasher }).compute(password, salt);
+	            }
+
 
 	            // Separate key and IV
 	            var iv = WordArray.create(key.words.slice(keySize), ivSize * 4);
@@ -24243,7 +19193,7 @@ internalMixin(Vue);
 	            cfg = this.cfg.extend(cfg);
 
 	            // Derive key and other params
-	            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize);
+	            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, cfg.salt, cfg.hasher);
 
 	            // Add IV to config
 	            cfg.iv = derivedParams.iv;
@@ -24282,7 +19232,7 @@ internalMixin(Vue);
 	            ciphertext = this._parse(ciphertext, cfg.format);
 
 	            // Derive key and other params
-	            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt);
+	            var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt, cfg.hasher);
 
 	            // Add IV to config
 	            cfg.iv = derivedParams.iv;
@@ -24299,19 +19249,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 5:
-/*!************************!*\
-  !*** ./src/pages.json ***!
-  \************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-
-
-/***/ }),
-
-/***/ 50:
+/* 50 */
 /*!********************************************!*\
   !*** ./node_modules/crypto-js/mode-cfb.js ***!
   \********************************************/
@@ -24393,8 +19331,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 51:
+/* 51 */
 /*!********************************************!*\
   !*** ./node_modules/crypto-js/mode-ctr.js ***!
   \********************************************/
@@ -24454,8 +19391,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 52:
+/* 52 */
 /*!****************************************************!*\
   !*** ./node_modules/crypto-js/mode-ctr-gladman.js ***!
   \****************************************************/
@@ -24573,8 +19509,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 53:
+/* 53 */
 /*!********************************************!*\
   !*** ./node_modules/crypto-js/mode-ofb.js ***!
   \********************************************/
@@ -24630,8 +19565,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 54:
+/* 54 */
 /*!********************************************!*\
   !*** ./node_modules/crypto-js/mode-ecb.js ***!
   \********************************************/
@@ -24673,8 +19607,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 55:
+/* 55 */
 /*!************************************************!*\
   !*** ./node_modules/crypto-js/pad-ansix923.js ***!
   \************************************************/
@@ -24725,8 +19658,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 56:
+/* 56 */
 /*!************************************************!*\
   !*** ./node_modules/crypto-js/pad-iso10126.js ***!
   \************************************************/
@@ -24772,8 +19704,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 57:
+/* 57 */
 /*!************************************************!*\
   !*** ./node_modules/crypto-js/pad-iso97971.js ***!
   \************************************************/
@@ -24815,8 +19746,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 58:
+/* 58 */
 /*!***************************************************!*\
   !*** ./node_modules/crypto-js/pad-zeropadding.js ***!
   \***************************************************/
@@ -24865,8 +19795,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 59:
+/* 59 */
 /*!*************************************************!*\
   !*** ./node_modules/crypto-js/pad-nopadding.js ***!
   \*************************************************/
@@ -24898,8 +19827,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 60:
+/* 60 */
 /*!**********************************************!*\
   !*** ./node_modules/crypto-js/format-hex.js ***!
   \**********************************************/
@@ -24967,8 +19895,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 61:
+/* 61 */
 /*!***************************************!*\
   !*** ./node_modules/crypto-js/aes.js ***!
   \***************************************/
@@ -25204,8 +20131,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 62:
+/* 62 */
 /*!*********************************************!*\
   !*** ./node_modules/crypto-js/tripledes.js ***!
   \*********************************************/
@@ -25986,8 +20912,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 63:
+/* 63 */
 /*!***************************************!*\
   !*** ./node_modules/crypto-js/rc4.js ***!
   \***************************************/
@@ -26128,8 +21053,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 64:
+/* 64 */
 /*!******************************************!*\
   !*** ./node_modules/crypto-js/rabbit.js ***!
   \******************************************/
@@ -26323,8 +21247,7 @@ internalMixin(Vue);
 }));
 
 /***/ }),
-
-/***/ 65:
+/* 65 */
 /*!*************************************************!*\
   !*** ./node_modules/crypto-js/rabbit-legacy.js ***!
   \*************************************************/
@@ -26516,8 +21439,480 @@ internalMixin(Vue);
 }));
 
 /***/ }),
+/* 66 */
+/*!********************************************!*\
+  !*** ./node_modules/crypto-js/blowfish.js ***!
+  \********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
-/***/ 66:
+;(function (root, factory, undef) {
+	if (true) {
+		// CommonJS
+		module.exports = exports = factory(__webpack_require__(/*! ./core */ 31), __webpack_require__(/*! ./enc-base64 */ 36), __webpack_require__(/*! ./md5 */ 38), __webpack_require__(/*! ./evpkdf */ 48), __webpack_require__(/*! ./cipher-core */ 49));
+	}
+	else {}
+}(this, function (CryptoJS) {
+
+	(function () {
+	    // Shortcuts
+	    var C = CryptoJS;
+	    var C_lib = C.lib;
+	    var BlockCipher = C_lib.BlockCipher;
+	    var C_algo = C.algo;
+
+	    const N = 16;
+
+	    //Origin pbox and sbox, derived from PI
+	    const ORIG_P = [
+	        0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344,
+	        0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
+	        0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C,
+	        0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917,
+	        0x9216D5D9, 0x8979FB1B
+	    ];
+
+	    const ORIG_S = [
+	        [   0xD1310BA6, 0x98DFB5AC, 0x2FFD72DB, 0xD01ADFB7,
+	            0xB8E1AFED, 0x6A267E96, 0xBA7C9045, 0xF12C7F99,
+	            0x24A19947, 0xB3916CF7, 0x0801F2E2, 0x858EFC16,
+	            0x636920D8, 0x71574E69, 0xA458FEA3, 0xF4933D7E,
+	            0x0D95748F, 0x728EB658, 0x718BCD58, 0x82154AEE,
+	            0x7B54A41D, 0xC25A59B5, 0x9C30D539, 0x2AF26013,
+	            0xC5D1B023, 0x286085F0, 0xCA417918, 0xB8DB38EF,
+	            0x8E79DCB0, 0x603A180E, 0x6C9E0E8B, 0xB01E8A3E,
+	            0xD71577C1, 0xBD314B27, 0x78AF2FDA, 0x55605C60,
+	            0xE65525F3, 0xAA55AB94, 0x57489862, 0x63E81440,
+	            0x55CA396A, 0x2AAB10B6, 0xB4CC5C34, 0x1141E8CE,
+	            0xA15486AF, 0x7C72E993, 0xB3EE1411, 0x636FBC2A,
+	            0x2BA9C55D, 0x741831F6, 0xCE5C3E16, 0x9B87931E,
+	            0xAFD6BA33, 0x6C24CF5C, 0x7A325381, 0x28958677,
+	            0x3B8F4898, 0x6B4BB9AF, 0xC4BFE81B, 0x66282193,
+	            0x61D809CC, 0xFB21A991, 0x487CAC60, 0x5DEC8032,
+	            0xEF845D5D, 0xE98575B1, 0xDC262302, 0xEB651B88,
+	            0x23893E81, 0xD396ACC5, 0x0F6D6FF3, 0x83F44239,
+	            0x2E0B4482, 0xA4842004, 0x69C8F04A, 0x9E1F9B5E,
+	            0x21C66842, 0xF6E96C9A, 0x670C9C61, 0xABD388F0,
+	            0x6A51A0D2, 0xD8542F68, 0x960FA728, 0xAB5133A3,
+	            0x6EEF0B6C, 0x137A3BE4, 0xBA3BF050, 0x7EFB2A98,
+	            0xA1F1651D, 0x39AF0176, 0x66CA593E, 0x82430E88,
+	            0x8CEE8619, 0x456F9FB4, 0x7D84A5C3, 0x3B8B5EBE,
+	            0xE06F75D8, 0x85C12073, 0x401A449F, 0x56C16AA6,
+	            0x4ED3AA62, 0x363F7706, 0x1BFEDF72, 0x429B023D,
+	            0x37D0D724, 0xD00A1248, 0xDB0FEAD3, 0x49F1C09B,
+	            0x075372C9, 0x80991B7B, 0x25D479D8, 0xF6E8DEF7,
+	            0xE3FE501A, 0xB6794C3B, 0x976CE0BD, 0x04C006BA,
+	            0xC1A94FB6, 0x409F60C4, 0x5E5C9EC2, 0x196A2463,
+	            0x68FB6FAF, 0x3E6C53B5, 0x1339B2EB, 0x3B52EC6F,
+	            0x6DFC511F, 0x9B30952C, 0xCC814544, 0xAF5EBD09,
+	            0xBEE3D004, 0xDE334AFD, 0x660F2807, 0x192E4BB3,
+	            0xC0CBA857, 0x45C8740F, 0xD20B5F39, 0xB9D3FBDB,
+	            0x5579C0BD, 0x1A60320A, 0xD6A100C6, 0x402C7279,
+	            0x679F25FE, 0xFB1FA3CC, 0x8EA5E9F8, 0xDB3222F8,
+	            0x3C7516DF, 0xFD616B15, 0x2F501EC8, 0xAD0552AB,
+	            0x323DB5FA, 0xFD238760, 0x53317B48, 0x3E00DF82,
+	            0x9E5C57BB, 0xCA6F8CA0, 0x1A87562E, 0xDF1769DB,
+	            0xD542A8F6, 0x287EFFC3, 0xAC6732C6, 0x8C4F5573,
+	            0x695B27B0, 0xBBCA58C8, 0xE1FFA35D, 0xB8F011A0,
+	            0x10FA3D98, 0xFD2183B8, 0x4AFCB56C, 0x2DD1D35B,
+	            0x9A53E479, 0xB6F84565, 0xD28E49BC, 0x4BFB9790,
+	            0xE1DDF2DA, 0xA4CB7E33, 0x62FB1341, 0xCEE4C6E8,
+	            0xEF20CADA, 0x36774C01, 0xD07E9EFE, 0x2BF11FB4,
+	            0x95DBDA4D, 0xAE909198, 0xEAAD8E71, 0x6B93D5A0,
+	            0xD08ED1D0, 0xAFC725E0, 0x8E3C5B2F, 0x8E7594B7,
+	            0x8FF6E2FB, 0xF2122B64, 0x8888B812, 0x900DF01C,
+	            0x4FAD5EA0, 0x688FC31C, 0xD1CFF191, 0xB3A8C1AD,
+	            0x2F2F2218, 0xBE0E1777, 0xEA752DFE, 0x8B021FA1,
+	            0xE5A0CC0F, 0xB56F74E8, 0x18ACF3D6, 0xCE89E299,
+	            0xB4A84FE0, 0xFD13E0B7, 0x7CC43B81, 0xD2ADA8D9,
+	            0x165FA266, 0x80957705, 0x93CC7314, 0x211A1477,
+	            0xE6AD2065, 0x77B5FA86, 0xC75442F5, 0xFB9D35CF,
+	            0xEBCDAF0C, 0x7B3E89A0, 0xD6411BD3, 0xAE1E7E49,
+	            0x00250E2D, 0x2071B35E, 0x226800BB, 0x57B8E0AF,
+	            0x2464369B, 0xF009B91E, 0x5563911D, 0x59DFA6AA,
+	            0x78C14389, 0xD95A537F, 0x207D5BA2, 0x02E5B9C5,
+	            0x83260376, 0x6295CFA9, 0x11C81968, 0x4E734A41,
+	            0xB3472DCA, 0x7B14A94A, 0x1B510052, 0x9A532915,
+	            0xD60F573F, 0xBC9BC6E4, 0x2B60A476, 0x81E67400,
+	            0x08BA6FB5, 0x571BE91F, 0xF296EC6B, 0x2A0DD915,
+	            0xB6636521, 0xE7B9F9B6, 0xFF34052E, 0xC5855664,
+	            0x53B02D5D, 0xA99F8FA1, 0x08BA4799, 0x6E85076A   ],
+	        [   0x4B7A70E9, 0xB5B32944, 0xDB75092E, 0xC4192623,
+	            0xAD6EA6B0, 0x49A7DF7D, 0x9CEE60B8, 0x8FEDB266,
+	            0xECAA8C71, 0x699A17FF, 0x5664526C, 0xC2B19EE1,
+	            0x193602A5, 0x75094C29, 0xA0591340, 0xE4183A3E,
+	            0x3F54989A, 0x5B429D65, 0x6B8FE4D6, 0x99F73FD6,
+	            0xA1D29C07, 0xEFE830F5, 0x4D2D38E6, 0xF0255DC1,
+	            0x4CDD2086, 0x8470EB26, 0x6382E9C6, 0x021ECC5E,
+	            0x09686B3F, 0x3EBAEFC9, 0x3C971814, 0x6B6A70A1,
+	            0x687F3584, 0x52A0E286, 0xB79C5305, 0xAA500737,
+	            0x3E07841C, 0x7FDEAE5C, 0x8E7D44EC, 0x5716F2B8,
+	            0xB03ADA37, 0xF0500C0D, 0xF01C1F04, 0x0200B3FF,
+	            0xAE0CF51A, 0x3CB574B2, 0x25837A58, 0xDC0921BD,
+	            0xD19113F9, 0x7CA92FF6, 0x94324773, 0x22F54701,
+	            0x3AE5E581, 0x37C2DADC, 0xC8B57634, 0x9AF3DDA7,
+	            0xA9446146, 0x0FD0030E, 0xECC8C73E, 0xA4751E41,
+	            0xE238CD99, 0x3BEA0E2F, 0x3280BBA1, 0x183EB331,
+	            0x4E548B38, 0x4F6DB908, 0x6F420D03, 0xF60A04BF,
+	            0x2CB81290, 0x24977C79, 0x5679B072, 0xBCAF89AF,
+	            0xDE9A771F, 0xD9930810, 0xB38BAE12, 0xDCCF3F2E,
+	            0x5512721F, 0x2E6B7124, 0x501ADDE6, 0x9F84CD87,
+	            0x7A584718, 0x7408DA17, 0xBC9F9ABC, 0xE94B7D8C,
+	            0xEC7AEC3A, 0xDB851DFA, 0x63094366, 0xC464C3D2,
+	            0xEF1C1847, 0x3215D908, 0xDD433B37, 0x24C2BA16,
+	            0x12A14D43, 0x2A65C451, 0x50940002, 0x133AE4DD,
+	            0x71DFF89E, 0x10314E55, 0x81AC77D6, 0x5F11199B,
+	            0x043556F1, 0xD7A3C76B, 0x3C11183B, 0x5924A509,
+	            0xF28FE6ED, 0x97F1FBFA, 0x9EBABF2C, 0x1E153C6E,
+	            0x86E34570, 0xEAE96FB1, 0x860E5E0A, 0x5A3E2AB3,
+	            0x771FE71C, 0x4E3D06FA, 0x2965DCB9, 0x99E71D0F,
+	            0x803E89D6, 0x5266C825, 0x2E4CC978, 0x9C10B36A,
+	            0xC6150EBA, 0x94E2EA78, 0xA5FC3C53, 0x1E0A2DF4,
+	            0xF2F74EA7, 0x361D2B3D, 0x1939260F, 0x19C27960,
+	            0x5223A708, 0xF71312B6, 0xEBADFE6E, 0xEAC31F66,
+	            0xE3BC4595, 0xA67BC883, 0xB17F37D1, 0x018CFF28,
+	            0xC332DDEF, 0xBE6C5AA5, 0x65582185, 0x68AB9802,
+	            0xEECEA50F, 0xDB2F953B, 0x2AEF7DAD, 0x5B6E2F84,
+	            0x1521B628, 0x29076170, 0xECDD4775, 0x619F1510,
+	            0x13CCA830, 0xEB61BD96, 0x0334FE1E, 0xAA0363CF,
+	            0xB5735C90, 0x4C70A239, 0xD59E9E0B, 0xCBAADE14,
+	            0xEECC86BC, 0x60622CA7, 0x9CAB5CAB, 0xB2F3846E,
+	            0x648B1EAF, 0x19BDF0CA, 0xA02369B9, 0x655ABB50,
+	            0x40685A32, 0x3C2AB4B3, 0x319EE9D5, 0xC021B8F7,
+	            0x9B540B19, 0x875FA099, 0x95F7997E, 0x623D7DA8,
+	            0xF837889A, 0x97E32D77, 0x11ED935F, 0x16681281,
+	            0x0E358829, 0xC7E61FD6, 0x96DEDFA1, 0x7858BA99,
+	            0x57F584A5, 0x1B227263, 0x9B83C3FF, 0x1AC24696,
+	            0xCDB30AEB, 0x532E3054, 0x8FD948E4, 0x6DBC3128,
+	            0x58EBF2EF, 0x34C6FFEA, 0xFE28ED61, 0xEE7C3C73,
+	            0x5D4A14D9, 0xE864B7E3, 0x42105D14, 0x203E13E0,
+	            0x45EEE2B6, 0xA3AAABEA, 0xDB6C4F15, 0xFACB4FD0,
+	            0xC742F442, 0xEF6ABBB5, 0x654F3B1D, 0x41CD2105,
+	            0xD81E799E, 0x86854DC7, 0xE44B476A, 0x3D816250,
+	            0xCF62A1F2, 0x5B8D2646, 0xFC8883A0, 0xC1C7B6A3,
+	            0x7F1524C3, 0x69CB7492, 0x47848A0B, 0x5692B285,
+	            0x095BBF00, 0xAD19489D, 0x1462B174, 0x23820E00,
+	            0x58428D2A, 0x0C55F5EA, 0x1DADF43E, 0x233F7061,
+	            0x3372F092, 0x8D937E41, 0xD65FECF1, 0x6C223BDB,
+	            0x7CDE3759, 0xCBEE7460, 0x4085F2A7, 0xCE77326E,
+	            0xA6078084, 0x19F8509E, 0xE8EFD855, 0x61D99735,
+	            0xA969A7AA, 0xC50C06C2, 0x5A04ABFC, 0x800BCADC,
+	            0x9E447A2E, 0xC3453484, 0xFDD56705, 0x0E1E9EC9,
+	            0xDB73DBD3, 0x105588CD, 0x675FDA79, 0xE3674340,
+	            0xC5C43465, 0x713E38D8, 0x3D28F89E, 0xF16DFF20,
+	            0x153E21E7, 0x8FB03D4A, 0xE6E39F2B, 0xDB83ADF7   ],
+	        [   0xE93D5A68, 0x948140F7, 0xF64C261C, 0x94692934,
+	            0x411520F7, 0x7602D4F7, 0xBCF46B2E, 0xD4A20068,
+	            0xD4082471, 0x3320F46A, 0x43B7D4B7, 0x500061AF,
+	            0x1E39F62E, 0x97244546, 0x14214F74, 0xBF8B8840,
+	            0x4D95FC1D, 0x96B591AF, 0x70F4DDD3, 0x66A02F45,
+	            0xBFBC09EC, 0x03BD9785, 0x7FAC6DD0, 0x31CB8504,
+	            0x96EB27B3, 0x55FD3941, 0xDA2547E6, 0xABCA0A9A,
+	            0x28507825, 0x530429F4, 0x0A2C86DA, 0xE9B66DFB,
+	            0x68DC1462, 0xD7486900, 0x680EC0A4, 0x27A18DEE,
+	            0x4F3FFEA2, 0xE887AD8C, 0xB58CE006, 0x7AF4D6B6,
+	            0xAACE1E7C, 0xD3375FEC, 0xCE78A399, 0x406B2A42,
+	            0x20FE9E35, 0xD9F385B9, 0xEE39D7AB, 0x3B124E8B,
+	            0x1DC9FAF7, 0x4B6D1856, 0x26A36631, 0xEAE397B2,
+	            0x3A6EFA74, 0xDD5B4332, 0x6841E7F7, 0xCA7820FB,
+	            0xFB0AF54E, 0xD8FEB397, 0x454056AC, 0xBA489527,
+	            0x55533A3A, 0x20838D87, 0xFE6BA9B7, 0xD096954B,
+	            0x55A867BC, 0xA1159A58, 0xCCA92963, 0x99E1DB33,
+	            0xA62A4A56, 0x3F3125F9, 0x5EF47E1C, 0x9029317C,
+	            0xFDF8E802, 0x04272F70, 0x80BB155C, 0x05282CE3,
+	            0x95C11548, 0xE4C66D22, 0x48C1133F, 0xC70F86DC,
+	            0x07F9C9EE, 0x41041F0F, 0x404779A4, 0x5D886E17,
+	            0x325F51EB, 0xD59BC0D1, 0xF2BCC18F, 0x41113564,
+	            0x257B7834, 0x602A9C60, 0xDFF8E8A3, 0x1F636C1B,
+	            0x0E12B4C2, 0x02E1329E, 0xAF664FD1, 0xCAD18115,
+	            0x6B2395E0, 0x333E92E1, 0x3B240B62, 0xEEBEB922,
+	            0x85B2A20E, 0xE6BA0D99, 0xDE720C8C, 0x2DA2F728,
+	            0xD0127845, 0x95B794FD, 0x647D0862, 0xE7CCF5F0,
+	            0x5449A36F, 0x877D48FA, 0xC39DFD27, 0xF33E8D1E,
+	            0x0A476341, 0x992EFF74, 0x3A6F6EAB, 0xF4F8FD37,
+	            0xA812DC60, 0xA1EBDDF8, 0x991BE14C, 0xDB6E6B0D,
+	            0xC67B5510, 0x6D672C37, 0x2765D43B, 0xDCD0E804,
+	            0xF1290DC7, 0xCC00FFA3, 0xB5390F92, 0x690FED0B,
+	            0x667B9FFB, 0xCEDB7D9C, 0xA091CF0B, 0xD9155EA3,
+	            0xBB132F88, 0x515BAD24, 0x7B9479BF, 0x763BD6EB,
+	            0x37392EB3, 0xCC115979, 0x8026E297, 0xF42E312D,
+	            0x6842ADA7, 0xC66A2B3B, 0x12754CCC, 0x782EF11C,
+	            0x6A124237, 0xB79251E7, 0x06A1BBE6, 0x4BFB6350,
+	            0x1A6B1018, 0x11CAEDFA, 0x3D25BDD8, 0xE2E1C3C9,
+	            0x44421659, 0x0A121386, 0xD90CEC6E, 0xD5ABEA2A,
+	            0x64AF674E, 0xDA86A85F, 0xBEBFE988, 0x64E4C3FE,
+	            0x9DBC8057, 0xF0F7C086, 0x60787BF8, 0x6003604D,
+	            0xD1FD8346, 0xF6381FB0, 0x7745AE04, 0xD736FCCC,
+	            0x83426B33, 0xF01EAB71, 0xB0804187, 0x3C005E5F,
+	            0x77A057BE, 0xBDE8AE24, 0x55464299, 0xBF582E61,
+	            0x4E58F48F, 0xF2DDFDA2, 0xF474EF38, 0x8789BDC2,
+	            0x5366F9C3, 0xC8B38E74, 0xB475F255, 0x46FCD9B9,
+	            0x7AEB2661, 0x8B1DDF84, 0x846A0E79, 0x915F95E2,
+	            0x466E598E, 0x20B45770, 0x8CD55591, 0xC902DE4C,
+	            0xB90BACE1, 0xBB8205D0, 0x11A86248, 0x7574A99E,
+	            0xB77F19B6, 0xE0A9DC09, 0x662D09A1, 0xC4324633,
+	            0xE85A1F02, 0x09F0BE8C, 0x4A99A025, 0x1D6EFE10,
+	            0x1AB93D1D, 0x0BA5A4DF, 0xA186F20F, 0x2868F169,
+	            0xDCB7DA83, 0x573906FE, 0xA1E2CE9B, 0x4FCD7F52,
+	            0x50115E01, 0xA70683FA, 0xA002B5C4, 0x0DE6D027,
+	            0x9AF88C27, 0x773F8641, 0xC3604C06, 0x61A806B5,
+	            0xF0177A28, 0xC0F586E0, 0x006058AA, 0x30DC7D62,
+	            0x11E69ED7, 0x2338EA63, 0x53C2DD94, 0xC2C21634,
+	            0xBBCBEE56, 0x90BCB6DE, 0xEBFC7DA1, 0xCE591D76,
+	            0x6F05E409, 0x4B7C0188, 0x39720A3D, 0x7C927C24,
+	            0x86E3725F, 0x724D9DB9, 0x1AC15BB4, 0xD39EB8FC,
+	            0xED545578, 0x08FCA5B5, 0xD83D7CD3, 0x4DAD0FC4,
+	            0x1E50EF5E, 0xB161E6F8, 0xA28514D9, 0x6C51133C,
+	            0x6FD5C7E7, 0x56E14EC4, 0x362ABFCE, 0xDDC6C837,
+	            0xD79A3234, 0x92638212, 0x670EFA8E, 0x406000E0  ],
+	        [   0x3A39CE37, 0xD3FAF5CF, 0xABC27737, 0x5AC52D1B,
+	            0x5CB0679E, 0x4FA33742, 0xD3822740, 0x99BC9BBE,
+	            0xD5118E9D, 0xBF0F7315, 0xD62D1C7E, 0xC700C47B,
+	            0xB78C1B6B, 0x21A19045, 0xB26EB1BE, 0x6A366EB4,
+	            0x5748AB2F, 0xBC946E79, 0xC6A376D2, 0x6549C2C8,
+	            0x530FF8EE, 0x468DDE7D, 0xD5730A1D, 0x4CD04DC6,
+	            0x2939BBDB, 0xA9BA4650, 0xAC9526E8, 0xBE5EE304,
+	            0xA1FAD5F0, 0x6A2D519A, 0x63EF8CE2, 0x9A86EE22,
+	            0xC089C2B8, 0x43242EF6, 0xA51E03AA, 0x9CF2D0A4,
+	            0x83C061BA, 0x9BE96A4D, 0x8FE51550, 0xBA645BD6,
+	            0x2826A2F9, 0xA73A3AE1, 0x4BA99586, 0xEF5562E9,
+	            0xC72FEFD3, 0xF752F7DA, 0x3F046F69, 0x77FA0A59,
+	            0x80E4A915, 0x87B08601, 0x9B09E6AD, 0x3B3EE593,
+	            0xE990FD5A, 0x9E34D797, 0x2CF0B7D9, 0x022B8B51,
+	            0x96D5AC3A, 0x017DA67D, 0xD1CF3ED6, 0x7C7D2D28,
+	            0x1F9F25CF, 0xADF2B89B, 0x5AD6B472, 0x5A88F54C,
+	            0xE029AC71, 0xE019A5E6, 0x47B0ACFD, 0xED93FA9B,
+	            0xE8D3C48D, 0x283B57CC, 0xF8D56629, 0x79132E28,
+	            0x785F0191, 0xED756055, 0xF7960E44, 0xE3D35E8C,
+	            0x15056DD4, 0x88F46DBA, 0x03A16125, 0x0564F0BD,
+	            0xC3EB9E15, 0x3C9057A2, 0x97271AEC, 0xA93A072A,
+	            0x1B3F6D9B, 0x1E6321F5, 0xF59C66FB, 0x26DCF319,
+	            0x7533D928, 0xB155FDF5, 0x03563482, 0x8ABA3CBB,
+	            0x28517711, 0xC20AD9F8, 0xABCC5167, 0xCCAD925F,
+	            0x4DE81751, 0x3830DC8E, 0x379D5862, 0x9320F991,
+	            0xEA7A90C2, 0xFB3E7BCE, 0x5121CE64, 0x774FBE32,
+	            0xA8B6E37E, 0xC3293D46, 0x48DE5369, 0x6413E680,
+	            0xA2AE0810, 0xDD6DB224, 0x69852DFD, 0x09072166,
+	            0xB39A460A, 0x6445C0DD, 0x586CDECF, 0x1C20C8AE,
+	            0x5BBEF7DD, 0x1B588D40, 0xCCD2017F, 0x6BB4E3BB,
+	            0xDDA26A7E, 0x3A59FF45, 0x3E350A44, 0xBCB4CDD5,
+	            0x72EACEA8, 0xFA6484BB, 0x8D6612AE, 0xBF3C6F47,
+	            0xD29BE463, 0x542F5D9E, 0xAEC2771B, 0xF64E6370,
+	            0x740E0D8D, 0xE75B1357, 0xF8721671, 0xAF537D5D,
+	            0x4040CB08, 0x4EB4E2CC, 0x34D2466A, 0x0115AF84,
+	            0xE1B00428, 0x95983A1D, 0x06B89FB4, 0xCE6EA048,
+	            0x6F3F3B82, 0x3520AB82, 0x011A1D4B, 0x277227F8,
+	            0x611560B1, 0xE7933FDC, 0xBB3A792B, 0x344525BD,
+	            0xA08839E1, 0x51CE794B, 0x2F32C9B7, 0xA01FBAC9,
+	            0xE01CC87E, 0xBCC7D1F6, 0xCF0111C3, 0xA1E8AAC7,
+	            0x1A908749, 0xD44FBD9A, 0xD0DADECB, 0xD50ADA38,
+	            0x0339C32A, 0xC6913667, 0x8DF9317C, 0xE0B12B4F,
+	            0xF79E59B7, 0x43F5BB3A, 0xF2D519FF, 0x27D9459C,
+	            0xBF97222C, 0x15E6FC2A, 0x0F91FC71, 0x9B941525,
+	            0xFAE59361, 0xCEB69CEB, 0xC2A86459, 0x12BAA8D1,
+	            0xB6C1075E, 0xE3056A0C, 0x10D25065, 0xCB03A442,
+	            0xE0EC6E0E, 0x1698DB3B, 0x4C98A0BE, 0x3278E964,
+	            0x9F1F9532, 0xE0D392DF, 0xD3A0342B, 0x8971F21E,
+	            0x1B0A7441, 0x4BA3348C, 0xC5BE7120, 0xC37632D8,
+	            0xDF359F8D, 0x9B992F2E, 0xE60B6F47, 0x0FE3F11D,
+	            0xE54CDA54, 0x1EDAD891, 0xCE6279CF, 0xCD3E7E6F,
+	            0x1618B166, 0xFD2C1D05, 0x848FD2C5, 0xF6FB2299,
+	            0xF523F357, 0xA6327623, 0x93A83531, 0x56CCCD02,
+	            0xACF08162, 0x5A75EBB5, 0x6E163697, 0x88D273CC,
+	            0xDE966292, 0x81B949D0, 0x4C50901B, 0x71C65614,
+	            0xE6C6C7BD, 0x327A140A, 0x45E1D006, 0xC3F27B9A,
+	            0xC9AA53FD, 0x62A80F00, 0xBB25BFE2, 0x35BDD2F6,
+	            0x71126905, 0xB2040222, 0xB6CBCF7C, 0xCD769C2B,
+	            0x53113EC0, 0x1640E3D3, 0x38ABBD60, 0x2547ADF0,
+	            0xBA38209C, 0xF746CE76, 0x77AFA1C5, 0x20756060,
+	            0x85CBFE4E, 0x8AE88DD8, 0x7AAAF9B0, 0x4CF9AA7E,
+	            0x1948C25C, 0x02FB8A8C, 0x01C36AE4, 0xD6EBE1F9,
+	            0x90D4F869, 0xA65CDEA0, 0x3F09252D, 0xC208E69F,
+	            0xB74E6132, 0xCE77E25B, 0x578FDFE3, 0x3AC372E6  ]
+	    ];
+
+	    var BLOWFISH_CTX = {
+	        pbox: [],
+	        sbox: []
+	    }
+
+	    function F(ctx, x){
+	        let a = (x >> 24) & 0xFF;
+	        let b = (x >> 16) & 0xFF;
+	        let c = (x >> 8) & 0xFF;
+	        let d = x & 0xFF;
+
+	        let y = ctx.sbox[0][a] + ctx.sbox[1][b];
+	        y = y ^ ctx.sbox[2][c];
+	        y = y + ctx.sbox[3][d];
+
+	        return y;
+	    }
+
+	    function BlowFish_Encrypt(ctx, left, right){
+	        let Xl = left;
+	        let Xr = right;
+	        let temp;
+
+	        for(let i = 0; i < N; ++i){
+	            Xl = Xl ^ ctx.pbox[i];
+	            Xr = F(ctx, Xl) ^ Xr;
+
+	            temp = Xl;
+	            Xl = Xr;
+	            Xr = temp;
+	        }
+
+	        temp = Xl;
+	        Xl = Xr;
+	        Xr = temp;
+
+	        Xr = Xr ^ ctx.pbox[N];
+	        Xl = Xl ^ ctx.pbox[N + 1];
+
+	        return {left: Xl, right: Xr};
+	    }
+
+	    function BlowFish_Decrypt(ctx, left, right){
+	        let Xl = left;
+	        let Xr = right;
+	        let temp;
+
+	        for(let i = N + 1; i > 1; --i){
+	            Xl = Xl ^ ctx.pbox[i];
+	            Xr = F(ctx, Xl) ^ Xr;
+
+	            temp = Xl;
+	            Xl = Xr;
+	            Xr = temp;
+	        }
+
+	        temp = Xl;
+	        Xl = Xr;
+	        Xr = temp;
+
+	        Xr = Xr ^ ctx.pbox[1];
+	        Xl = Xl ^ ctx.pbox[0];
+
+	        return {left: Xl, right: Xr};
+	    }
+
+	    /**
+	     * Initialization ctx's pbox and sbox.
+	     *
+	     * @param {Object} ctx The object has pbox and sbox.
+	     * @param {Array} key An array of 32-bit words.
+	     * @param {int} keysize The length of the key.
+	     *
+	     * @example
+	     *
+	     *     BlowFishInit(BLOWFISH_CTX, key, 128/32);
+	     */
+	    function BlowFishInit(ctx, key, keysize)
+	    {
+	        for(let Row = 0; Row < 4; Row++)
+	        {
+	            ctx.sbox[Row] = [];
+	            for(let Col = 0; Col < 256; Col++)
+	            {
+	                ctx.sbox[Row][Col] = ORIG_S[Row][Col];
+	            }
+	        }
+
+	        let keyIndex = 0;
+	        for(let index = 0; index < N + 2; index++)
+	        {
+	            ctx.pbox[index] = ORIG_P[index] ^ key[keyIndex];
+	            keyIndex++;
+	            if(keyIndex >= keysize)
+	            {
+	                keyIndex = 0;
+	            }
+	        }
+
+	        let Data1 = 0;
+	        let Data2 = 0;
+	        let res = 0;
+	        for(let i = 0; i < N + 2; i += 2)
+	        {
+	            res = BlowFish_Encrypt(ctx, Data1, Data2);
+	            Data1 = res.left;
+	            Data2 = res.right;
+	            ctx.pbox[i] = Data1;
+	            ctx.pbox[i + 1] = Data2;
+	        }
+
+	        for(let i = 0; i < 4; i++)
+	        {
+	            for(let j = 0; j < 256; j += 2)
+	            {
+	                res = BlowFish_Encrypt(ctx, Data1, Data2);
+	                Data1 = res.left;
+	                Data2 = res.right;
+	                ctx.sbox[i][j] = Data1;
+	                ctx.sbox[i][j + 1] = Data2;
+	            }
+	        }
+
+	        return true;
+	    }
+
+	    /**
+	     * Blowfish block cipher algorithm.
+	     */
+	    var Blowfish = C_algo.Blowfish = BlockCipher.extend({
+	        _doReset: function () {
+	            // Skip reset of nRounds has been set before and key did not change
+	            if (this._keyPriorReset === this._key) {
+	                return;
+	            }
+
+	            // Shortcuts
+	            var key = this._keyPriorReset = this._key;
+	            var keyWords = key.words;
+	            var keySize = key.sigBytes / 4;
+
+	            //Initialization pbox and sbox
+	            BlowFishInit(BLOWFISH_CTX, keyWords, keySize);
+	        },
+
+	        encryptBlock: function (M, offset) {
+	            var res = BlowFish_Encrypt(BLOWFISH_CTX, M[offset], M[offset + 1]);
+	            M[offset] = res.left;
+	            M[offset + 1] = res.right;
+	        },
+
+	        decryptBlock: function (M, offset) {
+	            var res = BlowFish_Decrypt(BLOWFISH_CTX, M[offset], M[offset + 1]);
+	            M[offset] = res.left;
+	            M[offset + 1] = res.right;
+	        },
+
+	        blockSize: 64/32,
+
+	        keySize: 128/32,
+
+	        ivSize: 64/32
+	    });
+
+	    /**
+	     * Shortcut functions to the cipher's object interface.
+	     *
+	     * @example
+	     *
+	     *     var ciphertext = CryptoJS.Blowfish.encrypt(message, key, cfg);
+	     *     var plaintext  = CryptoJS.Blowfish.decrypt(ciphertext, key, cfg);
+	     */
+	    C.Blowfish = BlockCipher._createHelper(Blowfish);
+	}());
+
+
+	return CryptoJS.Blowfish;
+
+}));
+
+/***/ }),
+/* 67 */
 /*!************************************!*\
   !*** ./src/utils/report/report.js ***!
   \************************************/
@@ -26531,11 +21926,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.reportExposeEvent = exports.reportClickEvent = exports.reportBury = exports.getCommonParams = exports.default = void 0;
-var _helper = __webpack_require__(/*! ./helper */ 67);
+var _helper = __webpack_require__(/*! ./helper */ 68);
 var _index = __webpack_require__(/*! @/utils/index */ 17);
 var _common = __webpack_require__(/*! @/http/common */ 27);
 var _util = __webpack_require__(/*! @/utils/util */ 10);
-var _config = __webpack_require__(/*! @/mixin/config */ 68);
+var _config = __webpack_require__(/*! @/mixin/config */ 69);
 /**
  * 解析数组类型dataKey
  * 例如list[$INDEX],返回{key:list, index: $INDEX}
@@ -26805,7 +22200,6 @@ const report = (track, pageData) => {
       }); // 上报字段
       params[keys[index]] = typeof res === "object" ? JSON.stringify(res) : res; // 都格式化成字符串
     }
-
     logger.push({
       eventId,
       referer: params.referrerUrl,
@@ -26815,7 +22209,7 @@ const report = (track, pageData) => {
       key: keys[index]
     });
   });
-  (_console = console) === null || _console === void 0 ? void 0 : (_console$table = _console.table) === null || _console$table === void 0 ? void 0 : _console$table.call(_console, logger);
+  (_console = console) === null || _console === void 0 || (_console$table = _console.table) === null || _console$table === void 0 || _console$table.call(_console, logger);
   if (eventId === _config.EVENT_ID_PV) {
     console.log("pageSession", params.pageSession);
   }
@@ -26844,13 +22238,11 @@ const report = (track, pageData) => {
     (0, _common.apiBuryPointClick)(params);
   }
 };
-var _default = report;
-exports.default = _default;
+var _default = exports.default = report;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-
-/***/ 67:
+/* 68 */
 /*!************************************!*\
   !*** ./src/utils/report/helper.js ***!
   \************************************/
@@ -26972,8 +22364,7 @@ const _isPromise = function (value) {
 exports._isPromise = _isPromise;
 
 /***/ }),
-
-/***/ 68:
+/* 69 */
 /*!*****************************!*\
   !*** ./src/mixin/config.js ***!
   \*****************************/
@@ -27021,7 +22412,7 @@ exports.trackConfig = exports.topShareConfig = exports.configExample = exports.E
  * 注意：config里使用exposure进行元素曝光配置时，如果元素是通过接口动态生成，则需要在接口请求回来后调用一遍initExport进行曝光上报初始化，详见 pages/mine/message/reply 的 未读消息曝光
  */
 // 配置示例
-const configExample = {
+const configExample = exports.configExample = {
   'pages/center/center': {
     exposure: [
     // 曝光上报 - 页面或具体节点
@@ -27077,18 +22468,14 @@ const configExample = {
 };
 
 // pv eventId
-exports.configExample = configExample;
-const EVENT_ID_PV = 'page_expose';
+const EVENT_ID_PV = exports.EVENT_ID_PV = 'page_expose';
 // element expose eventId
-exports.EVENT_ID_PV = EVENT_ID_PV;
-const EVENT_ID_ELEMENT_EXPOSE = 'element_expose';
+const EVENT_ID_ELEMENT_EXPOSE = exports.EVENT_ID_ELEMENT_EXPOSE = 'element_expose';
 // click eventId
-exports.EVENT_ID_ELEMENT_EXPOSE = EVENT_ID_ELEMENT_EXPOSE;
-const EVENT_ID_ELEMENT_CLICK = 'element_click';
+const EVENT_ID_ELEMENT_CLICK = exports.EVENT_ID_ELEMENT_CLICK = 'element_click';
 
 // 上报配置
-exports.EVENT_ID_ELEMENT_CLICK = EVENT_ID_ELEMENT_CLICK;
-const trackConfig = {
+const trackConfig = exports.trackConfig = {
   'pages/home/home': {
     exposure: [{
       dataKeys: {}
@@ -27751,7 +23138,6 @@ const trackConfig = {
       }
     }]
   },
-
   'pages/mine/message/reply': {
     exposure: [
     // 曝光上报 - 页面或具体节点
@@ -28736,19 +24122,16 @@ const trackConfig = {
  * 专门针对右上角分享给好友或分享到朋友圈的埋点配置
  *   比如你想在课程详情页分享的时候，上报当前课程的objectCode，则需要在这里配置
  */
-exports.trackConfig = trackConfig;
-const topShareConfig = {
+const topShareConfig = exports.topShareConfig = {
   'pages/detail/newDetail': {
     dataKeys: {
       activityContent: '$PAGE.courseReportObj'
     }
   }
 };
-exports.topShareConfig = topShareConfig;
 
 /***/ }),
-
-/***/ 69:
+/* 70 */
 /*!***************************!*\
   !*** ./src/dict/index.js ***!
   \***************************/
@@ -28763,7 +24146,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.brandList = exports.ZHOUWEN_GAME_URL = exports.TASK_DICT = exports.GONGGAO_DICT = void 0;
 // 顺序：宝尼达、爱芙莱、嗨体、逸美一加一、紧恋、冭活泡泡、濡白天使、嗨爆水、如生天使
-const brandList = [{
+const brandList = exports.brandList = [{
   src: 'https://udstatic.imeik.com/pcUploads/1709705987752/%E5%AE%9D%E5%B0%BC%E8%BE%BE%403x.png',
   name: '宝尼达',
   header: 'https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1705642797694/h-baonida.png'
@@ -28804,8 +24187,7 @@ const brandList = [{
   name: '风格美学',
   header: 'https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1732679752782/fgmx_header.png'
 }];
-exports.brandList = brandList;
-const TASK_DICT = {
+const TASK_DICT = exports.TASK_DICT = {
   ZHU_CE: '1',
   DENG_LU: '2',
   MEI_RI_QIAN_DAO: '3',
@@ -28835,10 +24217,8 @@ const TASK_DICT = {
   // "码上验真活动分享"
   AI_YAN_ZHEN_KA_FEN_XIANG: '18' // "i验真卡分享"
 };
-exports.TASK_DICT = TASK_DICT;
-const ZHOUWEN_GAME_URL = 'https://img.vrupup.com/s/525/front/index.html';
-exports.ZHOUWEN_GAME_URL = ZHOUWEN_GAME_URL;
-const GONGGAO_DICT = {
+const ZHOUWEN_GAME_URL = exports.ZHOUWEN_GAME_URL = 'https://img.vrupup.com/s/525/front/index.html';
+const GONGGAO_DICT = exports.GONGGAO_DICT = {
   600: '您的账号已被注销，无法使用，如有疑问，请联系客服',
   601: '您的账号异常，无法使用，如有疑问，请联系客服',
   700: '当前访问人数过多，请稍后再试！',
@@ -28847,11 +24227,9 @@ const GONGGAO_DICT = {
   801: '网络请求失败，请稍后重试',
   802: '当前功能正在升级维护中，请稍后再试！'
 };
-exports.GONGGAO_DICT = GONGGAO_DICT;
 
 /***/ }),
-
-/***/ 70:
+/* 71 */
 /*!****************************!*\
   !*** ./src/store/index.js ***!
   \****************************/
@@ -28861,8 +24239,9 @@ exports.GONGGAO_DICT = GONGGAO_DICT;
 
 
 /***/ }),
-
-/***/ 73:
+/* 72 */,
+/* 73 */,
+/* 74 */
 /*!**********************************************************************************************************!*\
   !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/vue-loader/lib/runtime/componentNormalizer.js ***!
   \**********************************************************************************************************/
@@ -28990,8 +24369,7 @@ function normalizeComponent (
 
 
 /***/ }),
-
-/***/ 74:
+/* 75 */
 /*!****************************!*\
   !*** ./src/store/hooks.js ***!
   \****************************/
@@ -29065,26 +24443,26 @@ const DictionaryTree = {
     return !!val;
   }
 };
-var _default = {
+var _default = exports.default = {
   DictionaryTree
 };
-exports.default = _default;
 
 /***/ }),
+/* 76 */
+/*!****************************************************************!*\
+  !*** ./node_modules/spa-custom-hooks/lib/spa-custom-hooks.mjs ***!
+  \****************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
-/***/ 75:
-/*!***************************************************************!*\
-  !*** ./node_modules/spa-custom-hooks/lib/spa-custom-hooks.js ***!
-  \***************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-!function(t,o){ true?module.exports=o():undefined}(this,(function(){"use strict";let t;const o=(t,o,e)=>{try{if(o){let n=o.split(".");const s=e?n.length-1:n.length;for(let o=0;o<s;o++)t=t[n[o]];return e?{key:n[s],obj:t}:t}return t}catch(t){return}},e=o=>t&&t.state?t:o&&o.$store||{};class n{constructor(t){let{customhook:o,name:e,destroy:n,hit:s=!1,watchKey:i,onUpdate:r}=t;this.name=e,this.destroy=n,this.hit=s,this.need=!1,this.initFlag=!1,i&&(this.watchKey=i.replace("$store.state.","")),this.onUpdate=r,this.__customhook=o}init(){this.initFlag||(this.watchKey&&this.watchAttr((t=>{this[t?"cycleStart":"cycleEnd"]()})),this.initFlag=!0)}cycleStart(){this.hit||(this.hit=!0,this.__customhook&&this.__customhook.triggerHook(this.name))}cycleEnd(){this.hit&&(this.hit=!1,this.__customhook&&this.__customhook.resetExecute(this.name))}watchAttr(t){try{const n=this;e(this.__customhook.pageInstance).watch((t=>o(t,n.watchKey)),((o,e)=>{t(n.onUpdate?n.onUpdate(o,e):o)}),{watchKey:n.watchKey})}catch(t){}}}let s={};const i=["onLaunch","created","beforeMount","mounted","activated","deactivated","beforeDestroy","destroyed","onLoad","attached","detached","onShow","onHide","onReady","onUnload"],r=t=>({Launch:new n({customhook:t,name:"onLaunch",destroy:"onUnload",hit:!0}),Created:new n({customhook:t,name:"created",destroy:"destroyed",hit:"created"==p.initHook}),Load:new n({customhook:t,name:"onLoad",destroy:"onUnload",hit:"onLoad"==p.initHook}),Attached:new n({customhook:t,name:"attached",destroy:"detached"}),Show:new n({customhook:t,name:"onShow",destroy:"onHide"}),Mounted:new n({customhook:t,name:"mounted",destroy:"destroyed"}),Ready:new n({customhook:t,name:"onReady",destroy:"onUnload"}),...Object.keys(s).reduce(((o,e)=>{const i=s[e];return i.customhook=t,(o[e]=new n(i))&&o}),{})}),c=()=>Object.keys(s);let h=i.map((t=>u(t)));class a{constructor(t,o,e){this.pageInstance=t,this.customHooks={},this.customHookArr=[],this.hook={},this.options=o||{},this.pageHooks=e,this.init()}init(){let t=r(this);this.hook=t;let o=this.pageHooks,e=o.hasOwnProperty("beforeCreate")||o.hasOwnProperty("onReady"),{customHookArr:n,hookInscape:s}=this.filterHooks(e?o:o.__proto__);this.customHookArr=n,n.forEach((e=>{this.customHooks[e]={callback:o[e].bind(this.pageInstance),inscape:s[e],execute:!1},s[e].forEach((o=>t[o].need=!0))})),n.length&&Object.keys(t).forEach((o=>t[o].need&&t[o].init()))}filterHooks(t){let o={};return{customHookArr:Object.keys(t).filter((t=>{let e=this.getHookArr(t);return!!e.length&&(o[t]=e.filter((o=>!!this.hook[o]||(console.warn(`[custom-hook 错误声明警告] "${o}"钩子未注册，意味着"${t}"可能永远不会执行，请先注册此钩子再使用，文档：https://github.com/1977474741/spa-custom-hooks#-diyhooks对象说明`),!1))),t=="on"+e.join("")&&o[t].length==e.length)})),hookInscape:o}}triggerHook(t){this.customHookArr.forEach((t=>{let o=this.customHooks[t];o.inscape.every((t=>this.hook[t].need&&this.checkHookHit(this.hook[t])))&&!o.execute&&(o.execute=!0,this.customHooks[t].callback(this.options))}))}resetExecute(t){t=u(t),this.customHookArr.forEach((o=>{let e=this.customHooks[o];-1!=e.inscape.indexOf(t)&&(e.execute=!1)}))}splitHook(t){t=t.replace("on","").split(/(?=[A-Z])/);const o=[...new Set(h.concat(c()))].sort(((t,o)=>o.length-t.length)),e=[];let n="";for(var s=0;s<t.length;s++){n+=t[s],-1!=o.indexOf(n)&&(e.push(n),n="")}return e}checkHookHit(t){if(t.watchKey){let n=o(e(t.__customhook.pageInstance).state,t.watchKey);return t.onUpdate?t.onUpdate(n):n}return t.hit}getHookArr(t){if(-1==t.indexOf("on"))return[];const o=this.splitHook(t),e=c();return o.length>1||-1!=e.indexOf(o[0])?o:[]}}function u(t){return t=(t=t.replace("on","")).substring(0,1).toUpperCase()+t.substring(1)}const l={"vue-h5":{hooksKey:"$options",initHook:"beforeCreate",supportComponent:!0,isPage(t){return t._compiled&&this.supportComponent}},"vue-miniprogram":{hooksKey:"$options",initHook:"beforeCreate",supportComponent:!0,isPage(){return this.supportComponent}},miniprogram:{hooksKey:"",initHook:"onLoad",initHookApp:"onLaunch",supportComponent:!0,isPage(){return this.supportComponent}}};let p=l["vue-miniprogram"];const k=(e,n,r,c)=>{function h(t){let e=o(this,p.hooksKey);p.isPage(e)&&(null!=r&&r.state||!c||(r.state=this[c]||c),this.customHook=new a(this,t,e))}e.mpvueVersion?p.initHook="onLoad":e.userAgentKey&&(p=l[e.userAgentKey]),t=r,s=n,e.mixin({...i.reduce(((t,o)=>(t[o]=function(t){if("object"!=typeof this.customHook&&null!=typeof this.customHook)return;if(!this.customHook.customHookArr.length)return;t&&Object.keys(t).length>0&&(this.customHook.options=t);const e=this.customHook.hook;for(let t in e){const n=e[t];n.name==o?n.cycleStart():n.destroy==o&&n.cycleEnd()}})&&t),{}),[p.initHook](t){h.call(this,t)},[p.initHookApp](t){h.call(this,t)}})},d={mixin(t){let o=Page,e=App;Page=e=>{this.mergeHook(t,e),o(e)},App=o=>{this.mergeHook(t,o),e(o)}},mergeHook(t,o){for(let[e,n]of Object.entries(t)){const t=o[e];o[e]=function(){for(var o=arguments.length,e=new Array(o),s=0;s<o;s++)e[s]=arguments[s];return n.call(this,...e),t&&t.call(this,...e)}}},userAgentKey:"miniprogram"},m={},y={watch(t,n,s){const i=e().state,r=s.watchKey,c=o(i,r,!0);m[r]?m[r].push(n):m[r]=[n],function t(o,e){let s=o[e];Object.defineProperty(o,e,{configurable:!0,enumerable:!0,set:function(t){s=t,m[r].map((t=>t(c.obj[c.key])))},get:function(){return s}}),Array.isArray(o[e])&&function(t,o){const e=Object.create(t);["push","pop","shift","unshift","splice","sort","reverse"].forEach((n=>{let s=e[n];!function(t,o,e,n){Object.defineProperty(t,o,{value:e,enumerable:!!n,writable:!0,configurable:!0})}(t,n,(function(){return s.apply(this,arguments),o.apply(this,arguments)}))}))}(o[e],(()=>{n(c.obj[c.key])}));if("object"==typeof o[e]&&null!=o[e])for(let[n,s]of Object.entries(o[e]))t(o[e],n)}(c.obj,c.key)}};var f={install:function(){arguments.length<3?k(d,arguments[0],y,arguments[1]||"globalData"):k(...arguments)},setHit:(t,o)=>{r()[t][o?"cycleStart":"cycleEnd"]()}};return f}));
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return _; });
+function t(t,e){var o=Object.keys(t);if(Object.getOwnPropertySymbols){var n=Object.getOwnPropertySymbols(t);e&&(n=n.filter((function(e){return Object.getOwnPropertyDescriptor(t,e).enumerable}))),o.push.apply(o,n)}return o}function e(e){for(var o=1;o<arguments.length;o++){var n=null!=arguments[o]?arguments[o]:{};o%2?t(Object(n),!0).forEach((function(t){c(e,t,n[t])})):Object.getOwnPropertyDescriptors?Object.defineProperties(e,Object.getOwnPropertyDescriptors(n)):t(Object(n)).forEach((function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(n,t))}))}return e}function o(t){var e=function(t,e){if("object"!=typeof t||!t)return t;var o=t[Symbol.toPrimitive];if(void 0!==o){var n=o.call(t,e||"default");if("object"!=typeof n)return n;throw new TypeError("@@toPrimitive must return a primitive value.")}return("string"===e?String:Number)(t)}(t,"string");return"symbol"==typeof e?e:String(e)}function n(t){return n="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},n(t)}function i(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}function r(t,e){for(var n=0;n<e.length;n++){var i=e[n];i.enumerable=i.enumerable||!1,i.configurable=!0,"value"in i&&(i.writable=!0),Object.defineProperty(t,o(i.key),i)}}function a(t,e,o){return e&&r(t.prototype,e),o&&r(t,o),Object.defineProperty(t,"prototype",{writable:!1}),t}function c(t,e,n){return(e=o(e))in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}function u(t,e){return function(t){if(Array.isArray(t))return t}(t)||function(t,e){var o=null==t?null:"undefined"!=typeof Symbol&&t[Symbol.iterator]||t["@@iterator"];if(null!=o){var n,i,r,a,c=[],u=!0,s=!1;try{if(r=(o=o.call(t)).next,0===e){if(Object(o)!==o)return;u=!1}else for(;!(u=(n=r.call(o)).done)&&(c.push(n.value),c.length!==e);u=!0);}catch(t){s=!0,i=t}finally{try{if(!u&&null!=o.return&&(a=o.return(),Object(a)!==a))return}finally{if(s)throw i}}return c}}(t,e)||s(t,e)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function s(t,e){if(t){if("string"==typeof t)return h(t,e);var o=Object.prototype.toString.call(t).slice(8,-1);return"Object"===o&&t.constructor&&(o=t.constructor.name),"Map"===o||"Set"===o?Array.from(t):"Arguments"===o||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o)?h(t,e):void 0}}function h(t,e){(null==e||e>t.length)&&(e=t.length);for(var o=0,n=new Array(e);o<e;o++)n[o]=t[o];return n}var l,f,d=function(t,e,o){try{if(e){var n=e;"string"==typeof e&&(n=e.split("."));for(var i=o?n.length-1:n.length,r=0;r<i;r++)t=t[n[r]];return o?{key:n[i],obj:t}:t}return t}catch(t){return}},m=function(t){return l&&l.state?l:t&&t.$store||{}},p=function(){function t(e){var o=e.customhook,n=e.name,r=e.destroy,a=e.hit,c=void 0!==a&&a,u=e.watchKey,s=e.onUpdate,h=e.type,l=e.weightValue;i(this,t),this.name=n,this.destroy=r,this.type=h,this.hit=c,this.watchKey=u,this.weightValue=l,this.initFlag=!1,this.onUpdate=s,this.__customhook=o}return a(t,[{key:"init",value:function(){var t=this;this.initFlag||(this.watchKey&&(this.unwatchFn=this.watchAttr((function(e){t[e?"cycleStart":"cycleEnd"]()}))),this.initFlag=!0)}},{key:"cycleStart",value:function(){var t;this.hit||(this.hit=!0,null===(t=this.__customhook)||void 0===t||t.triggerHook(this.name))}},{key:"cycleEnd",value:function(){var t;this.hit&&(this.hit=!1,this.destroy&&(null===(t=this.__customhook)||void 0===t||t.resetExecute(this.destroy)))}},{key:"watchAttr",value:function(t){try{var e=this;return m(this.__customhook.instance).watch((function(t){return d(t,e.watchKey)}),(function(o,n){t(e.onUpdate?e.onUpdate(o,n):o)}),{watchKey:e.watchKey})}catch(t){}}}]),t}(),y={},k=["created","attached","ready","detached"],g=["show","hide","routeDone"],v=function(t){if(Array.isArray(t))return h(t)}(f=new Set([].concat(["beforeCreate","created","onPageShow","beforeMount","mounted","activated","onPageHide","deactivated","beforeDestroy","destroyed","onLaunch","onLoad","onShow","onReady","onHide","onUnload"],["onInit","created","attached","ready","didMount","detached","didUnmount"])))||function(t){if("undefined"!=typeof Symbol&&null!=t[Symbol.iterator]||null!=t["@@iterator"])return Array.from(t)}(f)||s(f)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}(),w=function(t,o){return Object.keys(y).reduce((function(e,o){var n=y[o];return n.customhook=t,(e[o]=new p(n))&&e}),e({BeforeCreate:new p({customhook:t,name:"BeforeCreate",destroy:"destroyed",hit:!0,weightValue:2}),BeforeMount:new p({customhook:t,name:"beforeMount",destroy:"destroyed",weightValue:4}),PageShow:new p({customhook:t,name:"onPageShow",destroy:"onPageHide",weightValue:4.1}),Mounted:new p({customhook:t,name:"mounted",destroy:"destroyed",weightValue:5}),Activated:new p({customhook:t,name:"activated",destroy:"deactivated",weightValue:6}),PageHide:new p({customhook:t,name:"onPageHide",destroy:"onPageShow",weightValue:6.1}),Deactivated:new p({customhook:t,name:"deactivated",destroy:"activated",weightValue:7})},t.isComponent?{Init:new p({customhook:t,name:"onInit",destroy:"didUnmount",hit:"onInit"===o,weightValue:2}),Created:new p({customhook:t,name:"created",destroy:"detached",hit:"created"===o,weightValue:3}),Attached:new p({customhook:t,name:"attached",destroy:"detached",weightValue:4}),Show:new p({customhook:t,name:"show",destroy:"hide",weightValue:5}),DidMount:new p({customhook:t,name:"didMount",destroy:"didUnmount",hit:"didMount"===o,weightValue:6}),Ready:new p({customhook:t,name:"ready",destroy:"detached",weightValue:7}),RouteDone:new p({customhook:t,name:"routeDone",destroy:"detached",weightValue:8}),Hide:new p({customhook:t,name:"hide",destroy:"show",weightValue:9}),Detached:new p({customhook:t,name:"detached",destroy:"attached",weightValue:10})}:{Launch:new p({customhook:t,name:"onLaunch",destroy:"onUnload",hit:!0,weightValue:3}),Created:new p({customhook:t,name:"created",destroy:"destroyed",hit:"created"===o,weightValue:3}),Load:new p({customhook:t,name:"onLoad",destroy:"onUnload",hit:"onLoad"===o,weightValue:4}),Ready:new p({customhook:t,name:"onReady",destroy:"onUnload",weightValue:5}),Show:new p({customhook:t,name:"onShow",destroy:"onHide",weightValue:6}),Hide:new p({customhook:t,name:"onHide",destroy:"onShow",weightValue:7})}))},b=function(){function t(e){var o=e.instance,n=e.options,r=e.pageHooks,a=e.instanceType,c=e.initHookName;i(this,t),this.instance=o,this.instanceType=a,this.initHookName=c,this.isComponent="component"===a,this.customHooks={},this.customHookArr=[],this.hook={},this.options=n||{},this.pageHooks=r,this.diyHooks=Object.keys(y),this.init(),this.triggerHook()}return a(t,[{key:"init",value:function(){var t=this,e=w(this,this.initHookName);this.presetHooksName=Object.keys(e),this.hook=e;var o=this.pageHooks,n=o.hasOwnProperty("beforeCreate")||o.hasOwnProperty("onReady");o=n?o:o.__proto__,this.isComponent&&Object.assign(o,o.lifetimes,o.pageLifetimes);var i=this.filterHooks(o),r=i.customHookArr,a=i.hookInscape;r.forEach((function(e){t.customHooks[e]={callback:o[e].bind(t.instance),inscape:a[e],execute:!1,weightValue:a[e].reduce((function(e,o){var n;return e+((null===(n=t.hook[o])||void 0===n?void 0:n.weightValue)||0)}),0)}})),this.customHookArr=r.sort((function(e,o){return t.customHooks[e].weightValue-t.customHooks[o].weightValue})),Object.keys(this.hook).forEach((function(e){return t.hook[e].init()}))}},{key:"filterHooks",value:function(t){var e=this,o={},n={},i=Object.keys(t).filter((function(t){var i=e.getHookArr(t);return!!i.length&&(o[t]=i.filter((function(o){return e.hook[o]?(n[o]=e.hook[o],!0):(console.warn('[custom-hook 错误声明警告] "'.concat(o,'"钩子未注册，意味着"').concat(t,'"可能永远不会执行，请先注册此钩子再使用，文档：https://github.com/1977474741/spa-custom-hooks#-diyhooks对象说明')),!1)})),t=="on"+i.join("")&&o[t].length==i.length)}));return this.hook=n,{customHookArr:i,hookInscape:o}}},{key:"triggerHook",value:function(t){var e=this;this.customHookArr.forEach((function(t){var o=e.customHooks[t];o.inscape.every((function(t){return e.hook[t]&&e.checkHookHit(e.hook[t])}))&&!o.execute&&(o.execute=!0,e.customHooks[t].callback(e.options))}))}},{key:"resetExecute",value:function(t){var e=this;this.customHookArr.forEach((function(o){var n=e.customHooks[o];n.inscape.find((function(o){var n;return t===(null===(n=e.hook[o])||void 0===n?void 0:n.destroy)}))&&(n.execute=!1)}))}},{key:"checkHookHit",value:function(t){if(t.watchKey){var e=d(m(t.__customhook.instance).state,t.watchKey);return t.onUpdate?t.onUpdate(e):e}return t.hit}},{key:"getHookArr",value:function(t){if(-1==t.indexOf("on"))return[];var e=this.splitHook(t),o=this.diyHooks;return e.length>1||-1!=o.indexOf(e[0])?e:[]}},{key:"splitHook",value:function(t){var e=this;t=t.replace("on",""),this.presetHooksName.sort((function(t,e){return e.length-t.length}));var o=new RegExp("("+this.presetHooksName.join("|")+")","g");return t.split(o).filter((function(t){return e.hook[t]}))}}]),t}(),H={"vue-h5":{hooksKey:"$options",initHook:"beforeCreate",supportComponent:!0,isPage:function(t){return t._compiled&&this.supportComponent}},"vue-miniprogram":{hooksKey:"$options",initHook:"beforeCreate",supportComponent:!0,isPage:function(){return this.supportComponent}},miniprogram:{name:"miniprogram",hooksKey:"",initHook:"onLoad",initHookApp:"onLaunch",initHookComponentAlipay:"didMount",initHookComponentAlipayInit:"onInit",initHookComponentAlipayCreated:"created",initHookComponentWx:"created",initHookComponentLifetimes:"created",supportComponent:!0,isPage:function(){return this.supportComponent}}},j=H["vue-miniprogram"],A=function(t,o,i,r){function a(t,e,o){this.customHook?h.call(this,e,o):u.call(this,e,"component",t,o)}function u(t,e,o,n){if(!this.customHook){var a=d(this,j.hooksKey);if(j.isPage(a)){!i.state&&r&&(i.state=this[r]||r);var c="component"===e;Object.defineProperty(this,"customHook",{value:new b({instance:this,options:t,pageHooks:c?o:a,instanceType:e,initHookName:n}),configurable:!0,enumerable:!1})}}}function s(t){return t.reduce((function(t,e){return(t[e]=function(t){h.call(this,t,e)})&&t}),{})}function h(t,e){if(("object"==n(this.customHook)||null==n(this.customHook))&&this.customHook.customHookArr.length){t&&Object.keys(t).length>0&&(this.customHook.options=t);var o=this.customHook.hook,i=["beforeDestroy","destroyed","onUnload","didUnmount","detached"].includes(e);for(var r in o){var a,c=o[r];c.name==e?c.cycleStart():c.destroy==e&&c.cycleEnd(),i&&(null===(a=c.unwatchFn)||void 0===a||a.call(c))}i&&delete this.customHook}}t.mpvueVersion?j.initHook="onLoad":t.userAgentKey&&(j=H[t.userAgentKey]),l=i,y=o,t.mixin(e(e({},s(v)),{},c({},j.initHook,(function(t){u.call(this,t,"page",void 0,j.initHook)})),"miniprogram"===j.name?c(c(c(c(c(c({},j.initHookApp,(function(t){u.call(this,t,"app",void 0,j.initHookApp)})),j.initHookComponentWx,(function(t,e){u.call(this,e,"component",t,j.initHookComponentWx)})),j.initHookComponentAlipayInit,(function(t,e){u.call(this,e,"component",t,j.initHookComponentAlipayInit)})),j.initHookComponentAlipay,(function(t,e){a.call(this,t,e,j.initHookComponentAlipay)})),"lifetimes",e(e({},s(k)),{},c({},j.initHookComponentAlipayCreated,(function(t,e){a.call(this,t,e,j.initHookComponentAlipayCreated)})))),"pageLifetimes",e({},s(g))):{}))},O=Object.freeze({__proto__:null,get BASE(){return j},install:A}),C={mixin:function(t){var e=this,o=App,n=Page,i=Component;App=function(n){e.mergeHook(t,n),o(n)},Page=function(o){e.mergeHook(t,o),n(o)},Component=function(o){e.mergeComponentHook(t,o,o),i(o)}},mergeHook:function(t,e){for(var o=function(){var t=u(i[n],2),o=t[0],r=t[1],a=e[o];e[o]=function(){for(var t=arguments.length,e=new Array(t),o=0;o<t;o++)e[o]=arguments[o];a&&a.call.apply(a,[this].concat(e)),r.call.apply(r,[this].concat(e))}},n=0,i=Object.entries(t);n<i.length;n++)o()},mergeComponentHook:function(t,e,o){var n=this;if(e)for(var i=["lifetimes","pageLifetimes"],r=function(){var r=u(c[a],2),s=r[0],h=r[1];if(i.includes(s))n.mergeComponentHook(t[s],e[s],e);else{var l=e[s];e[s]=function(){for(var t=arguments.length,e=new Array(t),n=0;n<t;n++)e[n]=arguments[n];l&&l.call.apply(l,[this].concat(e)),h.call.apply(h,[this,o].concat(e))}}},a=0,c=Object.entries(t);a<c.length;a++)r()},userAgentKey:"miniprogram"},S={},P={watch:function(t,e,o){var i=m().state,r=o.watchKey,a=d(i,r,!0),c={callback:e,unwatch:!1};S[r]?S[r].push(c):S[r]=[c];var s=[];return function t(o,i){var c=o[i];Object.defineProperty(o,i,{configurable:!0,enumerable:!0,set:function(t){c=t,S[r].map((function(t){return t.callback(a.obj[a.key])}))},get:function(){return c}}),Array.isArray(o[i])&&s.push((h=o[i],l=function(){e(a.obj[a.key])},f=Object.create(h),d=["push","pop","shift","unshift","splice","sort","reverse"].map((function(t){var e=f[t];return V(h,t,(function(){return e.apply(this,arguments),l.apply(this,arguments)})),function(){V(h,t,e)}})),function(){d.map((function(t){return t()}))}));var h,l,f,d;if("object"===n(o[i])&&null!=o[i])for(var m=0,p=Object.entries(o[i]);m<p.length;m++){var y=u(p[m],2),k=y[0];y[1],t(o[i],k)}}(a.obj,a.key),function(){c.unwatch=!0;var t=S[r].findIndex((function(t){return t.unwatch}));S[r].splice(t,1),S[r].length||delete S[r],s.map((function(t){return t()}))}}};function V(t,e,o,n){Object.defineProperty(t,e,{value:o,enumerable:!!n,writable:!0,configurable:!0})}var _={install:function(){arguments.length<3?A(C,arguments[0],P,arguments[1]||"globalData"):A.apply(O,arguments)},setHit:function(t,e){w()[t][e?"cycleStart":"cycleEnd"]()}};
 
 
 /***/ }),
-
-/***/ 76:
+/* 77 */
 /*!**********************************!*\
   !*** ./src/polyfill/polyfill.js ***!
   \**********************************/
@@ -29107,7 +24485,7 @@ exports.default = _default;
  *
  * Author: 375890534@qq.com
  */
-const base64Binary = __webpack_require__(/*! ./base64Binary */ 77);
+const base64Binary = __webpack_require__(/*! ./base64Binary */ 78);
 
 /**
  * 获取guid
@@ -30120,8 +25498,7 @@ module.exports = {
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-
-/***/ 77:
+/* 78 */
 /*!**************************************!*\
   !*** ./src/polyfill/base64Binary.js ***!
   \**************************************/
@@ -30224,8 +25601,7 @@ module.exports = {
 };
 
 /***/ }),
-
-/***/ 78:
+/* 79 */
 /*!********************************!*\
   !*** ./src/polyfill/mixins.js ***!
   \********************************/
@@ -30240,7 +25616,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _util = __webpack_require__(/*! @/utils/util */ 10);
-var _default = {
+var _default = exports.default = {
   methods: {
     $hiddenPhone(phone) {
       const userInfo = (0, _util.lsGet)('userInfo');
@@ -30370,11 +25746,9 @@ var _default = {
     lsDel: _util.lsDel
   }
 };
-exports.default = _default;
 
 /***/ }),
-
-/***/ 79:
+/* 80 */
 /*!*****************************!*\
   !*** ./src/mixin/report.js ***!
   \*****************************/
@@ -30388,14 +25762,14 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _config = __webpack_require__(/*! ./config */ 68);
+var _config = __webpack_require__(/*! ./config */ 69);
 var _wx = __webpack_require__(/*! @/http/wx */ 25);
-var _helper = __webpack_require__(/*! @/utils/report/helper */ 67);
-var _config2 = __webpack_require__(/*! @/mixin/config */ 68);
-var _report = _interopRequireDefault(__webpack_require__(/*! @/utils/report/report */ 66));
+var _helper = __webpack_require__(/*! @/utils/report/helper */ 68);
+var _config2 = __webpack_require__(/*! @/mixin/config */ 69);
+var _report = _interopRequireDefault(__webpack_require__(/*! @/utils/report/report */ 67));
 var _util = __webpack_require__(/*! @/utils/util */ 10);
 var _utils = __webpack_require__(/*! @/utils */ 17);
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 /**
  * 数据埋点
  *  1、页面曝光
@@ -30411,7 +25785,6 @@ const expose = {
       reportedLeavePv: {} // 已上报的页面离开PV,用来防止同一个pageSession上报两次 {pageUrl: pageSession}
     };
   },
-
   created() {
     // 只在页面级别调用
     const page = (0, _helper.getActivePage)();
@@ -30512,7 +25885,6 @@ const expose = {
         this.initExport(); // 节点曝光
       });
     },
-
     // pv上报初始化
     initPv(type = "show") {
       const page = (0, _helper.getActivePage)();
@@ -30610,13 +25982,11 @@ const expose = {
     }
   }
 };
-var _default = expose;
-exports.default = _default;
+var _default = exports.default = expose;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
-
-/***/ 80:
+/* 81 */
 /*!****************************!*\
   !*** ./src/mixin/share.js ***!
   \****************************/
@@ -30634,10 +26004,10 @@ var _index = __webpack_require__(/*! @/utils/index */ 17);
 var _vuex = __webpack_require__(/*! vuex */ 14);
 var _util = __webpack_require__(/*! @/utils/util */ 10);
 var _tools = __webpack_require__(/*! @/utils/tools */ 18);
-var _report = _interopRequireDefault(__webpack_require__(/*! @/utils/report/report */ 66));
-var _moment = _interopRequireDefault(__webpack_require__(/*! moment */ 81));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-var _default = {
+var _report = _interopRequireDefault(__webpack_require__(/*! @/utils/report/report */ 67));
+var _moment = _interopRequireDefault(__webpack_require__(/*! moment */ 82));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+var _default = exports.default = {
   data() {
     return {
       isCallbackRunning: false,
@@ -30654,7 +26024,6 @@ var _default = {
       }
     };
   },
-
   computed: {
     ...(0, _vuex.mapState)(['iclubDictoryTree', 'commonConfig', 'isLogin'])
   },
@@ -30663,8 +26032,8 @@ var _default = {
       handler(c) {
         var _c$options, _c$options$find, _c$options2, _c$options2$find;
         if (!c) return;
-        const title = c === null || c === void 0 ? void 0 : (_c$options = c.options) === null || _c$options === void 0 ? void 0 : (_c$options$find = _c$options.find) === null || _c$options$find === void 0 ? void 0 : _c$options$find.call(_c$options, item => item.name === 'shareTitle');
-        const imageUrl = c === null || c === void 0 ? void 0 : (_c$options2 = c.options) === null || _c$options2 === void 0 ? void 0 : (_c$options2$find = _c$options2.find) === null || _c$options2$find === void 0 ? void 0 : _c$options2$find.call(_c$options2, item => item.name === 'shareImage');
+        const title = c === null || c === void 0 || (_c$options = c.options) === null || _c$options === void 0 || (_c$options$find = _c$options.find) === null || _c$options$find === void 0 ? void 0 : _c$options$find.call(_c$options, item => item.name === 'shareTitle');
+        const imageUrl = c === null || c === void 0 || (_c$options2 = c.options) === null || _c$options2 === void 0 || (_c$options2$find = _c$options2.find) === null || _c$options2$find === void 0 ? void 0 : _c$options2$find.call(_c$options2, item => item.name === 'shareImage');
         if (title && imageUrl) {
           this.share.title = title.sign;
           this.share.imageUrl = imageUrl.sign;
@@ -30672,7 +26041,6 @@ var _default = {
         // this.share.title = c.shareTitle
         // this.share.imageUrl = c.shareImage
       },
-
       immediate: true,
       deep: true
     }
@@ -30724,7 +26092,7 @@ var _default = {
     captchaCallback(methodName) {
       var _this;
       //   console.log('reRunCaptchaMethod 1', methodName)
-      (_this = this[`${methodName}`]) === null || _this === void 0 ? void 0 : _this.call(this);
+      (_this = this[`${methodName}`]) === null || _this === void 0 || _this.call(this);
     },
     phoneFilter(val) {
       var _val;
@@ -30778,7 +26146,7 @@ var _default = {
       }
     }
     this.$shareCallBack && this.$shareCallBack();
-    (_this$shareInfo = this.shareInfo) === null || _this$shareInfo === void 0 ? void 0 : (_this$shareInfo$callb = _this$shareInfo.callback) === null || _this$shareInfo$callb === void 0 ? void 0 : _this$shareInfo$callb.call(_this$shareInfo, res.from === 'button');
+    (_this$shareInfo = this.shareInfo) === null || _this$shareInfo === void 0 || (_this$shareInfo$callb = _this$shareInfo.callback) === null || _this$shareInfo$callb === void 0 || _this$shareInfo$callb.call(_this$shareInfo, res.from === 'button');
     const path = (0, _index.addUserIdWhenShare)(info.path || this.share.path);
     console.error('🚀 ~ 分享给好友 ~ path:', path);
     return {
@@ -30806,11 +26174,9 @@ var _default = {
     };
   }
 };
-exports.default = _default;
 
 /***/ }),
-
-/***/ 81:
+/* 82 */
 /*!***************************************!*\
   !*** ./node_modules/moment/moment.js ***!
   \***************************************/
@@ -36505,11 +31871,10 @@ exports.default = _default;
 
 })));
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/module.js */ 82)(module)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/module.js */ 83)(module)))
 
 /***/ }),
-
-/***/ 82:
+/* 83 */
 /*!***********************************!*\
   !*** (webpack)/buildin/module.js ***!
   \***********************************/
@@ -36541,8 +31906,7 @@ module.exports = function(module) {
 
 
 /***/ }),
-
-/***/ 83:
+/* 84 */
 /*!***********************************!*\
   !*** ./src/utils/report/index.js ***!
   \***********************************/
@@ -36556,11 +31920,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _helper = __webpack_require__(/*! ./helper */ 67);
-var _config = __webpack_require__(/*! ../../mixin/config */ 68);
-var _wrapper = _interopRequireDefault(__webpack_require__(/*! ./wrapper */ 84));
-var _report = _interopRequireDefault(__webpack_require__(/*! ./report */ 66));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _helper = __webpack_require__(/*! ./helper */ 68);
+var _config = __webpack_require__(/*! ../../mixin/config */ 69);
+var _wrapper = _interopRequireDefault(__webpack_require__(/*! ./wrapper */ 85));
+var _report = _interopRequireDefault(__webpack_require__(/*! ./report */ 67));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 /**
  * 原生小程序支持区分page还是component，但是经过uni打包后
  * 都是以component的形式存在，所以去掉 methodTracker
@@ -36674,12 +32038,10 @@ class Tracker extends _wrapper.default {
   //   }
   // }
 }
-var _default = Tracker;
-exports.default = _default;
+var _default = exports.default = Tracker;
 
 /***/ }),
-
-/***/ 84:
+/* 85 */
 /*!*************************************!*\
   !*** ./src/utils/report/wrapper.js ***!
   \*************************************/
@@ -36801,12 +32163,10 @@ class Wrapper {
     globalVarPage(this._createComponent(component, this.injectPageMethods, this.extraPageMethods));
   }
 }
-var _default = Wrapper;
-exports.default = _default;
+var _default = exports.default = Wrapper;
 
 /***/ }),
-
-/***/ 85:
+/* 86 */
 /*!*******************************!*\
   !*** ./src/utils/eventbus.js ***!
   \*******************************/
@@ -36893,52 +32253,6868 @@ module.exports = {
 };
 
 /***/ }),
-
-/***/ 9:
-/*!***************************!*\
-  !*** ./src/utils/init.js ***!
-  \***************************/
+/* 87 */,
+/* 88 */,
+/* 89 */,
+/* 90 */,
+/* 91 */,
+/* 92 */,
+/* 93 */,
+/* 94 */,
+/* 95 */,
+/* 96 */,
+/* 97 */,
+/* 98 */,
+/* 99 */,
+/* 100 */,
+/* 101 */,
+/* 102 */,
+/* 103 */,
+/* 104 */,
+/* 105 */,
+/* 106 */,
+/* 107 */,
+/* 108 */,
+/* 109 */,
+/* 110 */,
+/* 111 */,
+/* 112 */,
+/* 113 */,
+/* 114 */,
+/* 115 */,
+/* 116 */,
+/* 117 */,
+/* 118 */,
+/* 119 */,
+/* 120 */,
+/* 121 */,
+/* 122 */,
+/* 123 */,
+/* 124 */,
+/* 125 */,
+/* 126 */,
+/* 127 */,
+/* 128 */,
+/* 129 */,
+/* 130 */,
+/* 131 */,
+/* 132 */,
+/* 133 */,
+/* 134 */,
+/* 135 */,
+/* 136 */,
+/* 137 */,
+/* 138 */,
+/* 139 */,
+/* 140 */,
+/* 141 */,
+/* 142 */,
+/* 143 */,
+/* 144 */,
+/* 145 */,
+/* 146 */,
+/* 147 */,
+/* 148 */,
+/* 149 */,
+/* 150 */,
+/* 151 */,
+/* 152 */,
+/* 153 */,
+/* 154 */,
+/* 155 */,
+/* 156 */,
+/* 157 */,
+/* 158 */,
+/* 159 */,
+/* 160 */,
+/* 161 */,
+/* 162 */,
+/* 163 */,
+/* 164 */,
+/* 165 */,
+/* 166 */,
+/* 167 */,
+/* 168 */,
+/* 169 */,
+/* 170 */,
+/* 171 */,
+/* 172 */,
+/* 173 */,
+/* 174 */,
+/* 175 */,
+/* 176 */,
+/* 177 */,
+/* 178 */,
+/* 179 */,
+/* 180 */,
+/* 181 */,
+/* 182 */,
+/* 183 */,
+/* 184 */,
+/* 185 */,
+/* 186 */,
+/* 187 */,
+/* 188 */,
+/* 189 */,
+/* 190 */,
+/* 191 */,
+/* 192 */,
+/* 193 */,
+/* 194 */,
+/* 195 */,
+/* 196 */
+/*!*************************************************************************************!*\
+  !*** ./src/uni_modules/uni-transition/components/uni-transition/createAnimation.js ***!
+  \*************************************************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(uni) {
 
-var _util = __webpack_require__(/*! ./util */ 10);
-var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 13));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-// 是否登录
-uni.hasLogin = () => {
-  return !!(0, _util.lsGet)('iclubUserToken3');
-};
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createAnimation = createAnimation;
+// const defaultOption = {
+// 	duration: 300,
+// 	timingFunction: 'linear',
+// 	delay: 0,
+// 	transformOrigin: '50% 50% 0'
+// }
 
-// 清除登录信息
-uni.clearLogin = () => {
-  (0, _util.lsDel)('iclubUserToken3');
-  (0, _util.lsDel)('userInfo');
-  (0, _util.lsDel)('userHasUploadInfo');
-  (0, _util.lsDel)('encryptKey');
-  (0, _util.lsDel)('encryptIV');
-  (0, _util.lsDel)('encryptVersion');
-  _store.default.commit('setIsLogin', false);
-};
-
-// toast
-uni.cToast = (option = {}) => {
-  const title = typeof option === 'string' ? option : option.title || '';
-  if (title) {
-    setTimeout(() => {
-      uni.showToast({
-        title: title,
-        mask: option.mask || false,
-        icon: option.icon || 'none',
-        duration: option.duration || 3000
-      });
-    }, 500);
+class MPAnimation {
+  constructor(options, _this) {
+    this.options = options;
+    this.animation = uni.createAnimation(options);
+    this.currentStepAnimates = {};
+    this.next = 0;
+    this.$ = _this;
   }
-};
+  _nvuePushAnimates(type, args) {
+    let aniObj = this.currentStepAnimates[this.next];
+    let styles = {};
+    if (!aniObj) {
+      styles = {
+        styles: {},
+        config: {}
+      };
+    } else {
+      styles = aniObj;
+    }
+    if (animateTypes1.includes(type)) {
+      if (!styles.styles.transform) {
+        styles.styles.transform = '';
+      }
+      let unit = '';
+      if (type === 'rotate') {
+        unit = 'deg';
+      }
+      styles.styles.transform += `${type}(${args + unit}) `;
+    } else {
+      styles.styles[type] = `${args}`;
+    }
+    this.currentStepAnimates[this.next] = styles;
+  }
+  _animateRun(styles = {}, config = {}) {
+    let ref = this.$.$refs['ani'].ref;
+    if (!ref) return;
+    return new Promise((resolve, reject) => {
+      nvueAnimation.transition(ref, {
+        styles,
+        ...config
+      }, res => {
+        resolve();
+      });
+    });
+  }
+  _nvueNextAnimate(animates, step = 0, fn) {
+    let obj = animates[step];
+    if (obj) {
+      let {
+        styles,
+        config
+      } = obj;
+      this._animateRun(styles, config).then(() => {
+        step += 1;
+        this._nvueNextAnimate(animates, step, fn);
+      });
+    } else {
+      this.currentStepAnimates = {};
+      typeof fn === 'function' && fn();
+      this.isEnd = true;
+    }
+  }
+  step(config = {}) {
+    this.animation.step(config);
+    return this;
+  }
+  run(fn) {
+    this.$.animationData = this.animation.export();
+    this.$.timer = setTimeout(() => {
+      typeof fn === 'function' && fn();
+    }, this.$.durationTime);
+  }
+}
+const animateTypes1 = ['matrix', 'matrix3d', 'rotate', 'rotate3d', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scale3d', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'translate', 'translate3d', 'translateX', 'translateY', 'translateZ'];
+const animateTypes2 = ['opacity', 'backgroundColor'];
+const animateTypes3 = ['width', 'height', 'left', 'right', 'top', 'bottom'];
+animateTypes1.concat(animateTypes2, animateTypes3).forEach(type => {
+  MPAnimation.prototype[type] = function (...args) {
+    this.animation[type](...args);
+    return this;
+  };
+});
+function createAnimation(option, _this) {
+  if (!_this) return;
+  clearTimeout(_this.timer);
+  return new MPAnimation(option, _this);
+}
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
-/***/ })
+/***/ }),
+/* 197 */,
+/* 198 */,
+/* 199 */,
+/* 200 */,
+/* 201 */,
+/* 202 */,
+/* 203 */,
+/* 204 */,
+/* 205 */,
+/* 206 */,
+/* 207 */,
+/* 208 */,
+/* 209 */,
+/* 210 */,
+/* 211 */,
+/* 212 */,
+/* 213 */,
+/* 214 */,
+/* 215 */,
+/* 216 */,
+/* 217 */,
+/* 218 */
+/*!*************************************!*\
+  !*** ./src/components/form/util.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
-}]);
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getCommonRules = getCommonRules;
+exports.getExtraPosition = getExtraPosition;
+exports.getInputRequireRules = getInputRequireRules;
+exports.getPresetRules = getPresetRules;
+exports.getShowLabel = getShowLabel;
+exports.setPresetRules = setPresetRules;
+// 内置校验规则
+const presetRules = {
+  number: {
+    pattern: /^\d+(\.\d+)?$/,
+    errorMessage: '仅允许输入数字'
+  },
+  letter: {
+    pattern: /^[A-Za-z]+$/,
+    errorMessage: '仅允许输入英文字母'
+  },
+  chinese: {
+    pattern: /^[\u4E00-\u9FA5]+$/,
+    errorMessage: '仅允许输入汉字'
+  },
+  phone: {
+    pattern: /^1\d{10}$/,
+    errorMessage: '请输入11位手机号码'
+  },
+  nationalId: {
+    pattern: /^[1-9]{1}[0-9]{14}$|^[1-9]{1}[0-9]{16}([0-9]|[xX])$/,
+    errorMessage: '请输入正确的身份证号码'
+  }
+};
+
+// label展示
+function getShowLabel(model, field) {
+  return field.value || model[field.code] || '';
+}
+
+// 是否展示填写提示 && 返回填写提示的位置
+function getExtraPosition(field) {
+  // labelPosition为top时，展示在label下面；labelPosition为left时，展示在form-item下面
+  if (field.props && field.props.extra) {
+    return field.labelPosition === 'top' ? 'top' : 'bottom';
+  }
+  return '';
+}
+
+// 公共rule
+function getCommonRules(field) {
+  const rules = [];
+  const props = field.props || {};
+
+  // 必填校验
+  const txt = {
+    'form-radio': '选择',
+    'form-checkbox': '选择',
+    'form-select': '选择',
+    'form-date': '选择',
+    'form-rate': '选择',
+    'form-image': '上传',
+    'form-video': '上传',
+    'form-department-select': '选择',
+    'form-departmentAll-select': '选择'
+  }[field.type] || '填写';
+  if (getInputRequireRules(field, txt)) {
+    rules.push(getInputRequireRules(field, txt));
+  }
+
+  // 内置规则快捷校验
+  if (props && props.validate) {
+    rules.push(getPresetRules(props.validate));
+  }
+
+  // 自定义校验规则 - 当内置规则快捷校验满足不了时
+  if (props && props.rules) {
+    rules.push(...props.rules);
+  }
+  return rules;
+}
+
+/**
+ * 添加内置校验规则
+ * @param formRules 规则对象
+ * @param code 规则key
+ * @param ruleKey 规则名称
+ */
+function setPresetRules(formRules, code, ruleKey) {
+  if (presetRules[ruleKey]) {
+    formRules[code].push(presetRules[ruleKey]);
+  }
+}
+// 获取内置规则
+function getPresetRules(ruleKey) {
+  if (presetRules[ruleKey]) {
+    return presetRules[ruleKey];
+  }
+}
+
+/**
+ * 必填项规则
+ * @param formRules 规则对象
+ * @param code 规则key
+ * @param label 展示名称
+ */
+// 必填校验规则
+function getInputRequireRules(field, txt) {
+  return field.required ? {
+    required: true,
+    errorMessage: field.errorMessage || `请${txt || '输入'}${field.label}`
+  } : null;
+}
+
+/***/ }),
+/* 219 */,
+/* 220 */,
+/* 221 */,
+/* 222 */,
+/* 223 */,
+/* 224 */,
+/* 225 */,
+/* 226 */,
+/* 227 */,
+/* 228 */,
+/* 229 */,
+/* 230 */,
+/* 231 */,
+/* 232 */,
+/* 233 */,
+/* 234 */,
+/* 235 */,
+/* 236 */,
+/* 237 */,
+/* 238 */
+/*!********************************************************************!*\
+  !*** ./src/uni_modules/uni-forms/components/uni-forms/validate.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var pattern = {
+  email: /^\S+?@\S+?\.\S+?$/,
+  idcard: /^[1-9]\d{5}(18|19|([23]\d))\d{2}((0[1-9])|(10|11|12))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/,
+  url: new RegExp('^(?!mailto:)(?:(?:http|https|ftp)://|//)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-*)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$', 'i')
+};
+const FORMAT_MAPPING = {
+  int: 'integer',
+  bool: 'boolean',
+  double: 'number',
+  long: 'number',
+  password: 'string'
+  // "fileurls": 'array'
+};
+function formatMessage(args, resources = '') {
+  var defaultMessage = ['label'];
+  defaultMessage.forEach(item => {
+    if (args[item] === undefined) {
+      args[item] = '';
+    }
+  });
+  let str = resources;
+  for (let key in args) {
+    let reg = new RegExp('{' + key + '}');
+    str = str.replace(reg, args[key]);
+  }
+  return str;
+}
+function isEmptyValue(value, type) {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  if (typeof value === 'string' && !value) {
+    return true;
+  }
+  if (Array.isArray(value) && !value.length) {
+    return true;
+  }
+  if (type === 'object' && !Object.keys(value).length) {
+    return true;
+  }
+  return false;
+}
+const types = {
+  integer(value) {
+    return types.number(value) && parseInt(value, 10) === value;
+  },
+  string(value) {
+    return typeof value === 'string';
+  },
+  number(value) {
+    if (isNaN(value)) {
+      return false;
+    }
+    return typeof value === 'number';
+  },
+  boolean: function (value) {
+    return typeof value === 'boolean';
+  },
+  float: function (value) {
+    return types.number(value) && !types.integer(value);
+  },
+  array(value) {
+    return Array.isArray(value);
+  },
+  object(value) {
+    return typeof value === 'object' && !types.array(value);
+  },
+  date(value) {
+    return value instanceof Date;
+  },
+  timestamp(value) {
+    if (!this.integer(value) || Math.abs(value).toString().length > 16) {
+      return false;
+    }
+    return true;
+  },
+  file(value) {
+    return typeof value.url === 'string';
+  },
+  email(value) {
+    return typeof value === 'string' && !!value.match(pattern.email) && value.length < 255;
+  },
+  url(value) {
+    return typeof value === 'string' && !!value.match(pattern.url);
+  },
+  pattern(reg, value) {
+    try {
+      return new RegExp(reg).test(value);
+    } catch (e) {
+      return false;
+    }
+  },
+  method(value) {
+    return typeof value === 'function';
+  },
+  idcard(value) {
+    return typeof value === 'string' && !!value.match(pattern.idcard);
+  },
+  'url-https'(value) {
+    return this.url(value) && value.startsWith('https://');
+  },
+  'url-scheme'(value) {
+    return value.startsWith('://');
+  },
+  'url-web'(value) {
+    return false;
+  }
+};
+class RuleValidator {
+  constructor(message) {
+    this._message = message;
+  }
+  async validateRule(fieldKey, fieldValue, value, data, allData) {
+    var result = null;
+    let rules = fieldValue.rules;
+    let hasRequired = rules.findIndex(item => {
+      return item.required;
+    });
+    if (hasRequired < 0) {
+      if (value === null || value === undefined) {
+        return result;
+      }
+      if (typeof value === 'string' && !value.length) {
+        return result;
+      }
+    }
+    var message = this._message;
+    if (rules === undefined) {
+      return message['default'];
+    }
+    for (var i = 0; i < rules.length; i++) {
+      let rule = rules[i];
+      let vt = this._getValidateType(rule);
+      Object.assign(rule, {
+        label: fieldValue.label || `["${fieldKey}"]`
+      });
+      if (RuleValidatorHelper[vt]) {
+        result = RuleValidatorHelper[vt](rule, value, message);
+        if (result != null) {
+          break;
+        }
+      }
+      if (rule.validateExpr) {
+        let now = Date.now();
+        let resultExpr = rule.validateExpr(value, allData, now);
+        if (resultExpr === false) {
+          result = this._getMessage(rule, rule.errorMessage || this._message['default']);
+          break;
+        }
+      }
+      if (rule.validateFunction) {
+        result = await this.validateFunction(rule, value, data, allData, vt);
+        if (result !== null) {
+          break;
+        }
+      }
+    }
+    if (result !== null) {
+      result = message.TAG + result;
+    }
+    return result;
+  }
+  async validateFunction(rule, value, data, allData, vt) {
+    let result = null;
+    try {
+      let callbackMessage = null;
+      const res = await rule.validateFunction(rule, value, allData || data, message => {
+        callbackMessage = message;
+      });
+      if (callbackMessage || typeof res === 'string' && res || res === false) {
+        result = this._getMessage(rule, callbackMessage || res, vt);
+      }
+    } catch (e) {
+      result = this._getMessage(rule, e.message, vt);
+    }
+    return result;
+  }
+  _getMessage(rule, message, vt) {
+    return formatMessage(rule, message || rule.errorMessage || this._message[vt] || message['default']);
+  }
+  _getValidateType(rule) {
+    var result = '';
+    if (rule.required) {
+      result = 'required';
+    } else if (rule.format) {
+      result = 'format';
+    } else if (rule.arrayType) {
+      result = 'arrayTypeFormat';
+    } else if (rule.range) {
+      result = 'range';
+    } else if (rule.maximum !== undefined || rule.minimum !== undefined) {
+      result = 'rangeNumber';
+    } else if (rule.maxLength !== undefined || rule.minLength !== undefined) {
+      result = 'rangeLength';
+    } else if (rule.pattern) {
+      result = 'pattern';
+    } else if (rule.validateFunction) {
+      result = 'validateFunction';
+    }
+    return result;
+  }
+}
+const RuleValidatorHelper = {
+  required(rule, value, message) {
+    if (rule.required && isEmptyValue(value, rule.format || typeof value)) {
+      return formatMessage(rule, rule.errorMessage || message.required);
+    }
+    return null;
+  },
+  range(rule, value, message) {
+    const {
+      range,
+      errorMessage
+    } = rule;
+    let list = new Array(range.length);
+    for (let i = 0; i < range.length; i++) {
+      const item = range[i];
+      if (types.object(item) && item.value !== undefined) {
+        list[i] = item.value;
+      } else {
+        list[i] = item;
+      }
+    }
+    let result = false;
+    if (Array.isArray(value)) {
+      result = new Set(value.concat(list)).size === list.length;
+    } else {
+      if (list.indexOf(value) > -1) {
+        result = true;
+      }
+    }
+    if (!result) {
+      return formatMessage(rule, errorMessage || message['enum']);
+    }
+    return null;
+  },
+  rangeNumber(rule, value, message) {
+    if (!types.number(value)) {
+      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
+    }
+    let {
+      minimum,
+      maximum,
+      exclusiveMinimum,
+      exclusiveMaximum
+    } = rule;
+    let min = exclusiveMinimum ? value <= minimum : value < minimum;
+    let max = exclusiveMaximum ? value >= maximum : value > maximum;
+    if (minimum !== undefined && min) {
+      return formatMessage(rule, rule.errorMessage || message['number'][exclusiveMinimum ? 'exclusiveMinimum' : 'minimum']);
+    } else if (maximum !== undefined && max) {
+      return formatMessage(rule, rule.errorMessage || message['number'][exclusiveMaximum ? 'exclusiveMaximum' : 'maximum']);
+    } else if (minimum !== undefined && maximum !== undefined && (min || max)) {
+      return formatMessage(rule, rule.errorMessage || message['number'].range);
+    }
+    return null;
+  },
+  rangeLength(rule, value, message) {
+    if (!types.string(value) && !types.array(value)) {
+      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
+    }
+    let min = rule.minLength;
+    let max = rule.maxLength;
+    let val = value.length;
+    if (min !== undefined && val < min) {
+      return formatMessage(rule, rule.errorMessage || message['length'].minLength);
+    } else if (max !== undefined && val > max) {
+      return formatMessage(rule, rule.errorMessage || message['length'].maxLength);
+    } else if (min !== undefined && max !== undefined && (val < min || val > max)) {
+      return formatMessage(rule, rule.errorMessage || message['length'].range);
+    }
+    return null;
+  },
+  pattern(rule, value, message) {
+    if (!types['pattern'](rule.pattern, value)) {
+      return formatMessage(rule, rule.errorMessage || message.pattern.mismatch);
+    }
+    return null;
+  },
+  format(rule, value, message) {
+    var customTypes = Object.keys(types);
+    var format = FORMAT_MAPPING[rule.format] ? FORMAT_MAPPING[rule.format] : rule.format || rule.arrayType;
+    if (customTypes.indexOf(format) > -1) {
+      if (!types[format](value)) {
+        return formatMessage(rule, rule.errorMessage || message.typeError);
+      }
+    }
+    return null;
+  },
+  arrayTypeFormat(rule, value, message) {
+    if (!Array.isArray(value)) {
+      return formatMessage(rule, rule.errorMessage || message.typeError);
+    }
+    for (let i = 0; i < value.length; i++) {
+      const element = value[i];
+      let formatResult = this.format(rule, element, message);
+      if (formatResult !== null) {
+        return formatResult;
+      }
+    }
+    return null;
+  }
+};
+class SchemaValidator extends RuleValidator {
+  constructor(schema, options) {
+    super(SchemaValidator.message);
+    this._schema = schema;
+    this._options = options || null;
+  }
+  updateSchema(schema) {
+    this._schema = schema;
+  }
+  async validate(data, allData) {
+    let result = this._checkFieldInSchema(data);
+    if (!result) {
+      result = await this.invokeValidate(data, false, allData);
+    }
+    return result.length ? result[0] : null;
+  }
+  async validateAll(data, allData) {
+    let result = this._checkFieldInSchema(data);
+    if (!result) {
+      result = await this.invokeValidate(data, true, allData);
+    }
+    return result;
+  }
+  async validateUpdate(data, allData) {
+    let result = this._checkFieldInSchema(data);
+    if (!result) {
+      result = await this.invokeValidateUpdate(data, false, allData);
+    }
+    return result.length ? result[0] : null;
+  }
+  async invokeValidate(data, all, allData) {
+    let result = [];
+    let schema = this._schema;
+    for (let key in schema) {
+      let value = schema[key];
+      let errorMessage = await this.validateRule(key, value, data[key], data, allData);
+      if (errorMessage != null) {
+        result.push({
+          key,
+          errorMessage
+        });
+        if (!all) break;
+      }
+    }
+    return result;
+  }
+  async invokeValidateUpdate(data, all, allData) {
+    let result = [];
+    for (let key in data) {
+      let errorMessage = await this.validateRule(key, this._schema[key], data[key], data, allData);
+      if (errorMessage != null) {
+        result.push({
+          key,
+          errorMessage
+        });
+        if (!all) break;
+      }
+    }
+    return result;
+  }
+  _checkFieldInSchema(data) {
+    var keys = Object.keys(data);
+    var keys2 = Object.keys(this._schema);
+    if (new Set(keys.concat(keys2)).size === keys2.length) {
+      return '';
+    }
+    var noExistFields = keys.filter(key => {
+      return keys2.indexOf(key) < 0;
+    });
+    var errorMessage = formatMessage({
+      field: JSON.stringify(noExistFields)
+    }, SchemaValidator.message.TAG + SchemaValidator.message['defaultInvalid']);
+    return [{
+      key: 'invalid',
+      errorMessage
+    }];
+  }
+}
+function Message() {
+  return {
+    TAG: '',
+    default: '验证错误',
+    defaultInvalid: '提交的字段{field}在数据库中并不存在',
+    validateFunction: '验证无效',
+    required: '{label}必填',
+    enum: '{label}超出范围',
+    timestamp: '{label}格式无效',
+    whitespace: '{label}不能为空',
+    typeError: '{label}类型无效',
+    date: {
+      format: '{label}日期{value}格式无效',
+      parse: '{label}日期无法解析,{value}无效',
+      invalid: '{label}日期{value}无效'
+    },
+    length: {
+      minLength: '{label}长度不能少于{minLength}',
+      maxLength: '{label}长度不能超过{maxLength}',
+      range: '{label}必须介于{minLength}和{maxLength}之间'
+    },
+    number: {
+      minimum: '{label}不能小于{minimum}',
+      maximum: '{label}不能大于{maximum}',
+      exclusiveMinimum: '{label}不能小于等于{minimum}',
+      exclusiveMaximum: '{label}不能大于等于{maximum}',
+      range: '{label}必须介于{minimum}and{maximum}之间'
+    },
+    pattern: {
+      mismatch: '{label}格式不匹配'
+    }
+  };
+}
+SchemaValidator.message = new Message();
+var _default = exports.default = SchemaValidator;
+
+/***/ }),
+/* 239 */,
+/* 240 */,
+/* 241 */,
+/* 242 */,
+/* 243 */,
+/* 244 */,
+/* 245 */,
+/* 246 */,
+/* 247 */,
+/* 248 */,
+/* 249 */,
+/* 250 */,
+/* 251 */,
+/* 252 */,
+/* 253 */,
+/* 254 */,
+/* 255 */,
+/* 256 */,
+/* 257 */,
+/* 258 */,
+/* 259 */,
+/* 260 */,
+/* 261 */,
+/* 262 */,
+/* 263 */,
+/* 264 */,
+/* 265 */,
+/* 266 */,
+/* 267 */,
+/* 268 */,
+/* 269 */,
+/* 270 */,
+/* 271 */,
+/* 272 */,
+/* 273 */,
+/* 274 */,
+/* 275 */,
+/* 276 */,
+/* 277 */,
+/* 278 */,
+/* 279 */,
+/* 280 */,
+/* 281 */,
+/* 282 */,
+/* 283 */,
+/* 284 */,
+/* 285 */,
+/* 286 */,
+/* 287 */,
+/* 288 */,
+/* 289 */,
+/* 290 */,
+/* 291 */,
+/* 292 */,
+/* 293 */,
+/* 294 */,
+/* 295 */,
+/* 296 */,
+/* 297 */,
+/* 298 */,
+/* 299 */,
+/* 300 */,
+/* 301 */,
+/* 302 */,
+/* 303 */,
+/* 304 */,
+/* 305 */,
+/* 306 */,
+/* 307 */,
+/* 308 */,
+/* 309 */,
+/* 310 */,
+/* 311 */,
+/* 312 */,
+/* 313 */,
+/* 314 */,
+/* 315 */,
+/* 316 */,
+/* 317 */,
+/* 318 */,
+/* 319 */,
+/* 320 */,
+/* 321 */,
+/* 322 */,
+/* 323 */,
+/* 324 */,
+/* 325 */,
+/* 326 */,
+/* 327 */,
+/* 328 */,
+/* 329 */,
+/* 330 */
+/*!************************************************************************************!*\
+  !*** ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js ***!
+  \************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global, uni) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _uniI18n = __webpack_require__(/*! @dcloudio/uni-i18n */ 3);
+var _pages = _interopRequireDefault(__webpack_require__(/*! @/pages.json */ 331));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+"undefined" != typeof globalThis ? globalThis : "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self && self;
+function n(e) {
+  return e && e.__esModule && Object.prototype.hasOwnProperty.call(e, "default") ? e.default : e;
+}
+function s(e, t, n) {
+  return e(n = {
+    path: t,
+    exports: {},
+    require: function (e, t) {
+      return function () {
+        throw new Error("Dynamic requires are not currently supported by @rollup/plugin-commonjs");
+      }(null == t && n.path);
+    }
+  }, n.exports), n.exports;
+}
+var r = s(function (e, t) {
+    var n;
+    e.exports = (n = n || function (e, t) {
+      var n = Object.create || function () {
+          function e() {}
+          return function (t) {
+            var n;
+            return e.prototype = t, n = new e(), e.prototype = null, n;
+          };
+        }(),
+        s = {},
+        r = s.lib = {},
+        i = r.Base = {
+          extend: function (e) {
+            var t = n(this);
+            return e && t.mixIn(e), t.hasOwnProperty("init") && this.init !== t.init || (t.init = function () {
+              t.$super.init.apply(this, arguments);
+            }), t.init.prototype = t, t.$super = this, t;
+          },
+          create: function () {
+            var e = this.extend();
+            return e.init.apply(e, arguments), e;
+          },
+          init: function () {},
+          mixIn: function (e) {
+            for (var t in e) e.hasOwnProperty(t) && (this[t] = e[t]);
+            e.hasOwnProperty("toString") && (this.toString = e.toString);
+          },
+          clone: function () {
+            return this.init.prototype.extend(this);
+          }
+        },
+        o = r.WordArray = i.extend({
+          init: function (e, n) {
+            e = this.words = e || [], this.sigBytes = n != t ? n : 4 * e.length;
+          },
+          toString: function (e) {
+            return (e || c).stringify(this);
+          },
+          concat: function (e) {
+            var t = this.words,
+              n = e.words,
+              s = this.sigBytes,
+              r = e.sigBytes;
+            if (this.clamp(), s % 4) for (var i = 0; i < r; i++) {
+              var o = n[i >>> 2] >>> 24 - i % 4 * 8 & 255;
+              t[s + i >>> 2] |= o << 24 - (s + i) % 4 * 8;
+            } else for (i = 0; i < r; i += 4) t[s + i >>> 2] = n[i >>> 2];
+            return this.sigBytes += r, this;
+          },
+          clamp: function () {
+            var t = this.words,
+              n = this.sigBytes;
+            t[n >>> 2] &= 4294967295 << 32 - n % 4 * 8, t.length = e.ceil(n / 4);
+          },
+          clone: function () {
+            var e = i.clone.call(this);
+            return e.words = this.words.slice(0), e;
+          },
+          random: function (t) {
+            for (var n, s = [], r = function (t) {
+                t = t;
+                var n = 987654321,
+                  s = 4294967295;
+                return function () {
+                  var r = ((n = 36969 * (65535 & n) + (n >> 16) & s) << 16) + (t = 18e3 * (65535 & t) + (t >> 16) & s) & s;
+                  return r /= 4294967296, (r += .5) * (e.random() > .5 ? 1 : -1);
+                };
+              }, i = 0; i < t; i += 4) {
+              var a = r(4294967296 * (n || e.random()));
+              n = 987654071 * a(), s.push(4294967296 * a() | 0);
+            }
+            return new o.init(s, t);
+          }
+        }),
+        a = s.enc = {},
+        c = a.Hex = {
+          stringify: function (e) {
+            for (var t = e.words, n = e.sigBytes, s = [], r = 0; r < n; r++) {
+              var i = t[r >>> 2] >>> 24 - r % 4 * 8 & 255;
+              s.push((i >>> 4).toString(16)), s.push((15 & i).toString(16));
+            }
+            return s.join("");
+          },
+          parse: function (e) {
+            for (var t = e.length, n = [], s = 0; s < t; s += 2) n[s >>> 3] |= parseInt(e.substr(s, 2), 16) << 24 - s % 8 * 4;
+            return new o.init(n, t / 2);
+          }
+        },
+        u = a.Latin1 = {
+          stringify: function (e) {
+            for (var t = e.words, n = e.sigBytes, s = [], r = 0; r < n; r++) {
+              var i = t[r >>> 2] >>> 24 - r % 4 * 8 & 255;
+              s.push(String.fromCharCode(i));
+            }
+            return s.join("");
+          },
+          parse: function (e) {
+            for (var t = e.length, n = [], s = 0; s < t; s++) n[s >>> 2] |= (255 & e.charCodeAt(s)) << 24 - s % 4 * 8;
+            return new o.init(n, t);
+          }
+        },
+        l = a.Utf8 = {
+          stringify: function (e) {
+            try {
+              return decodeURIComponent(escape(u.stringify(e)));
+            } catch (e) {
+              throw new Error("Malformed UTF-8 data");
+            }
+          },
+          parse: function (e) {
+            return u.parse(unescape(encodeURIComponent(e)));
+          }
+        },
+        h = r.BufferedBlockAlgorithm = i.extend({
+          reset: function () {
+            this._data = new o.init(), this._nDataBytes = 0;
+          },
+          _append: function (e) {
+            "string" == typeof e && (e = l.parse(e)), this._data.concat(e), this._nDataBytes += e.sigBytes;
+          },
+          _process: function (t) {
+            var n = this._data,
+              s = n.words,
+              r = n.sigBytes,
+              i = this.blockSize,
+              a = r / (4 * i),
+              c = (a = t ? e.ceil(a) : e.max((0 | a) - this._minBufferSize, 0)) * i,
+              u = e.min(4 * c, r);
+            if (c) {
+              for (var l = 0; l < c; l += i) this._doProcessBlock(s, l);
+              var h = s.splice(0, c);
+              n.sigBytes -= u;
+            }
+            return new o.init(h, u);
+          },
+          clone: function () {
+            var e = i.clone.call(this);
+            return e._data = this._data.clone(), e;
+          },
+          _minBufferSize: 0
+        });
+      r.Hasher = h.extend({
+        cfg: i.extend(),
+        init: function (e) {
+          this.cfg = this.cfg.extend(e), this.reset();
+        },
+        reset: function () {
+          h.reset.call(this), this._doReset();
+        },
+        update: function (e) {
+          return this._append(e), this._process(), this;
+        },
+        finalize: function (e) {
+          return e && this._append(e), this._doFinalize();
+        },
+        blockSize: 16,
+        _createHelper: function (e) {
+          return function (t, n) {
+            return new e.init(n).finalize(t);
+          };
+        },
+        _createHmacHelper: function (e) {
+          return function (t, n) {
+            return new d.HMAC.init(e, n).finalize(t);
+          };
+        }
+      });
+      var d = s.algo = {};
+      return s;
+    }(Math), n);
+  }),
+  i = r,
+  o = (s(function (e, t) {
+    var n;
+    e.exports = (n = i, function (e) {
+      var t = n,
+        s = t.lib,
+        r = s.WordArray,
+        i = s.Hasher,
+        o = t.algo,
+        a = [];
+      !function () {
+        for (var t = 0; t < 64; t++) a[t] = 4294967296 * e.abs(e.sin(t + 1)) | 0;
+      }();
+      var c = o.MD5 = i.extend({
+        _doReset: function () {
+          this._hash = new r.init([1732584193, 4023233417, 2562383102, 271733878]);
+        },
+        _doProcessBlock: function (e, t) {
+          for (var n = 0; n < 16; n++) {
+            var s = t + n,
+              r = e[s];
+            e[s] = 16711935 & (r << 8 | r >>> 24) | 4278255360 & (r << 24 | r >>> 8);
+          }
+          var i = this._hash.words,
+            o = e[t + 0],
+            c = e[t + 1],
+            f = e[t + 2],
+            p = e[t + 3],
+            g = e[t + 4],
+            m = e[t + 5],
+            y = e[t + 6],
+            _ = e[t + 7],
+            w = e[t + 8],
+            v = e[t + 9],
+            S = e[t + 10],
+            k = e[t + 11],
+            I = e[t + 12],
+            b = e[t + 13],
+            T = e[t + 14],
+            A = e[t + 15],
+            C = i[0],
+            P = i[1],
+            E = i[2],
+            O = i[3];
+          C = u(C, P, E, O, o, 7, a[0]), O = u(O, C, P, E, c, 12, a[1]), E = u(E, O, C, P, f, 17, a[2]), P = u(P, E, O, C, p, 22, a[3]), C = u(C, P, E, O, g, 7, a[4]), O = u(O, C, P, E, m, 12, a[5]), E = u(E, O, C, P, y, 17, a[6]), P = u(P, E, O, C, _, 22, a[7]), C = u(C, P, E, O, w, 7, a[8]), O = u(O, C, P, E, v, 12, a[9]), E = u(E, O, C, P, S, 17, a[10]), P = u(P, E, O, C, k, 22, a[11]), C = u(C, P, E, O, I, 7, a[12]), O = u(O, C, P, E, b, 12, a[13]), E = u(E, O, C, P, T, 17, a[14]), C = l(C, P = u(P, E, O, C, A, 22, a[15]), E, O, c, 5, a[16]), O = l(O, C, P, E, y, 9, a[17]), E = l(E, O, C, P, k, 14, a[18]), P = l(P, E, O, C, o, 20, a[19]), C = l(C, P, E, O, m, 5, a[20]), O = l(O, C, P, E, S, 9, a[21]), E = l(E, O, C, P, A, 14, a[22]), P = l(P, E, O, C, g, 20, a[23]), C = l(C, P, E, O, v, 5, a[24]), O = l(O, C, P, E, T, 9, a[25]), E = l(E, O, C, P, p, 14, a[26]), P = l(P, E, O, C, w, 20, a[27]), C = l(C, P, E, O, b, 5, a[28]), O = l(O, C, P, E, f, 9, a[29]), E = l(E, O, C, P, _, 14, a[30]), C = h(C, P = l(P, E, O, C, I, 20, a[31]), E, O, m, 4, a[32]), O = h(O, C, P, E, w, 11, a[33]), E = h(E, O, C, P, k, 16, a[34]), P = h(P, E, O, C, T, 23, a[35]), C = h(C, P, E, O, c, 4, a[36]), O = h(O, C, P, E, g, 11, a[37]), E = h(E, O, C, P, _, 16, a[38]), P = h(P, E, O, C, S, 23, a[39]), C = h(C, P, E, O, b, 4, a[40]), O = h(O, C, P, E, o, 11, a[41]), E = h(E, O, C, P, p, 16, a[42]), P = h(P, E, O, C, y, 23, a[43]), C = h(C, P, E, O, v, 4, a[44]), O = h(O, C, P, E, I, 11, a[45]), E = h(E, O, C, P, A, 16, a[46]), C = d(C, P = h(P, E, O, C, f, 23, a[47]), E, O, o, 6, a[48]), O = d(O, C, P, E, _, 10, a[49]), E = d(E, O, C, P, T, 15, a[50]), P = d(P, E, O, C, m, 21, a[51]), C = d(C, P, E, O, I, 6, a[52]), O = d(O, C, P, E, p, 10, a[53]), E = d(E, O, C, P, S, 15, a[54]), P = d(P, E, O, C, c, 21, a[55]), C = d(C, P, E, O, w, 6, a[56]), O = d(O, C, P, E, A, 10, a[57]), E = d(E, O, C, P, y, 15, a[58]), P = d(P, E, O, C, b, 21, a[59]), C = d(C, P, E, O, g, 6, a[60]), O = d(O, C, P, E, k, 10, a[61]), E = d(E, O, C, P, f, 15, a[62]), P = d(P, E, O, C, v, 21, a[63]), i[0] = i[0] + C | 0, i[1] = i[1] + P | 0, i[2] = i[2] + E | 0, i[3] = i[3] + O | 0;
+        },
+        _doFinalize: function () {
+          var t = this._data,
+            n = t.words,
+            s = 8 * this._nDataBytes,
+            r = 8 * t.sigBytes;
+          n[r >>> 5] |= 128 << 24 - r % 32;
+          var i = e.floor(s / 4294967296),
+            o = s;
+          n[15 + (r + 64 >>> 9 << 4)] = 16711935 & (i << 8 | i >>> 24) | 4278255360 & (i << 24 | i >>> 8), n[14 + (r + 64 >>> 9 << 4)] = 16711935 & (o << 8 | o >>> 24) | 4278255360 & (o << 24 | o >>> 8), t.sigBytes = 4 * (n.length + 1), this._process();
+          for (var a = this._hash, c = a.words, u = 0; u < 4; u++) {
+            var l = c[u];
+            c[u] = 16711935 & (l << 8 | l >>> 24) | 4278255360 & (l << 24 | l >>> 8);
+          }
+          return a;
+        },
+        clone: function () {
+          var e = i.clone.call(this);
+          return e._hash = this._hash.clone(), e;
+        }
+      });
+      function u(e, t, n, s, r, i, o) {
+        var a = e + (t & n | ~t & s) + r + o;
+        return (a << i | a >>> 32 - i) + t;
+      }
+      function l(e, t, n, s, r, i, o) {
+        var a = e + (t & s | n & ~s) + r + o;
+        return (a << i | a >>> 32 - i) + t;
+      }
+      function h(e, t, n, s, r, i, o) {
+        var a = e + (t ^ n ^ s) + r + o;
+        return (a << i | a >>> 32 - i) + t;
+      }
+      function d(e, t, n, s, r, i, o) {
+        var a = e + (n ^ (t | ~s)) + r + o;
+        return (a << i | a >>> 32 - i) + t;
+      }
+      t.MD5 = i._createHelper(c), t.HmacMD5 = i._createHmacHelper(c);
+    }(Math), n.MD5);
+  }), s(function (e, t) {
+    var n;
+    e.exports = (n = i, void function () {
+      var e = n,
+        t = e.lib.Base,
+        s = e.enc.Utf8;
+      e.algo.HMAC = t.extend({
+        init: function (e, t) {
+          e = this._hasher = new e.init(), "string" == typeof t && (t = s.parse(t));
+          var n = e.blockSize,
+            r = 4 * n;
+          t.sigBytes > r && (t = e.finalize(t)), t.clamp();
+          for (var i = this._oKey = t.clone(), o = this._iKey = t.clone(), a = i.words, c = o.words, u = 0; u < n; u++) a[u] ^= 1549556828, c[u] ^= 909522486;
+          i.sigBytes = o.sigBytes = r, this.reset();
+        },
+        reset: function () {
+          var e = this._hasher;
+          e.reset(), e.update(this._iKey);
+        },
+        update: function (e) {
+          return this._hasher.update(e), this;
+        },
+        finalize: function (e) {
+          var t = this._hasher,
+            n = t.finalize(e);
+          return t.reset(), t.finalize(this._oKey.clone().concat(n));
+        }
+      });
+    }());
+  }), s(function (e, t) {
+    e.exports = i.HmacMD5;
+  })),
+  a = s(function (e, t) {
+    e.exports = i.enc.Utf8;
+  }),
+  c = s(function (e, t) {
+    var n;
+    e.exports = (n = i, function () {
+      var e = n,
+        t = e.lib.WordArray;
+      function s(e, n, s) {
+        for (var r = [], i = 0, o = 0; o < n; o++) if (o % 4) {
+          var a = s[e.charCodeAt(o - 1)] << o % 4 * 2,
+            c = s[e.charCodeAt(o)] >>> 6 - o % 4 * 2;
+          r[i >>> 2] |= (a | c) << 24 - i % 4 * 8, i++;
+        }
+        return t.create(r, i);
+      }
+      e.enc.Base64 = {
+        stringify: function (e) {
+          var t = e.words,
+            n = e.sigBytes,
+            s = this._map;
+          e.clamp();
+          for (var r = [], i = 0; i < n; i += 3) for (var o = (t[i >>> 2] >>> 24 - i % 4 * 8 & 255) << 16 | (t[i + 1 >>> 2] >>> 24 - (i + 1) % 4 * 8 & 255) << 8 | t[i + 2 >>> 2] >>> 24 - (i + 2) % 4 * 8 & 255, a = 0; a < 4 && i + .75 * a < n; a++) r.push(s.charAt(o >>> 6 * (3 - a) & 63));
+          var c = s.charAt(64);
+          if (c) for (; r.length % 4;) r.push(c);
+          return r.join("");
+        },
+        parse: function (e) {
+          var t = e.length,
+            n = this._map,
+            r = this._reverseMap;
+          if (!r) {
+            r = this._reverseMap = [];
+            for (var i = 0; i < n.length; i++) r[n.charCodeAt(i)] = i;
+          }
+          var o = n.charAt(64);
+          if (o) {
+            var a = e.indexOf(o);
+            -1 !== a && (t = a);
+          }
+          return s(e, t, r);
+        },
+        _map: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+      };
+    }(), n.enc.Base64);
+  });
+const u = "FUNCTION",
+  l = "OBJECT",
+  h = "CLIENT_DB";
+function d(e) {
+  return Object.prototype.toString.call(e).slice(8, -1).toLowerCase();
+}
+function f(e) {
+  return "object" === d(e);
+}
+function p(e) {
+  return e && "string" == typeof e ? JSON.parse(e) : e;
+}
+const g = "development" === "test",
+  m = "mp-weixin",
+  y = "true" === undefined || !0 === undefined,
+  _ = p([]);
+let w;
+w = "h5" === m ? "web" : "app-plus" === m ? "app" : m;
+const v = p(undefined),
+  S = p(undefined) || [],
+  k = false;
+let I = "";
+try {
+  {
+    const e = __webpack_require__(/*! uni-stat-config */ 332).default || __webpack_require__(/*! uni-stat-config */ 332);
+    I = e.appid;
+  }
+} catch (e) {}
+let b = {};
+function T(e, t = {}) {
+  var n, s;
+  return n = b, s = e, Object.prototype.hasOwnProperty.call(n, s) || (b[e] = t), b[e];
+}
+"app" === w && (b = uni._globalUniCloudObj ? uni._globalUniCloudObj : uni._globalUniCloudObj = {});
+const A = ["invoke", "success", "fail", "complete"],
+  C = T("_globalUniCloudInterceptor");
+function P(e, t) {
+  C[e] || (C[e] = {}), f(t) && Object.keys(t).forEach(n => {
+    A.indexOf(n) > -1 && function (e, t, n) {
+      let s = C[e][t];
+      s || (s = C[e][t] = []), -1 === s.indexOf(n) && "function" == typeof n && s.push(n);
+    }(e, n, t[n]);
+  });
+}
+function E(e, t) {
+  C[e] || (C[e] = {}), f(t) ? Object.keys(t).forEach(n => {
+    A.indexOf(n) > -1 && function (e, t, n) {
+      const s = C[e][t];
+      if (!s) return;
+      const r = s.indexOf(n);
+      r > -1 && s.splice(r, 1);
+    }(e, n, t[n]);
+  }) : delete C[e];
+}
+function O(e, t) {
+  return e && 0 !== e.length ? e.reduce((e, n) => e.then(() => n(t)), Promise.resolve()) : Promise.resolve();
+}
+function x(e, t) {
+  return C[e] && C[e][t] || [];
+}
+function U(e) {
+  P("callObject", e);
+}
+const R = T("_globalUniCloudListener"),
+  L = "response",
+  N = "needLogin",
+  D = "refreshToken",
+  F = "clientdb",
+  q = "cloudfunction",
+  K = "cloudobject";
+function M(e) {
+  return R[e] || (R[e] = []), R[e];
+}
+function j(e, t) {
+  const n = M(e);
+  n.includes(t) || n.push(t);
+}
+function B(e, t) {
+  const n = M(e),
+    s = n.indexOf(t);
+  -1 !== s && n.splice(s, 1);
+}
+function $(e, t) {
+  const n = M(e);
+  for (let e = 0; e < n.length; e++) {
+    (0, n[e])(t);
+  }
+}
+let W,
+  z = !1;
+function J() {
+  return W || (W = new Promise(e => {
+    z && e(), function t() {
+      if ("function" == typeof getCurrentPages) {
+        const t = getCurrentPages();
+        t && t[0] && (z = !0, e());
+      }
+      z || setTimeout(() => {
+        t();
+      }, 30);
+    }();
+  }), W);
+}
+function H(e, t) {
+  return t ? function (n) {
+    let s = !1;
+    if ("callFunction" === t) {
+      const e = n && n.type || u;
+      s = e !== u;
+    }
+    const r = "callFunction" === t && !s;
+    let i;
+    i = this.isReady ? Promise.resolve() : this.initUniCloud, n = n || {};
+    const o = i.then(() => s ? Promise.resolve() : O(x(t, "invoke"), n)).then(() => e.call(this, n)).then(e => s ? Promise.resolve(e) : O(x(t, "success"), e).then(() => O(x(t, "complete"), e)).then(() => (r && $(L, {
+      type: q,
+      content: e
+    }), Promise.resolve(e))), e => s ? Promise.reject(e) : O(x(t, "fail"), e).then(() => O(x(t, "complete"), e)).then(() => ($(L, {
+      type: q,
+      content: e
+    }), Promise.reject(e))));
+    if (!(n.success || n.fail || n.complete)) return o;
+    o.then(e => {
+      n.success && n.success(e), n.complete && n.complete(e), r && $(L, {
+        type: q,
+        content: e
+      });
+    }, e => {
+      n.fail && n.fail(e), n.complete && n.complete(e), r && $(L, {
+        type: q,
+        content: e
+      });
+    });
+  } : function (t) {
+    if (!((t = t || {}).success || t.fail || t.complete)) return e.call(this, t);
+    e.call(this, t).then(e => {
+      t.success && t.success(e), t.complete && t.complete(e);
+    }, e => {
+      t.fail && t.fail(e), t.complete && t.complete(e);
+    });
+  };
+}
+class V extends Error {
+  constructor(e) {
+    super(e.message), this.errMsg = e.message || "unknown system error", this.code = this.errCode = e.code || "SYSTEM_ERROR", this.errSubject = e.subject, this.cause = e.cause, this.requestId = e.requestId;
+  }
+  toJson(e = 0) {
+    if (!(e >= 10)) return e++, {
+      errCode: this.errCode,
+      errMsg: this.errMsg,
+      errSubject: this.errSubject,
+      cause: this.cause && this.cause.toJson ? this.cause.toJson(e) : this.cause
+    };
+  }
+}
+var G = {
+  request: e => uni.request(e),
+  uploadFile: e => uni.uploadFile(e),
+  setStorageSync: (e, t) => uni.setStorageSync(e, t),
+  getStorageSync: e => uni.getStorageSync(e),
+  removeStorageSync: e => uni.removeStorageSync(e),
+  clearStorageSync: () => uni.clearStorageSync()
+};
+function Y() {
+  return {
+    token: G.getStorageSync("uni_id_token") || G.getStorageSync("uniIdToken"),
+    tokenExpired: G.getStorageSync("uni_id_token_expired")
+  };
+}
+function Q({
+  token: e,
+  tokenExpired: t
+} = {}) {
+  e && G.setStorageSync("uni_id_token", e), t && G.setStorageSync("uni_id_token_expired", t);
+}
+function X() {
+  if (!g || "web" !== w) return;
+  uni.getStorageSync("__LAST_DCLOUD_APPID") !== I && (uni.setStorageSync("__LAST_DCLOUD_APPID", I), console.warn("检测到当前项目与上次运行到此端口的项目不一致，自动清理uni-id保存的token信息（仅开发调试时生效）"), G.removeStorageSync("uni_id_token"), G.removeStorageSync("uniIdToken"), G.removeStorageSync("uni_id_token_expired"));
+}
+let Z, ee;
+function te() {
+  return Z || (Z = uni.getSystemInfoSync()), Z;
+}
+function ne() {
+  let e, t;
+  try {
+    if (uni.getLaunchOptionsSync) {
+      if (uni.getLaunchOptionsSync.toString().indexOf("not yet implemented") > -1) return;
+      const {
+        scene: n,
+        channel: s
+      } = uni.getLaunchOptionsSync();
+      e = s, t = n;
+    }
+  } catch (e) {}
+  return {
+    channel: e,
+    scene: t
+  };
+}
+function se() {
+  const e = uni.getLocale && uni.getLocale() || "en";
+  if (ee) return {
+    ...ee,
+    locale: e,
+    LOCALE: e
+  };
+  const t = te(),
+    {
+      deviceId: n,
+      osName: s,
+      uniPlatform: r,
+      appId: i
+    } = t,
+    o = ["pixelRatio", "brand", "model", "system", "language", "version", "platform", "host", "SDKVersion", "swanNativeVersion", "app", "AppPlatform", "fontSizeSetting"];
+  for (let e = 0; e < o.length; e++) {
+    delete t[o[e]];
+  }
+  return ee = {
+    PLATFORM: r,
+    OS: s,
+    APPID: i,
+    DEVICEID: n,
+    ...ne(),
+    ...t
+  }, {
+    ...ee,
+    locale: e,
+    LOCALE: e
+  };
+}
+var re = {
+    sign: function (e, t) {
+      let n = "";
+      return Object.keys(e).sort().forEach(function (t) {
+        e[t] && (n = n + "&" + t + "=" + e[t]);
+      }), n = n.slice(1), o(n, t).toString();
+    },
+    wrappedRequest: function (e, t) {
+      return new Promise((n, s) => {
+        t(Object.assign(e, {
+          complete(e) {
+            e || (e = {}), g && "web" === w && e.errMsg && 0 === e.errMsg.indexOf("request:fail") && console.warn("发布H5，需要在uniCloud后台操作，绑定安全域名，否则会因为跨域问题而无法访问。教程参考：https://uniapp.dcloud.io/uniCloud/quickstart?id=useinh5");
+            const t = e.data && e.data.header && e.data.header["x-serverless-request-id"] || e.header && e.header["request-id"];
+            if (!e.statusCode || e.statusCode >= 400) return s(new V({
+              code: "SYS_ERR",
+              message: e.errMsg || "request:fail",
+              requestId: t
+            }));
+            const r = e.data;
+            if (r.error) return s(new V({
+              code: r.error.code,
+              message: r.error.message,
+              requestId: t
+            }));
+            r.result = r.data, r.requestId = t, delete r.data, n(r);
+          }
+        }));
+      });
+    },
+    toBase64: function (e) {
+      return c.stringify(a.parse(e));
+    }
+  },
+  ie = {
+    "uniCloud.init.paramRequired": "{param} required",
+    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
+  };
+const {
+  t: oe
+} = (0, _uniI18n.initVueI18n)({
+  "zh-Hans": {
+    "uniCloud.init.paramRequired": "缺少参数：{param}",
+    "uniCloud.uploadFile.fileError": "filePath应为File对象"
+  },
+  "zh-Hant": {
+    "uniCloud.init.paramRequired": "缺少参数：{param}",
+    "uniCloud.uploadFile.fileError": "filePath应为File对象"
+  },
+  en: ie,
+  fr: {
+    "uniCloud.init.paramRequired": "{param} required",
+    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
+  },
+  es: {
+    "uniCloud.init.paramRequired": "{param} required",
+    "uniCloud.uploadFile.fileError": "filePath should be instance of File"
+  },
+  ja: ie
+}, "zh-Hans");
+var ae = class {
+  constructor(e) {
+    ["spaceId", "clientSecret"].forEach(t => {
+      if (!Object.prototype.hasOwnProperty.call(e, t)) throw new Error(oe("uniCloud.init.paramRequired", {
+        param: t
+      }));
+    }), this.config = Object.assign({}, {
+      endpoint: "https://api.bspapp.com"
+    }, e), this.config.provider = "aliyun", this.config.requestUrl = this.config.endpoint + "/client", this.config.envType = this.config.envType || "public", this.config.accessTokenKey = "access_token_" + this.config.spaceId, this.adapter = G, this._getAccessTokenPromise = null, this._getAccessTokenPromiseStatus = null;
+  }
+  get hasAccessToken() {
+    return !!this.accessToken;
+  }
+  setAccessToken(e) {
+    this.accessToken = e;
+  }
+  requestWrapped(e) {
+    return re.wrappedRequest(e, this.adapter.request);
+  }
+  requestAuth(e) {
+    return this.requestWrapped(e);
+  }
+  request(e, t) {
+    return Promise.resolve().then(() => this.hasAccessToken ? t ? this.requestWrapped(e) : this.requestWrapped(e).catch(t => new Promise((e, n) => {
+      !t || "GATEWAY_INVALID_TOKEN" !== t.code && "InvalidParameter.InvalidToken" !== t.code ? n(t) : e();
+    }).then(() => this.getAccessToken()).then(() => {
+      const t = this.rebuildRequest(e);
+      return this.request(t, !0);
+    })) : this.getAccessToken().then(() => {
+      const t = this.rebuildRequest(e);
+      return this.request(t, !0);
+    }));
+  }
+  rebuildRequest(e) {
+    const t = Object.assign({}, e);
+    return t.data.token = this.accessToken, t.header["x-basement-token"] = this.accessToken, t.header["x-serverless-sign"] = re.sign(t.data, this.config.clientSecret), t;
+  }
+  setupRequest(e, t) {
+    const n = Object.assign({}, e, {
+        spaceId: this.config.spaceId,
+        timestamp: Date.now()
+      }),
+      s = {
+        "Content-Type": "application/json"
+      };
+    return "auth" !== t && (n.token = this.accessToken, s["x-basement-token"] = this.accessToken), s["x-serverless-sign"] = re.sign(n, this.config.clientSecret), {
+      url: this.config.requestUrl,
+      method: "POST",
+      data: n,
+      dataType: "json",
+      header: s
+    };
+  }
+  getAccessToken() {
+    if ("pending" === this._getAccessTokenPromiseStatus) return this._getAccessTokenPromise;
+    this._getAccessTokenPromiseStatus = "pending";
+    return this._getAccessTokenPromise = this.requestAuth(this.setupRequest({
+      method: "serverless.auth.user.anonymousAuthorize",
+      params: "{}"
+    }, "auth")).then(e => new Promise((t, n) => {
+      e.result && e.result.accessToken ? (this.setAccessToken(e.result.accessToken), this._getAccessTokenPromiseStatus = "fulfilled", t(this.accessToken)) : (this._getAccessTokenPromiseStatus = "rejected", n(new V({
+        code: "AUTH_FAILED",
+        message: "获取accessToken失败"
+      })));
+    }), e => (this._getAccessTokenPromiseStatus = "rejected", Promise.reject(e))), this._getAccessTokenPromise;
+  }
+  authorize() {
+    this.getAccessToken();
+  }
+  callFunction(e) {
+    const t = {
+      method: "serverless.function.runtime.invoke",
+      params: JSON.stringify({
+        functionTarget: e.name,
+        functionArgs: e.data || {}
+      })
+    };
+    return this.request(this.setupRequest(t));
+  }
+  getOSSUploadOptionsFromPath(e) {
+    const t = {
+      method: "serverless.file.resource.generateProximalSign",
+      params: JSON.stringify(e)
+    };
+    return this.request(this.setupRequest(t));
+  }
+  uploadFileToOSS({
+    url: e,
+    formData: t,
+    name: n,
+    filePath: s,
+    fileType: r,
+    onUploadProgress: i
+  }) {
+    return new Promise((o, a) => {
+      const c = this.adapter.uploadFile({
+        url: e,
+        formData: t,
+        name: n,
+        filePath: s,
+        fileType: r,
+        header: {
+          "X-OSS-server-side-encrpytion": "AES256"
+        },
+        success(e) {
+          e && e.statusCode < 400 ? o(e) : a(new V({
+            code: "UPLOAD_FAILED",
+            message: "文件上传失败"
+          }));
+        },
+        fail(e) {
+          a(new V({
+            code: e.code || "UPLOAD_FAILED",
+            message: e.message || e.errMsg || "文件上传失败"
+          }));
+        }
+      });
+      "function" == typeof i && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(e => {
+        i({
+          loaded: e.totalBytesSent,
+          total: e.totalBytesExpectedToSend
+        });
+      });
+    });
+  }
+  reportOSSUpload(e) {
+    const t = {
+      method: "serverless.file.resource.report",
+      params: JSON.stringify(e)
+    };
+    return this.request(this.setupRequest(t));
+  }
+  async uploadFile({
+    filePath: e,
+    cloudPath: t,
+    fileType: n = "image",
+    onUploadProgress: s,
+    config: r
+  }) {
+    if ("string" !== d(t)) throw new V({
+      code: "INVALID_PARAM",
+      message: "cloudPath必须为字符串类型"
+    });
+    if (!(t = t.trim())) throw new V({
+      code: "CLOUDPATH_REQUIRED",
+      message: "cloudPath不可为空"
+    });
+    if (/:\/\//.test(t)) throw new V({
+      code: "INVALID_PARAM",
+      message: "cloudPath不合法"
+    });
+    const i = r && r.envType || this.config.envType,
+      o = (await this.getOSSUploadOptionsFromPath({
+        env: i,
+        filename: t
+      })).result,
+      a = "https://" + o.cdnDomain + "/" + o.ossPath,
+      {
+        securityToken: c,
+        accessKeyId: u,
+        signature: l,
+        host: h,
+        ossPath: f,
+        id: p,
+        policy: g,
+        ossCallbackUrl: m
+      } = o,
+      y = {
+        "Cache-Control": "max-age=2592000",
+        "Content-Disposition": "attachment",
+        OSSAccessKeyId: u,
+        Signature: l,
+        host: h,
+        id: p,
+        key: f,
+        policy: g,
+        success_action_status: 200
+      };
+    if (c && (y["x-oss-security-token"] = c), m) {
+      const e = JSON.stringify({
+        callbackUrl: m,
+        callbackBody: JSON.stringify({
+          fileId: p,
+          spaceId: this.config.spaceId
+        }),
+        callbackBodyType: "application/json"
+      });
+      y.callback = re.toBase64(e);
+    }
+    const _ = {
+      url: "https://" + o.host,
+      formData: y,
+      fileName: "file",
+      name: "file",
+      filePath: e,
+      fileType: n
+    };
+    if (await this.uploadFileToOSS(Object.assign({}, _, {
+      onUploadProgress: s
+    })), m) return {
+      success: !0,
+      filePath: e,
+      fileID: a
+    };
+    if ((await this.reportOSSUpload({
+      id: p
+    })).success) return {
+      success: !0,
+      filePath: e,
+      fileID: a
+    };
+    throw new V({
+      code: "UPLOAD_FAILED",
+      message: "文件上传失败"
+    });
+  }
+  getTempFileURL({
+    fileList: e
+  } = {}) {
+    return new Promise((t, n) => {
+      Array.isArray(e) && 0 !== e.length || n(new V({
+        code: "INVALID_PARAM",
+        message: "fileList的元素必须是非空的字符串"
+      })), t({
+        fileList: e.map(e => ({
+          fileID: e,
+          tempFileURL: e
+        }))
+      });
+    });
+  }
+  async getFileInfo({
+    fileList: e
+  } = {}) {
+    if (!Array.isArray(e) || 0 === e.length) throw new V({
+      code: "INVALID_PARAM",
+      message: "fileList的元素必须是非空的字符串"
+    });
+    const t = {
+      method: "serverless.file.resource.info",
+      params: JSON.stringify({
+        id: e.map(e => e.split("?")[0]).join(",")
+      })
+    };
+    return {
+      fileList: (await this.request(this.setupRequest(t))).result
+    };
+  }
+};
+var ce = {
+  init(e) {
+    const t = new ae(e),
+      n = {
+        signInAnonymously: function () {
+          return t.authorize();
+        },
+        getLoginState: function () {
+          return Promise.resolve(!1);
+        }
+      };
+    return t.auth = function () {
+      return n;
+    }, t.customAuth = t.auth, t;
+  }
+};
+const ue = "undefined" != typeof location && "http:" === location.protocol ? "http:" : "https:";
+var le;
+!function (e) {
+  e.local = "local", e.none = "none", e.session = "session";
+}(le || (le = {}));
+var he = function () {};
+const de = () => {
+  let e;
+  if (!Promise) {
+    e = () => {}, e.promise = {};
+    const t = () => {
+      throw new V({
+        message: 'Your Node runtime does support ES6 Promises. Set "global.Promise" to your preferred implementation of promises.'
+      });
+    };
+    return Object.defineProperty(e.promise, "then", {
+      get: t
+    }), Object.defineProperty(e.promise, "catch", {
+      get: t
+    }), e;
+  }
+  const t = new Promise((t, n) => {
+    e = (e, s) => e ? n(e) : t(s);
+  });
+  return e.promise = t, e;
+};
+function fe(e) {
+  return void 0 === e;
+}
+function pe(e) {
+  return "[object Null]" === Object.prototype.toString.call(e);
+}
+var ge;
+function me(e) {
+  const t = (n = e, "[object Array]" === Object.prototype.toString.call(n) ? e : [e]);
+  var n;
+  for (const e of t) {
+    const {
+      isMatch: t,
+      genAdapter: n,
+      runtime: s
+    } = e;
+    if (t()) return {
+      adapter: n(),
+      runtime: s
+    };
+  }
+}
+!function (e) {
+  e.WEB = "web", e.WX_MP = "wx_mp";
+}(ge || (ge = {}));
+const ye = {
+    adapter: null,
+    runtime: void 0
+  },
+  _e = ["anonymousUuidKey"];
+class we extends he {
+  constructor() {
+    super(), ye.adapter.root.tcbObject || (ye.adapter.root.tcbObject = {});
+  }
+  setItem(e, t) {
+    ye.adapter.root.tcbObject[e] = t;
+  }
+  getItem(e) {
+    return ye.adapter.root.tcbObject[e];
+  }
+  removeItem(e) {
+    delete ye.adapter.root.tcbObject[e];
+  }
+  clear() {
+    delete ye.adapter.root.tcbObject;
+  }
+}
+function ve(e, t) {
+  switch (e) {
+    case "local":
+      return t.localStorage || new we();
+    case "none":
+      return new we();
+    default:
+      return t.sessionStorage || new we();
+  }
+}
+class Se {
+  constructor(e) {
+    if (!this._storage) {
+      this._persistence = ye.adapter.primaryStorage || e.persistence, this._storage = ve(this._persistence, ye.adapter);
+      const t = `access_token_${e.env}`,
+        n = `access_token_expire_${e.env}`,
+        s = `refresh_token_${e.env}`,
+        r = `anonymous_uuid_${e.env}`,
+        i = `login_type_${e.env}`,
+        o = `user_info_${e.env}`;
+      this.keys = {
+        accessTokenKey: t,
+        accessTokenExpireKey: n,
+        refreshTokenKey: s,
+        anonymousUuidKey: r,
+        loginTypeKey: i,
+        userInfoKey: o
+      };
+    }
+  }
+  updatePersistence(e) {
+    if (e === this._persistence) return;
+    const t = "local" === this._persistence;
+    this._persistence = e;
+    const n = ve(e, ye.adapter);
+    for (const e in this.keys) {
+      const s = this.keys[e];
+      if (t && _e.includes(e)) continue;
+      const r = this._storage.getItem(s);
+      fe(r) || pe(r) || (n.setItem(s, r), this._storage.removeItem(s));
+    }
+    this._storage = n;
+  }
+  setStore(e, t, n) {
+    if (!this._storage) return;
+    const s = {
+        version: n || "localCachev1",
+        content: t
+      },
+      r = JSON.stringify(s);
+    try {
+      this._storage.setItem(e, r);
+    } catch (e) {
+      throw e;
+    }
+  }
+  getStore(e, t) {
+    try {
+      if (!this._storage) return;
+    } catch (e) {
+      return "";
+    }
+    t = t || "localCachev1";
+    const n = this._storage.getItem(e);
+    if (!n) return "";
+    if (n.indexOf(t) >= 0) {
+      return JSON.parse(n).content;
+    }
+    return "";
+  }
+  removeStore(e) {
+    this._storage.removeItem(e);
+  }
+}
+const ke = {},
+  Ie = {};
+function be(e) {
+  return ke[e];
+}
+class Te {
+  constructor(e, t) {
+    this.data = t || null, this.name = e;
+  }
+}
+class Ae extends Te {
+  constructor(e, t) {
+    super("error", {
+      error: e,
+      data: t
+    }), this.error = e;
+  }
+}
+const Ce = new class {
+  constructor() {
+    this._listeners = {};
+  }
+  on(e, t) {
+    return function (e, t, n) {
+      n[e] = n[e] || [], n[e].push(t);
+    }(e, t, this._listeners), this;
+  }
+  off(e, t) {
+    return function (e, t, n) {
+      if (n && n[e]) {
+        const s = n[e].indexOf(t);
+        -1 !== s && n[e].splice(s, 1);
+      }
+    }(e, t, this._listeners), this;
+  }
+  fire(e, t) {
+    if (e instanceof Ae) return console.error(e.error), this;
+    const n = "string" == typeof e ? new Te(e, t || {}) : e;
+    const s = n.name;
+    if (this._listens(s)) {
+      n.target = this;
+      const e = this._listeners[s] ? [...this._listeners[s]] : [];
+      for (const t of e) t.call(this, n);
+    }
+    return this;
+  }
+  _listens(e) {
+    return this._listeners[e] && this._listeners[e].length > 0;
+  }
+}();
+function Pe(e, t) {
+  Ce.on(e, t);
+}
+function Ee(e, t = {}) {
+  Ce.fire(e, t);
+}
+function Oe(e, t) {
+  Ce.off(e, t);
+}
+const xe = "loginStateChanged",
+  Ue = "loginStateExpire",
+  Re = "loginTypeChanged",
+  Le = "anonymousConverted",
+  Ne = "refreshAccessToken";
+var De;
+!function (e) {
+  e.ANONYMOUS = "ANONYMOUS", e.WECHAT = "WECHAT", e.WECHAT_PUBLIC = "WECHAT-PUBLIC", e.WECHAT_OPEN = "WECHAT-OPEN", e.CUSTOM = "CUSTOM", e.EMAIL = "EMAIL", e.USERNAME = "USERNAME", e.NULL = "NULL";
+}(De || (De = {}));
+const Fe = ["auth.getJwt", "auth.logout", "auth.signInWithTicket", "auth.signInAnonymously", "auth.signIn", "auth.fetchAccessTokenWithRefreshToken", "auth.signUpWithEmailAndPassword", "auth.activateEndUserMail", "auth.sendPasswordResetEmail", "auth.resetPasswordWithToken", "auth.isUsernameRegistered"],
+  qe = {
+    "X-SDK-Version": "1.3.5"
+  };
+function Ke(e, t, n) {
+  const s = e[t];
+  e[t] = function (t) {
+    const r = {},
+      i = {};
+    n.forEach(n => {
+      const {
+        data: s,
+        headers: o
+      } = n.call(e, t);
+      Object.assign(r, s), Object.assign(i, o);
+    });
+    const o = t.data;
+    return o && (() => {
+      var e;
+      if (e = o, "[object FormData]" !== Object.prototype.toString.call(e)) t.data = {
+        ...o,
+        ...r
+      };else for (const e in r) o.append(e, r[e]);
+    })(), t.headers = {
+      ...(t.headers || {}),
+      ...i
+    }, s.call(e, t);
+  };
+}
+function Me() {
+  const e = Math.random().toString(16).slice(2);
+  return {
+    data: {
+      seqId: e
+    },
+    headers: {
+      ...qe,
+      "x-seqid": e
+    }
+  };
+}
+class je {
+  constructor(e = {}) {
+    var t;
+    this.config = e, this._reqClass = new ye.adapter.reqClass({
+      timeout: this.config.timeout,
+      timeoutMsg: `请求在${this.config.timeout / 1e3}s内未完成，已中断`,
+      restrictedMethods: ["post"]
+    }), this._cache = be(this.config.env), this._localCache = (t = this.config.env, Ie[t]), Ke(this._reqClass, "post", [Me]), Ke(this._reqClass, "upload", [Me]), Ke(this._reqClass, "download", [Me]);
+  }
+  async post(e) {
+    return await this._reqClass.post(e);
+  }
+  async upload(e) {
+    return await this._reqClass.upload(e);
+  }
+  async download(e) {
+    return await this._reqClass.download(e);
+  }
+  async refreshAccessToken() {
+    let e, t;
+    this._refreshAccessTokenPromise || (this._refreshAccessTokenPromise = this._refreshAccessToken());
+    try {
+      e = await this._refreshAccessTokenPromise;
+    } catch (e) {
+      t = e;
+    }
+    if (this._refreshAccessTokenPromise = null, this._shouldRefreshAccessTokenHook = null, t) throw t;
+    return e;
+  }
+  async _refreshAccessToken() {
+    const {
+      accessTokenKey: e,
+      accessTokenExpireKey: t,
+      refreshTokenKey: n,
+      loginTypeKey: s,
+      anonymousUuidKey: r
+    } = this._cache.keys;
+    this._cache.removeStore(e), this._cache.removeStore(t);
+    let i = this._cache.getStore(n);
+    if (!i) throw new V({
+      message: "未登录CloudBase"
+    });
+    const o = {
+        refresh_token: i
+      },
+      a = await this.request("auth.fetchAccessTokenWithRefreshToken", o);
+    if (a.data.code) {
+      const {
+        code: e
+      } = a.data;
+      if ("SIGN_PARAM_INVALID" === e || "REFRESH_TOKEN_EXPIRED" === e || "INVALID_REFRESH_TOKEN" === e) {
+        if (this._cache.getStore(s) === De.ANONYMOUS && "INVALID_REFRESH_TOKEN" === e) {
+          const e = this._cache.getStore(r),
+            t = this._cache.getStore(n),
+            s = await this.send("auth.signInAnonymously", {
+              anonymous_uuid: e,
+              refresh_token: t
+            });
+          return this.setRefreshToken(s.refresh_token), this._refreshAccessToken();
+        }
+        Ee(Ue), this._cache.removeStore(n);
+      }
+      throw new V({
+        code: a.data.code,
+        message: `刷新access token失败：${a.data.code}`
+      });
+    }
+    if (a.data.access_token) return Ee(Ne), this._cache.setStore(e, a.data.access_token), this._cache.setStore(t, a.data.access_token_expire + Date.now()), {
+      accessToken: a.data.access_token,
+      accessTokenExpire: a.data.access_token_expire
+    };
+    a.data.refresh_token && (this._cache.removeStore(n), this._cache.setStore(n, a.data.refresh_token), this._refreshAccessToken());
+  }
+  async getAccessToken() {
+    const {
+      accessTokenKey: e,
+      accessTokenExpireKey: t,
+      refreshTokenKey: n
+    } = this._cache.keys;
+    if (!this._cache.getStore(n)) throw new V({
+      message: "refresh token不存在，登录状态异常"
+    });
+    let s = this._cache.getStore(e),
+      r = this._cache.getStore(t),
+      i = !0;
+    return this._shouldRefreshAccessTokenHook && !(await this._shouldRefreshAccessTokenHook(s, r)) && (i = !1), (!s || !r || r < Date.now()) && i ? this.refreshAccessToken() : {
+      accessToken: s,
+      accessTokenExpire: r
+    };
+  }
+  async request(e, t, n) {
+    const s = `x-tcb-trace_${this.config.env}`;
+    let r = "application/x-www-form-urlencoded";
+    const i = {
+      action: e,
+      env: this.config.env,
+      dataVersion: "2019-08-16",
+      ...t
+    };
+    if (-1 === Fe.indexOf(e)) {
+      const {
+        refreshTokenKey: e
+      } = this._cache.keys;
+      this._cache.getStore(e) && (i.access_token = (await this.getAccessToken()).accessToken);
+    }
+    let o;
+    if ("storage.uploadFile" === e) {
+      o = new FormData();
+      for (let e in o) o.hasOwnProperty(e) && void 0 !== o[e] && o.append(e, i[e]);
+      r = "multipart/form-data";
+    } else {
+      r = "application/json", o = {};
+      for (let e in i) void 0 !== i[e] && (o[e] = i[e]);
+    }
+    let a = {
+      headers: {
+        "content-type": r
+      }
+    };
+    n && n.onUploadProgress && (a.onUploadProgress = n.onUploadProgress);
+    const c = this._localCache.getStore(s);
+    c && (a.headers["X-TCB-Trace"] = c);
+    const {
+      parse: u,
+      inQuery: l,
+      search: h
+    } = t;
+    let d = {
+      env: this.config.env
+    };
+    u && (d.parse = !0), l && (d = {
+      ...l,
+      ...d
+    });
+    let f = function (e, t, n = {}) {
+      const s = /\?/.test(t);
+      let r = "";
+      for (let e in n) "" === r ? !s && (t += "?") : r += "&", r += `${e}=${encodeURIComponent(n[e])}`;
+      return /^http(s)?\:\/\//.test(t += r) ? t : `${e}${t}`;
+    }(ue, "//tcb-api.tencentcloudapi.com/web", d);
+    h && (f += h);
+    const p = await this.post({
+        url: f,
+        data: o,
+        ...a
+      }),
+      g = p.header && p.header["x-tcb-trace"];
+    if (g && this._localCache.setStore(s, g), 200 !== Number(p.status) && 200 !== Number(p.statusCode) || !p.data) throw new V({
+      code: "NETWORK_ERROR",
+      message: "network request error"
+    });
+    return p;
+  }
+  async send(e, t = {}) {
+    const n = await this.request(e, t, {
+      onUploadProgress: t.onUploadProgress
+    });
+    if ("ACCESS_TOKEN_EXPIRED" === n.data.code && -1 === Fe.indexOf(e)) {
+      await this.refreshAccessToken();
+      const n = await this.request(e, t, {
+        onUploadProgress: t.onUploadProgress
+      });
+      if (n.data.code) throw new V({
+        code: n.data.code,
+        message: n.data.message
+      });
+      return n.data;
+    }
+    if (n.data.code) throw new V({
+      code: n.data.code,
+      message: n.data.message
+    });
+    return n.data;
+  }
+  setRefreshToken(e) {
+    const {
+      accessTokenKey: t,
+      accessTokenExpireKey: n,
+      refreshTokenKey: s
+    } = this._cache.keys;
+    this._cache.removeStore(t), this._cache.removeStore(n), this._cache.setStore(s, e);
+  }
+}
+const Be = {};
+function $e(e) {
+  return Be[e];
+}
+class We {
+  constructor(e) {
+    this.config = e, this._cache = be(e.env), this._request = $e(e.env);
+  }
+  setRefreshToken(e) {
+    const {
+      accessTokenKey: t,
+      accessTokenExpireKey: n,
+      refreshTokenKey: s
+    } = this._cache.keys;
+    this._cache.removeStore(t), this._cache.removeStore(n), this._cache.setStore(s, e);
+  }
+  setAccessToken(e, t) {
+    const {
+      accessTokenKey: n,
+      accessTokenExpireKey: s
+    } = this._cache.keys;
+    this._cache.setStore(n, e), this._cache.setStore(s, t);
+  }
+  async refreshUserInfo() {
+    const {
+      data: e
+    } = await this._request.send("auth.getUserInfo", {});
+    return this.setLocalUserInfo(e), e;
+  }
+  setLocalUserInfo(e) {
+    const {
+      userInfoKey: t
+    } = this._cache.keys;
+    this._cache.setStore(t, e);
+  }
+}
+class ze {
+  constructor(e) {
+    if (!e) throw new V({
+      code: "PARAM_ERROR",
+      message: "envId is not defined"
+    });
+    this._envId = e, this._cache = be(this._envId), this._request = $e(this._envId), this.setUserInfo();
+  }
+  linkWithTicket(e) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "ticket must be string"
+    });
+    return this._request.send("auth.linkWithTicket", {
+      ticket: e
+    });
+  }
+  linkWithRedirect(e) {
+    e.signInWithRedirect();
+  }
+  updatePassword(e, t) {
+    return this._request.send("auth.updatePassword", {
+      oldPassword: t,
+      newPassword: e
+    });
+  }
+  updateEmail(e) {
+    return this._request.send("auth.updateEmail", {
+      newEmail: e
+    });
+  }
+  updateUsername(e) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "username must be a string"
+    });
+    return this._request.send("auth.updateUsername", {
+      username: e
+    });
+  }
+  async getLinkedUidList() {
+    const {
+      data: e
+    } = await this._request.send("auth.getLinkedUidList", {});
+    let t = !1;
+    const {
+      users: n
+    } = e;
+    return n.forEach(e => {
+      e.wxOpenId && e.wxPublicId && (t = !0);
+    }), {
+      users: n,
+      hasPrimaryUid: t
+    };
+  }
+  setPrimaryUid(e) {
+    return this._request.send("auth.setPrimaryUid", {
+      uid: e
+    });
+  }
+  unlink(e) {
+    return this._request.send("auth.unlink", {
+      platform: e
+    });
+  }
+  async update(e) {
+    const {
+        nickName: t,
+        gender: n,
+        avatarUrl: s,
+        province: r,
+        country: i,
+        city: o
+      } = e,
+      {
+        data: a
+      } = await this._request.send("auth.updateUserInfo", {
+        nickName: t,
+        gender: n,
+        avatarUrl: s,
+        province: r,
+        country: i,
+        city: o
+      });
+    this.setLocalUserInfo(a);
+  }
+  async refresh() {
+    const {
+      data: e
+    } = await this._request.send("auth.getUserInfo", {});
+    return this.setLocalUserInfo(e), e;
+  }
+  setUserInfo() {
+    const {
+        userInfoKey: e
+      } = this._cache.keys,
+      t = this._cache.getStore(e);
+    ["uid", "loginType", "openid", "wxOpenId", "wxPublicId", "unionId", "qqMiniOpenId", "email", "hasPassword", "customUserId", "nickName", "gender", "avatarUrl"].forEach(e => {
+      this[e] = t[e];
+    }), this.location = {
+      country: t.country,
+      province: t.province,
+      city: t.city
+    };
+  }
+  setLocalUserInfo(e) {
+    const {
+      userInfoKey: t
+    } = this._cache.keys;
+    this._cache.setStore(t, e), this.setUserInfo();
+  }
+}
+class Je {
+  constructor(e) {
+    if (!e) throw new V({
+      code: "PARAM_ERROR",
+      message: "envId is not defined"
+    });
+    this._cache = be(e);
+    const {
+        refreshTokenKey: t,
+        accessTokenKey: n,
+        accessTokenExpireKey: s
+      } = this._cache.keys,
+      r = this._cache.getStore(t),
+      i = this._cache.getStore(n),
+      o = this._cache.getStore(s);
+    this.credential = {
+      refreshToken: r,
+      accessToken: i,
+      accessTokenExpire: o
+    }, this.user = new ze(e);
+  }
+  get isAnonymousAuth() {
+    return this.loginType === De.ANONYMOUS;
+  }
+  get isCustomAuth() {
+    return this.loginType === De.CUSTOM;
+  }
+  get isWeixinAuth() {
+    return this.loginType === De.WECHAT || this.loginType === De.WECHAT_OPEN || this.loginType === De.WECHAT_PUBLIC;
+  }
+  get loginType() {
+    return this._cache.getStore(this._cache.keys.loginTypeKey);
+  }
+}
+class He extends We {
+  async signIn() {
+    this._cache.updatePersistence("local");
+    const {
+        anonymousUuidKey: e,
+        refreshTokenKey: t
+      } = this._cache.keys,
+      n = this._cache.getStore(e) || void 0,
+      s = this._cache.getStore(t) || void 0,
+      r = await this._request.send("auth.signInAnonymously", {
+        anonymous_uuid: n,
+        refresh_token: s
+      });
+    if (r.uuid && r.refresh_token) {
+      this._setAnonymousUUID(r.uuid), this.setRefreshToken(r.refresh_token), await this._request.refreshAccessToken(), Ee(xe), Ee(Re, {
+        env: this.config.env,
+        loginType: De.ANONYMOUS,
+        persistence: "local"
+      });
+      const e = new Je(this.config.env);
+      return await e.user.refresh(), e;
+    }
+    throw new V({
+      message: "匿名登录失败"
+    });
+  }
+  async linkAndRetrieveDataWithTicket(e) {
+    const {
+        anonymousUuidKey: t,
+        refreshTokenKey: n
+      } = this._cache.keys,
+      s = this._cache.getStore(t),
+      r = this._cache.getStore(n),
+      i = await this._request.send("auth.linkAndRetrieveDataWithTicket", {
+        anonymous_uuid: s,
+        refresh_token: r,
+        ticket: e
+      });
+    if (i.refresh_token) return this._clearAnonymousUUID(), this.setRefreshToken(i.refresh_token), await this._request.refreshAccessToken(), Ee(Le, {
+      env: this.config.env
+    }), Ee(Re, {
+      loginType: De.CUSTOM,
+      persistence: "local"
+    }), {
+      credential: {
+        refreshToken: i.refresh_token
+      }
+    };
+    throw new V({
+      message: "匿名转化失败"
+    });
+  }
+  _setAnonymousUUID(e) {
+    const {
+      anonymousUuidKey: t,
+      loginTypeKey: n
+    } = this._cache.keys;
+    this._cache.removeStore(t), this._cache.setStore(t, e), this._cache.setStore(n, De.ANONYMOUS);
+  }
+  _clearAnonymousUUID() {
+    this._cache.removeStore(this._cache.keys.anonymousUuidKey);
+  }
+}
+class Ve extends We {
+  async signIn(e) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "ticket must be a string"
+    });
+    const {
+        refreshTokenKey: t
+      } = this._cache.keys,
+      n = await this._request.send("auth.signInWithTicket", {
+        ticket: e,
+        refresh_token: this._cache.getStore(t) || ""
+      });
+    if (n.refresh_token) return this.setRefreshToken(n.refresh_token), await this._request.refreshAccessToken(), Ee(xe), Ee(Re, {
+      env: this.config.env,
+      loginType: De.CUSTOM,
+      persistence: this.config.persistence
+    }), await this.refreshUserInfo(), new Je(this.config.env);
+    throw new V({
+      message: "自定义登录失败"
+    });
+  }
+}
+class Ge extends We {
+  async signIn(e, t) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "email must be a string"
+    });
+    const {
+        refreshTokenKey: n
+      } = this._cache.keys,
+      s = await this._request.send("auth.signIn", {
+        loginType: "EMAIL",
+        email: e,
+        password: t,
+        refresh_token: this._cache.getStore(n) || ""
+      }),
+      {
+        refresh_token: r,
+        access_token: i,
+        access_token_expire: o
+      } = s;
+    if (r) return this.setRefreshToken(r), i && o ? this.setAccessToken(i, o) : await this._request.refreshAccessToken(), await this.refreshUserInfo(), Ee(xe), Ee(Re, {
+      env: this.config.env,
+      loginType: De.EMAIL,
+      persistence: this.config.persistence
+    }), new Je(this.config.env);
+    throw s.code ? new V({
+      code: s.code,
+      message: `邮箱登录失败: ${s.message}`
+    }) : new V({
+      message: "邮箱登录失败"
+    });
+  }
+  async activate(e) {
+    return this._request.send("auth.activateEndUserMail", {
+      token: e
+    });
+  }
+  async resetPasswordWithToken(e, t) {
+    return this._request.send("auth.resetPasswordWithToken", {
+      token: e,
+      newPassword: t
+    });
+  }
+}
+class Ye extends We {
+  async signIn(e, t) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "username must be a string"
+    });
+    "string" != typeof t && (t = "", console.warn("password is empty"));
+    const {
+        refreshTokenKey: n
+      } = this._cache.keys,
+      s = await this._request.send("auth.signIn", {
+        loginType: De.USERNAME,
+        username: e,
+        password: t,
+        refresh_token: this._cache.getStore(n) || ""
+      }),
+      {
+        refresh_token: r,
+        access_token_expire: i,
+        access_token: o
+      } = s;
+    if (r) return this.setRefreshToken(r), o && i ? this.setAccessToken(o, i) : await this._request.refreshAccessToken(), await this.refreshUserInfo(), Ee(xe), Ee(Re, {
+      env: this.config.env,
+      loginType: De.USERNAME,
+      persistence: this.config.persistence
+    }), new Je(this.config.env);
+    throw s.code ? new V({
+      code: s.code,
+      message: `用户名密码登录失败: ${s.message}`
+    }) : new V({
+      message: "用户名密码登录失败"
+    });
+  }
+}
+class Qe {
+  constructor(e) {
+    this.config = e, this._cache = be(e.env), this._request = $e(e.env), this._onAnonymousConverted = this._onAnonymousConverted.bind(this), this._onLoginTypeChanged = this._onLoginTypeChanged.bind(this), Pe(Re, this._onLoginTypeChanged);
+  }
+  get currentUser() {
+    const e = this.hasLoginState();
+    return e && e.user || null;
+  }
+  get loginType() {
+    return this._cache.getStore(this._cache.keys.loginTypeKey);
+  }
+  anonymousAuthProvider() {
+    return new He(this.config);
+  }
+  customAuthProvider() {
+    return new Ve(this.config);
+  }
+  emailAuthProvider() {
+    return new Ge(this.config);
+  }
+  usernameAuthProvider() {
+    return new Ye(this.config);
+  }
+  async signInAnonymously() {
+    return new He(this.config).signIn();
+  }
+  async signInWithEmailAndPassword(e, t) {
+    return new Ge(this.config).signIn(e, t);
+  }
+  signInWithUsernameAndPassword(e, t) {
+    return new Ye(this.config).signIn(e, t);
+  }
+  async linkAndRetrieveDataWithTicket(e) {
+    this._anonymousAuthProvider || (this._anonymousAuthProvider = new He(this.config)), Pe(Le, this._onAnonymousConverted);
+    return await this._anonymousAuthProvider.linkAndRetrieveDataWithTicket(e);
+  }
+  async signOut() {
+    if (this.loginType === De.ANONYMOUS) throw new V({
+      message: "匿名用户不支持登出操作"
+    });
+    const {
+        refreshTokenKey: e,
+        accessTokenKey: t,
+        accessTokenExpireKey: n
+      } = this._cache.keys,
+      s = this._cache.getStore(e);
+    if (!s) return;
+    const r = await this._request.send("auth.logout", {
+      refresh_token: s
+    });
+    return this._cache.removeStore(e), this._cache.removeStore(t), this._cache.removeStore(n), Ee(xe), Ee(Re, {
+      env: this.config.env,
+      loginType: De.NULL,
+      persistence: this.config.persistence
+    }), r;
+  }
+  async signUpWithEmailAndPassword(e, t) {
+    return this._request.send("auth.signUpWithEmailAndPassword", {
+      email: e,
+      password: t
+    });
+  }
+  async sendPasswordResetEmail(e) {
+    return this._request.send("auth.sendPasswordResetEmail", {
+      email: e
+    });
+  }
+  onLoginStateChanged(e) {
+    Pe(xe, () => {
+      const t = this.hasLoginState();
+      e.call(this, t);
+    });
+    const t = this.hasLoginState();
+    e.call(this, t);
+  }
+  onLoginStateExpired(e) {
+    Pe(Ue, e.bind(this));
+  }
+  onAccessTokenRefreshed(e) {
+    Pe(Ne, e.bind(this));
+  }
+  onAnonymousConverted(e) {
+    Pe(Le, e.bind(this));
+  }
+  onLoginTypeChanged(e) {
+    Pe(Re, () => {
+      const t = this.hasLoginState();
+      e.call(this, t);
+    });
+  }
+  async getAccessToken() {
+    return {
+      accessToken: (await this._request.getAccessToken()).accessToken,
+      env: this.config.env
+    };
+  }
+  hasLoginState() {
+    const {
+      refreshTokenKey: e
+    } = this._cache.keys;
+    return this._cache.getStore(e) ? new Je(this.config.env) : null;
+  }
+  async isUsernameRegistered(e) {
+    if ("string" != typeof e) throw new V({
+      code: "PARAM_ERROR",
+      message: "username must be a string"
+    });
+    const {
+      data: t
+    } = await this._request.send("auth.isUsernameRegistered", {
+      username: e
+    });
+    return t && t.isRegistered;
+  }
+  getLoginState() {
+    return Promise.resolve(this.hasLoginState());
+  }
+  async signInWithTicket(e) {
+    return new Ve(this.config).signIn(e);
+  }
+  shouldRefreshAccessToken(e) {
+    this._request._shouldRefreshAccessTokenHook = e.bind(this);
+  }
+  getUserInfo() {
+    return this._request.send("auth.getUserInfo", {}).then(e => e.code ? e : {
+      ...e.data,
+      requestId: e.seqId
+    });
+  }
+  getAuthHeader() {
+    const {
+        refreshTokenKey: e,
+        accessTokenKey: t
+      } = this._cache.keys,
+      n = this._cache.getStore(e);
+    return {
+      "x-cloudbase-credentials": this._cache.getStore(t) + "/@@/" + n
+    };
+  }
+  _onAnonymousConverted(e) {
+    const {
+      env: t
+    } = e.data;
+    t === this.config.env && this._cache.updatePersistence(this.config.persistence);
+  }
+  _onLoginTypeChanged(e) {
+    const {
+      loginType: t,
+      persistence: n,
+      env: s
+    } = e.data;
+    s === this.config.env && (this._cache.updatePersistence(n), this._cache.setStore(this._cache.keys.loginTypeKey, t));
+  }
+}
+const Xe = function (e, t) {
+    t = t || de();
+    const n = $e(this.config.env),
+      {
+        cloudPath: s,
+        filePath: r,
+        onUploadProgress: i,
+        fileType: o = "image"
+      } = e;
+    return n.send("storage.getUploadMetadata", {
+      path: s
+    }).then(e => {
+      const {
+          data: {
+            url: a,
+            authorization: c,
+            token: u,
+            fileId: l,
+            cosFileId: h
+          },
+          requestId: d
+        } = e,
+        f = {
+          key: s,
+          signature: c,
+          "x-cos-meta-fileid": h,
+          success_action_status: "201",
+          "x-cos-security-token": u
+        };
+      n.upload({
+        url: a,
+        data: f,
+        file: r,
+        name: s,
+        fileType: o,
+        onUploadProgress: i
+      }).then(e => {
+        201 === e.statusCode ? t(null, {
+          fileID: l,
+          requestId: d
+        }) : t(new V({
+          code: "STORAGE_REQUEST_FAIL",
+          message: `STORAGE_REQUEST_FAIL: ${e.data}`
+        }));
+      }).catch(e => {
+        t(e);
+      });
+    }).catch(e => {
+      t(e);
+    }), t.promise;
+  },
+  Ze = function (e, t) {
+    t = t || de();
+    const n = $e(this.config.env),
+      {
+        cloudPath: s
+      } = e;
+    return n.send("storage.getUploadMetadata", {
+      path: s
+    }).then(e => {
+      t(null, e);
+    }).catch(e => {
+      t(e);
+    }), t.promise;
+  },
+  et = function ({
+    fileList: e
+  }, t) {
+    if (t = t || de(), !e || !Array.isArray(e)) return {
+      code: "INVALID_PARAM",
+      message: "fileList必须是非空的数组"
+    };
+    for (let t of e) if (!t || "string" != typeof t) return {
+      code: "INVALID_PARAM",
+      message: "fileList的元素必须是非空的字符串"
+    };
+    const n = {
+      fileid_list: e
+    };
+    return $e(this.config.env).send("storage.batchDeleteFile", n).then(e => {
+      e.code ? t(null, e) : t(null, {
+        fileList: e.data.delete_list,
+        requestId: e.requestId
+      });
+    }).catch(e => {
+      t(e);
+    }), t.promise;
+  },
+  tt = function ({
+    fileList: e
+  }, t) {
+    t = t || de(), e && Array.isArray(e) || t(null, {
+      code: "INVALID_PARAM",
+      message: "fileList必须是非空的数组"
+    });
+    let n = [];
+    for (let s of e) "object" == typeof s ? (s.hasOwnProperty("fileID") && s.hasOwnProperty("maxAge") || t(null, {
+      code: "INVALID_PARAM",
+      message: "fileList的元素必须是包含fileID和maxAge的对象"
+    }), n.push({
+      fileid: s.fileID,
+      max_age: s.maxAge
+    })) : "string" == typeof s ? n.push({
+      fileid: s
+    }) : t(null, {
+      code: "INVALID_PARAM",
+      message: "fileList的元素必须是字符串"
+    });
+    const s = {
+      file_list: n
+    };
+    return $e(this.config.env).send("storage.batchGetDownloadUrl", s).then(e => {
+      e.code ? t(null, e) : t(null, {
+        fileList: e.data.download_list,
+        requestId: e.requestId
+      });
+    }).catch(e => {
+      t(e);
+    }), t.promise;
+  },
+  nt = async function ({
+    fileID: e
+  }, t) {
+    const n = (await tt.call(this, {
+      fileList: [{
+        fileID: e,
+        maxAge: 600
+      }]
+    })).fileList[0];
+    if ("SUCCESS" !== n.code) return t ? t(n) : new Promise(e => {
+      e(n);
+    });
+    const s = $e(this.config.env);
+    let r = n.download_url;
+    if (r = encodeURI(r), !t) return s.download({
+      url: r
+    });
+    t(await s.download({
+      url: r
+    }));
+  },
+  st = function ({
+    name: e,
+    data: t,
+    query: n,
+    parse: s,
+    search: r
+  }, i) {
+    const o = i || de();
+    let a;
+    try {
+      a = t ? JSON.stringify(t) : "";
+    } catch (e) {
+      return Promise.reject(e);
+    }
+    if (!e) return Promise.reject(new V({
+      code: "PARAM_ERROR",
+      message: "函数名不能为空"
+    }));
+    const c = {
+      inQuery: n,
+      parse: s,
+      search: r,
+      function_name: e,
+      request_data: a
+    };
+    return $e(this.config.env).send("functions.invokeFunction", c).then(e => {
+      if (e.code) o(null, e);else {
+        let t = e.data.response_data;
+        if (s) o(null, {
+          result: t,
+          requestId: e.requestId
+        });else try {
+          t = JSON.parse(e.data.response_data), o(null, {
+            result: t,
+            requestId: e.requestId
+          });
+        } catch (e) {
+          o(new V({
+            message: "response data must be json"
+          }));
+        }
+      }
+      return o.promise;
+    }).catch(e => {
+      o(e);
+    }), o.promise;
+  },
+  rt = {
+    timeout: 15e3,
+    persistence: "session"
+  },
+  it = {};
+class ot {
+  constructor(e) {
+    this.config = e || this.config, this.authObj = void 0;
+  }
+  init(e) {
+    switch (ye.adapter || (this.requestClient = new ye.adapter.reqClass({
+      timeout: e.timeout || 5e3,
+      timeoutMsg: `请求在${(e.timeout || 5e3) / 1e3}s内未完成，已中断`
+    })), this.config = {
+      ...rt,
+      ...e
+    }, !0) {
+      case this.config.timeout > 6e5:
+        console.warn("timeout大于可配置上限[10分钟]，已重置为上限数值"), this.config.timeout = 6e5;
+        break;
+      case this.config.timeout < 100:
+        console.warn("timeout小于可配置下限[100ms]，已重置为下限数值"), this.config.timeout = 100;
+    }
+    return new ot(this.config);
+  }
+  auth({
+    persistence: e
+  } = {}) {
+    if (this.authObj) return this.authObj;
+    const t = e || ye.adapter.primaryStorage || rt.persistence;
+    var n;
+    return t !== this.config.persistence && (this.config.persistence = t), function (e) {
+      const {
+        env: t
+      } = e;
+      ke[t] = new Se(e), Ie[t] = new Se({
+        ...e,
+        persistence: "local"
+      });
+    }(this.config), n = this.config, Be[n.env] = new je(n), this.authObj = new Qe(this.config), this.authObj;
+  }
+  on(e, t) {
+    return Pe.apply(this, [e, t]);
+  }
+  off(e, t) {
+    return Oe.apply(this, [e, t]);
+  }
+  callFunction(e, t) {
+    return st.apply(this, [e, t]);
+  }
+  deleteFile(e, t) {
+    return et.apply(this, [e, t]);
+  }
+  getTempFileURL(e, t) {
+    return tt.apply(this, [e, t]);
+  }
+  downloadFile(e, t) {
+    return nt.apply(this, [e, t]);
+  }
+  uploadFile(e, t) {
+    return Xe.apply(this, [e, t]);
+  }
+  getUploadMetadata(e, t) {
+    return Ze.apply(this, [e, t]);
+  }
+  registerExtension(e) {
+    it[e.name] = e;
+  }
+  async invokeExtension(e, t) {
+    const n = it[e];
+    if (!n) throw new V({
+      message: `扩展${e} 必须先注册`
+    });
+    return await n.invoke(t, this);
+  }
+  useAdapters(e) {
+    const {
+      adapter: t,
+      runtime: n
+    } = me(e) || {};
+    t && (ye.adapter = t), n && (ye.runtime = n);
+  }
+}
+var at = new ot();
+function ct(e, t, n) {
+  void 0 === n && (n = {});
+  var s = /\?/.test(t),
+    r = "";
+  for (var i in n) "" === r ? !s && (t += "?") : r += "&", r += i + "=" + encodeURIComponent(n[i]);
+  return /^http(s)?:\/\//.test(t += r) ? t : "" + e + t;
+}
+class ut {
+  post(e) {
+    const {
+      url: t,
+      data: n,
+      headers: s
+    } = e;
+    return new Promise((e, r) => {
+      G.request({
+        url: ct("https:", t),
+        data: n,
+        method: "POST",
+        header: s,
+        success(t) {
+          e(t);
+        },
+        fail(e) {
+          r(e);
+        }
+      });
+    });
+  }
+  upload(e) {
+    return new Promise((t, n) => {
+      const {
+          url: s,
+          file: r,
+          data: i,
+          headers: o,
+          fileType: a
+        } = e,
+        c = G.uploadFile({
+          url: ct("https:", s),
+          name: "file",
+          formData: Object.assign({}, i),
+          filePath: r,
+          fileType: a,
+          header: o,
+          success(e) {
+            const n = {
+              statusCode: e.statusCode,
+              data: e.data || {}
+            };
+            200 === e.statusCode && i.success_action_status && (n.statusCode = parseInt(i.success_action_status, 10)), t(n);
+          },
+          fail(e) {
+            n(new Error(e.errMsg || "uploadFile:fail"));
+          }
+        });
+      "function" == typeof e.onUploadProgress && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(t => {
+        e.onUploadProgress({
+          loaded: t.totalBytesSent,
+          total: t.totalBytesExpectedToSend
+        });
+      });
+    });
+  }
+}
+const lt = {
+  setItem(e, t) {
+    G.setStorageSync(e, t);
+  },
+  getItem: e => G.getStorageSync(e),
+  removeItem(e) {
+    G.removeStorageSync(e);
+  },
+  clear() {
+    G.clearStorageSync();
+  }
+};
+var ht = {
+  genAdapter: function () {
+    return {
+      root: {},
+      reqClass: ut,
+      localStorage: lt,
+      primaryStorage: "local"
+    };
+  },
+  isMatch: function () {
+    return !0;
+  },
+  runtime: "uni_app"
+};
+at.useAdapters(ht);
+const dt = at,
+  ft = dt.init;
+dt.init = function (e) {
+  e.env = e.spaceId;
+  const t = ft.call(this, e);
+  t.config.provider = "tencent", t.config.spaceId = e.spaceId;
+  const n = t.auth;
+  return t.auth = function (e) {
+    const t = n.call(this, e);
+    return ["linkAndRetrieveDataWithTicket", "signInAnonymously", "signOut", "getAccessToken", "getLoginState", "signInWithTicket", "getUserInfo"].forEach(e => {
+      t[e] = H(t[e]).bind(t);
+    }), t;
+  }, t.customAuth = t.auth, t;
+};
+var pt = dt;
+var gt = class extends ae {
+  getAccessToken() {
+    return new Promise((e, t) => {
+      const n = "Anonymous_Access_token";
+      this.setAccessToken(n), e(n);
+    });
+  }
+  setupRequest(e, t) {
+    const n = Object.assign({}, e, {
+        spaceId: this.config.spaceId,
+        timestamp: Date.now()
+      }),
+      s = {
+        "Content-Type": "application/json"
+      };
+    "auth" !== t && (n.token = this.accessToken, s["x-basement-token"] = this.accessToken), s["x-serverless-sign"] = re.sign(n, this.config.clientSecret);
+    const r = se();
+    s["x-client-info"] = encodeURIComponent(JSON.stringify(r));
+    const {
+      token: i
+    } = Y();
+    return s["x-client-token"] = i, {
+      url: this.config.requestUrl,
+      method: "POST",
+      data: n,
+      dataType: "json",
+      header: JSON.parse(JSON.stringify(s))
+    };
+  }
+  uploadFileToOSS({
+    url: e,
+    formData: t,
+    name: n,
+    filePath: s,
+    fileType: r,
+    onUploadProgress: i
+  }) {
+    return new Promise((o, a) => {
+      const c = this.adapter.uploadFile({
+        url: e,
+        formData: t,
+        name: n,
+        filePath: s,
+        fileType: r,
+        success(e) {
+          e && e.statusCode < 400 ? o(e) : a(new V({
+            code: "UPLOAD_FAILED",
+            message: "文件上传失败"
+          }));
+        },
+        fail(e) {
+          a(new V({
+            code: e.code || "UPLOAD_FAILED",
+            message: e.message || e.errMsg || "文件上传失败"
+          }));
+        }
+      });
+      "function" == typeof i && c && "function" == typeof c.onProgressUpdate && c.onProgressUpdate(e => {
+        i({
+          loaded: e.totalBytesSent,
+          total: e.totalBytesExpectedToSend
+        });
+      });
+    });
+  }
+  uploadFile({
+    filePath: e,
+    cloudPath: t,
+    fileType: n = "image",
+    onUploadProgress: s
+  }) {
+    if (!t) throw new V({
+      code: "CLOUDPATH_REQUIRED",
+      message: "cloudPath不可为空"
+    });
+    let r;
+    return this.getOSSUploadOptionsFromPath({
+      cloudPath: t
+    }).then(t => {
+      const {
+        url: i,
+        formData: o,
+        name: a
+      } = t.result;
+      r = t.result.fileUrl;
+      const c = {
+        url: i,
+        formData: o,
+        name: a,
+        filePath: e,
+        fileType: n
+      };
+      return this.uploadFileToOSS(Object.assign({}, c, {
+        onUploadProgress: s
+      }));
+    }).then(() => this.reportOSSUpload({
+      cloudPath: t
+    })).then(t => new Promise((n, s) => {
+      t.success ? n({
+        success: !0,
+        filePath: e,
+        fileID: r
+      }) : s(new V({
+        code: "UPLOAD_FAILED",
+        message: "文件上传失败"
+      }));
+    }));
+  }
+  deleteFile({
+    fileList: e
+  }) {
+    const t = {
+      method: "serverless.file.resource.delete",
+      params: JSON.stringify({
+        fileList: e
+      })
+    };
+    return this.request(this.setupRequest(t)).then(e => {
+      if (e.success) return e.result;
+      throw new V({
+        code: "DELETE_FILE_FAILED",
+        message: "删除文件失败"
+      });
+    });
+  }
+  getTempFileURL({
+    fileList: e
+  } = {}) {
+    if (!Array.isArray(e) || 0 === e.length) throw new V({
+      code: "INVALID_PARAM",
+      message: "fileList的元素必须是非空的字符串"
+    });
+    const t = {
+      method: "serverless.file.resource.getTempFileURL",
+      params: JSON.stringify({
+        fileList: e
+      })
+    };
+    return this.request(this.setupRequest(t)).then(e => {
+      if (e.success) return {
+        fileList: e.result.fileList.map(e => ({
+          fileID: e.fileID,
+          tempFileURL: e.tempFileURL
+        }))
+      };
+      throw new V({
+        code: "GET_TEMP_FILE_URL_FAILED",
+        message: "获取临时文件链接失败"
+      });
+    });
+  }
+};
+var mt = {
+  init(e) {
+    const t = new gt(e),
+      n = {
+        signInAnonymously: function () {
+          return t.authorize();
+        },
+        getLoginState: function () {
+          return Promise.resolve(!1);
+        }
+      };
+    return t.auth = function () {
+      return n;
+    }, t.customAuth = t.auth, t;
+  }
+};
+function yt({
+  data: e
+}) {
+  let t;
+  t = se();
+  const n = JSON.parse(JSON.stringify(e || {}));
+  if (Object.assign(n, {
+    clientInfo: t
+  }), !n.uniIdToken) {
+    const {
+      token: e
+    } = Y();
+    e && (n.uniIdToken = e);
+  }
+  return n;
+}
+function _t({
+  name: e,
+  data: t
+} = {}) {
+  const {
+      localAddress: n,
+      localPort: s
+    } = this.__dev__,
+    r = {
+      aliyun: "aliyun",
+      tencent: "tcb"
+    }[this.config.provider],
+    i = this.config.spaceId,
+    o = `http://${n}:${s}/system/check-function`,
+    a = `http://${n}:${s}/cloudfunctions/${e}`;
+  return new Promise((t, n) => {
+    G.request({
+      method: "POST",
+      url: o,
+      data: {
+        name: e,
+        platform: w,
+        provider: r,
+        spaceId: i
+      },
+      timeout: 3e3,
+      success(e) {
+        t(e);
+      },
+      fail() {
+        t({
+          data: {
+            code: "NETWORK_ERROR",
+            message: "连接本地调试服务失败，请检查客户端是否和主机在同一局域网下，自动切换为已部署的云函数。"
+          }
+        });
+      }
+    });
+  }).then(({
+    data: e
+  } = {}) => {
+    const {
+      code: t,
+      message: n
+    } = e || {};
+    return {
+      code: 0 === t ? 0 : t || "SYS_ERR",
+      message: n || "SYS_ERR"
+    };
+  }).then(({
+    code: n,
+    message: s
+  }) => {
+    if (0 !== n) {
+      switch (n) {
+        case "MODULE_ENCRYPTED":
+          console.error(`此云函数（${e}）依赖加密公共模块不可本地调试，自动切换为云端已部署的云函数`);
+          break;
+        case "FUNCTION_ENCRYPTED":
+          console.error(`此云函数（${e}）已加密不可本地调试，自动切换为云端已部署的云函数`);
+          break;
+        case "ACTION_ENCRYPTED":
+          console.error(s || "需要访问加密的uni-clientDB-action，自动切换为云端环境");
+          break;
+        case "NETWORK_ERROR":
+          {
+            const e = "连接本地调试服务失败，请检查客户端是否和主机在同一局域网下";
+            throw console.error(e), new Error(e);
+          }
+        case "SWITCH_TO_CLOUD":
+          break;
+        default:
+          {
+            const e = `检测本地调试服务出现错误：${s}，请检查网络环境或重启客户端再试`;
+            throw console.error(e), new Error(e);
+          }
+      }
+      return this._callCloudFunction({
+        name: e,
+        data: t
+      });
+    }
+    return new Promise((e, n) => {
+      const s = yt.call(this, {
+        data: t
+      });
+      G.request({
+        method: "POST",
+        url: a,
+        data: {
+          provider: r,
+          platform: w,
+          param: s
+        },
+        success: ({
+          statusCode: t,
+          data: s
+        } = {}) => !t || t >= 400 ? n(new V({
+          code: s.code || "SYS_ERR",
+          message: s.message || "request:fail"
+        })) : e({
+          result: s
+        }),
+        fail(e) {
+          n(new V({
+            code: e.code || e.errCode || "SYS_ERR",
+            message: e.message || e.errMsg || "request:fail"
+          }));
+        }
+      });
+    });
+  });
+}
+const wt = [{
+  rule: /fc_function_not_found|FUNCTION_NOT_FOUND/,
+  content: "，云函数[{functionName}]在云端不存在，请检查此云函数名称是否正确以及该云函数是否已上传到服务空间",
+  mode: "append"
+}];
+var vt = /[\\^$.*+?()[\]{}|]/g,
+  St = RegExp(vt.source);
+function kt(e, t, n) {
+  return e.replace(new RegExp((s = t) && St.test(s) ? s.replace(vt, "\\$&") : s, "g"), n);
+  var s;
+}
+const It = "none",
+  bt = "request",
+  Tt = "response",
+  At = "both";
+class Ct {
+  constructor({
+    secretType: e,
+    uniCloudIns: t
+  } = {}) {
+    this.secretType = e || It, this.uniCloudIns = t;
+    const {
+      provider: n,
+      spaceId: s
+    } = this.uniCloudIns.config;
+    var r;
+    this.provider = n, this.spaceId = s, this.scopedGlobalCache = (r = this.uniCloudIns, T("_globalUniCloudSecureNetworkCache__{spaceId}".replace("{spaceId}", r.config.spaceId)));
+  }
+  getSystemInfo() {
+    return this._systemInfo || (this._systemInfo = te()), this._systemInfo;
+  }
+  get appId() {
+    return this.getSystemInfo().appId;
+  }
+  get deviceId() {
+    return this.getSystemInfo().deviceId;
+  }
+  async encryptData(e) {
+    return this.secretType === It || this.secretType === It ? e : this.platformEncryptData(e);
+  }
+  async decryptResult(e) {
+    if (this.secretType === It) return e;
+    const {
+      content: t
+    } = e;
+    return t ? this.secretType === bt ? t : this.platformDecryptResult(e) : e;
+  }
+  wrapVerifyClientCallFunction(e) {
+    const t = this;
+    return async function ({
+      name: n,
+      data: s = {}
+    } = {}) {
+      await t.prepare(), (s = JSON.parse(JSON.stringify(s)))._uniCloudOptions = await t.platformGetSignOption();
+      return await e({
+        name: n,
+        data: s
+      });
+    };
+  }
+  wrapEncryptDataCallFunction(e) {
+    const t = this;
+    return async function ({
+      name: n,
+      data: s = {}
+    } = {}) {
+      await t.prepare();
+      const r = await t.encryptData(s),
+        i = await e({
+          name: n,
+          data: r
+        });
+      return i.result = await t.decryptResult(i.result), i;
+    };
+  }
+}
+/*! MIT License. Copyright 2015-2018 Richard Moore <me@ricmoo.com>. See LICENSE.txt. */
+function Pt(e) {
+  return parseInt(e) === e;
+}
+function Et(e) {
+  if (!Pt(e.length)) return !1;
+  for (var t = 0; t < e.length; t++) if (!Pt(e[t]) || e[t] < 0 || e[t] > 255) return !1;
+  return !0;
+}
+function Ot(e, t) {
+  if (e.buffer && "Uint8Array" === e.name) return t && (e = e.slice ? e.slice() : Array.prototype.slice.call(e)), e;
+  if (Array.isArray(e)) {
+    if (!Et(e)) throw new Error("Array contains invalid value: " + e);
+    return new Uint8Array(e);
+  }
+  if (Pt(e.length) && Et(e)) return new Uint8Array(e);
+  throw new Error("unsupported array-like object");
+}
+function xt(e) {
+  return new Uint8Array(e);
+}
+function Ut(e, t, n, s, r) {
+  null == s && null == r || (e = e.slice ? e.slice(s, r) : Array.prototype.slice.call(e, s, r)), t.set(e, n);
+}
+var Rt,
+  Lt = {
+    toBytes: function (e) {
+      var t = [],
+        n = 0;
+      for (e = encodeURI(e); n < e.length;) {
+        var s = e.charCodeAt(n++);
+        37 === s ? (t.push(parseInt(e.substr(n, 2), 16)), n += 2) : t.push(s);
+      }
+      return Ot(t);
+    },
+    fromBytes: function (e) {
+      for (var t = [], n = 0; n < e.length;) {
+        var s = e[n];
+        s < 128 ? (t.push(String.fromCharCode(s)), n++) : s > 191 && s < 224 ? (t.push(String.fromCharCode((31 & s) << 6 | 63 & e[n + 1])), n += 2) : (t.push(String.fromCharCode((15 & s) << 12 | (63 & e[n + 1]) << 6 | 63 & e[n + 2])), n += 3);
+      }
+      return t.join("");
+    }
+  },
+  Nt = (Rt = "0123456789abcdef", {
+    toBytes: function (e) {
+      for (var t = [], n = 0; n < e.length; n += 2) t.push(parseInt(e.substr(n, 2), 16));
+      return t;
+    },
+    fromBytes: function (e) {
+      for (var t = [], n = 0; n < e.length; n++) {
+        var s = e[n];
+        t.push(Rt[(240 & s) >> 4] + Rt[15 & s]);
+      }
+      return t.join("");
+    }
+  }),
+  Dt = {
+    16: 10,
+    24: 12,
+    32: 14
+  },
+  Ft = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54, 108, 216, 171, 77, 154, 47, 94, 188, 99, 198, 151, 53, 106, 212, 179, 125, 250, 239, 197, 145],
+  qt = [99, 124, 119, 123, 242, 107, 111, 197, 48, 1, 103, 43, 254, 215, 171, 118, 202, 130, 201, 125, 250, 89, 71, 240, 173, 212, 162, 175, 156, 164, 114, 192, 183, 253, 147, 38, 54, 63, 247, 204, 52, 165, 229, 241, 113, 216, 49, 21, 4, 199, 35, 195, 24, 150, 5, 154, 7, 18, 128, 226, 235, 39, 178, 117, 9, 131, 44, 26, 27, 110, 90, 160, 82, 59, 214, 179, 41, 227, 47, 132, 83, 209, 0, 237, 32, 252, 177, 91, 106, 203, 190, 57, 74, 76, 88, 207, 208, 239, 170, 251, 67, 77, 51, 133, 69, 249, 2, 127, 80, 60, 159, 168, 81, 163, 64, 143, 146, 157, 56, 245, 188, 182, 218, 33, 16, 255, 243, 210, 205, 12, 19, 236, 95, 151, 68, 23, 196, 167, 126, 61, 100, 93, 25, 115, 96, 129, 79, 220, 34, 42, 144, 136, 70, 238, 184, 20, 222, 94, 11, 219, 224, 50, 58, 10, 73, 6, 36, 92, 194, 211, 172, 98, 145, 149, 228, 121, 231, 200, 55, 109, 141, 213, 78, 169, 108, 86, 244, 234, 101, 122, 174, 8, 186, 120, 37, 46, 28, 166, 180, 198, 232, 221, 116, 31, 75, 189, 139, 138, 112, 62, 181, 102, 72, 3, 246, 14, 97, 53, 87, 185, 134, 193, 29, 158, 225, 248, 152, 17, 105, 217, 142, 148, 155, 30, 135, 233, 206, 85, 40, 223, 140, 161, 137, 13, 191, 230, 66, 104, 65, 153, 45, 15, 176, 84, 187, 22],
+  Kt = [82, 9, 106, 213, 48, 54, 165, 56, 191, 64, 163, 158, 129, 243, 215, 251, 124, 227, 57, 130, 155, 47, 255, 135, 52, 142, 67, 68, 196, 222, 233, 203, 84, 123, 148, 50, 166, 194, 35, 61, 238, 76, 149, 11, 66, 250, 195, 78, 8, 46, 161, 102, 40, 217, 36, 178, 118, 91, 162, 73, 109, 139, 209, 37, 114, 248, 246, 100, 134, 104, 152, 22, 212, 164, 92, 204, 93, 101, 182, 146, 108, 112, 72, 80, 253, 237, 185, 218, 94, 21, 70, 87, 167, 141, 157, 132, 144, 216, 171, 0, 140, 188, 211, 10, 247, 228, 88, 5, 184, 179, 69, 6, 208, 44, 30, 143, 202, 63, 15, 2, 193, 175, 189, 3, 1, 19, 138, 107, 58, 145, 17, 65, 79, 103, 220, 234, 151, 242, 207, 206, 240, 180, 230, 115, 150, 172, 116, 34, 231, 173, 53, 133, 226, 249, 55, 232, 28, 117, 223, 110, 71, 241, 26, 113, 29, 41, 197, 137, 111, 183, 98, 14, 170, 24, 190, 27, 252, 86, 62, 75, 198, 210, 121, 32, 154, 219, 192, 254, 120, 205, 90, 244, 31, 221, 168, 51, 136, 7, 199, 49, 177, 18, 16, 89, 39, 128, 236, 95, 96, 81, 127, 169, 25, 181, 74, 13, 45, 229, 122, 159, 147, 201, 156, 239, 160, 224, 59, 77, 174, 42, 245, 176, 200, 235, 187, 60, 131, 83, 153, 97, 23, 43, 4, 126, 186, 119, 214, 38, 225, 105, 20, 99, 85, 33, 12, 125],
+  Mt = [3328402341, 4168907908, 4000806809, 4135287693, 4294111757, 3597364157, 3731845041, 2445657428, 1613770832, 33620227, 3462883241, 1445669757, 3892248089, 3050821474, 1303096294, 3967186586, 2412431941, 528646813, 2311702848, 4202528135, 4026202645, 2992200171, 2387036105, 4226871307, 1101901292, 3017069671, 1604494077, 1169141738, 597466303, 1403299063, 3832705686, 2613100635, 1974974402, 3791519004, 1033081774, 1277568618, 1815492186, 2118074177, 4126668546, 2211236943, 1748251740, 1369810420, 3521504564, 4193382664, 3799085459, 2883115123, 1647391059, 706024767, 134480908, 2512897874, 1176707941, 2646852446, 806885416, 932615841, 168101135, 798661301, 235341577, 605164086, 461406363, 3756188221, 3454790438, 1311188841, 2142417613, 3933566367, 302582043, 495158174, 1479289972, 874125870, 907746093, 3698224818, 3025820398, 1537253627, 2756858614, 1983593293, 3084310113, 2108928974, 1378429307, 3722699582, 1580150641, 327451799, 2790478837, 3117535592, 0, 3253595436, 1075847264, 3825007647, 2041688520, 3059440621, 3563743934, 2378943302, 1740553945, 1916352843, 2487896798, 2555137236, 2958579944, 2244988746, 3151024235, 3320835882, 1336584933, 3992714006, 2252555205, 2588757463, 1714631509, 293963156, 2319795663, 3925473552, 67240454, 4269768577, 2689618160, 2017213508, 631218106, 1269344483, 2723238387, 1571005438, 2151694528, 93294474, 1066570413, 563977660, 1882732616, 4059428100, 1673313503, 2008463041, 2950355573, 1109467491, 537923632, 3858759450, 4260623118, 3218264685, 2177748300, 403442708, 638784309, 3287084079, 3193921505, 899127202, 2286175436, 773265209, 2479146071, 1437050866, 4236148354, 2050833735, 3362022572, 3126681063, 840505643, 3866325909, 3227541664, 427917720, 2655997905, 2749160575, 1143087718, 1412049534, 999329963, 193497219, 2353415882, 3354324521, 1807268051, 672404540, 2816401017, 3160301282, 369822493, 2916866934, 3688947771, 1681011286, 1949973070, 336202270, 2454276571, 201721354, 1210328172, 3093060836, 2680341085, 3184776046, 1135389935, 3294782118, 965841320, 831886756, 3554993207, 4068047243, 3588745010, 2345191491, 1849112409, 3664604599, 26054028, 2983581028, 2622377682, 1235855840, 3630984372, 2891339514, 4092916743, 3488279077, 3395642799, 4101667470, 1202630377, 268961816, 1874508501, 4034427016, 1243948399, 1546530418, 941366308, 1470539505, 1941222599, 2546386513, 3421038627, 2715671932, 3899946140, 1042226977, 2521517021, 1639824860, 227249030, 260737669, 3765465232, 2084453954, 1907733956, 3429263018, 2420656344, 100860677, 4160157185, 470683154, 3261161891, 1781871967, 2924959737, 1773779408, 394692241, 2579611992, 974986535, 664706745, 3655459128, 3958962195, 731420851, 571543859, 3530123707, 2849626480, 126783113, 865375399, 765172662, 1008606754, 361203602, 3387549984, 2278477385, 2857719295, 1344809080, 2782912378, 59542671, 1503764984, 160008576, 437062935, 1707065306, 3622233649, 2218934982, 3496503480, 2185314755, 697932208, 1512910199, 504303377, 2075177163, 2824099068, 1841019862, 739644986],
+  jt = [2781242211, 2230877308, 2582542199, 2381740923, 234877682, 3184946027, 2984144751, 1418839493, 1348481072, 50462977, 2848876391, 2102799147, 434634494, 1656084439, 3863849899, 2599188086, 1167051466, 2636087938, 1082771913, 2281340285, 368048890, 3954334041, 3381544775, 201060592, 3963727277, 1739838676, 4250903202, 3930435503, 3206782108, 4149453988, 2531553906, 1536934080, 3262494647, 484572669, 2923271059, 1783375398, 1517041206, 1098792767, 49674231, 1334037708, 1550332980, 4098991525, 886171109, 150598129, 2481090929, 1940642008, 1398944049, 1059722517, 201851908, 1385547719, 1699095331, 1587397571, 674240536, 2704774806, 252314885, 3039795866, 151914247, 908333586, 2602270848, 1038082786, 651029483, 1766729511, 3447698098, 2682942837, 454166793, 2652734339, 1951935532, 775166490, 758520603, 3000790638, 4004797018, 4217086112, 4137964114, 1299594043, 1639438038, 3464344499, 2068982057, 1054729187, 1901997871, 2534638724, 4121318227, 1757008337, 0, 750906861, 1614815264, 535035132, 3363418545, 3988151131, 3201591914, 1183697867, 3647454910, 1265776953, 3734260298, 3566750796, 3903871064, 1250283471, 1807470800, 717615087, 3847203498, 384695291, 3313910595, 3617213773, 1432761139, 2484176261, 3481945413, 283769337, 100925954, 2180939647, 4037038160, 1148730428, 3123027871, 3813386408, 4087501137, 4267549603, 3229630528, 2315620239, 2906624658, 3156319645, 1215313976, 82966005, 3747855548, 3245848246, 1974459098, 1665278241, 807407632, 451280895, 251524083, 1841287890, 1283575245, 337120268, 891687699, 801369324, 3787349855, 2721421207, 3431482436, 959321879, 1469301956, 4065699751, 2197585534, 1199193405, 2898814052, 3887750493, 724703513, 2514908019, 2696962144, 2551808385, 3516813135, 2141445340, 1715741218, 2119445034, 2872807568, 2198571144, 3398190662, 700968686, 3547052216, 1009259540, 2041044702, 3803995742, 487983883, 1991105499, 1004265696, 1449407026, 1316239930, 504629770, 3683797321, 168560134, 1816667172, 3837287516, 1570751170, 1857934291, 4014189740, 2797888098, 2822345105, 2754712981, 936633572, 2347923833, 852879335, 1133234376, 1500395319, 3084545389, 2348912013, 1689376213, 3533459022, 3762923945, 3034082412, 4205598294, 133428468, 634383082, 2949277029, 2398386810, 3913789102, 403703816, 3580869306, 2297460856, 1867130149, 1918643758, 607656988, 4049053350, 3346248884, 1368901318, 600565992, 2090982877, 2632479860, 557719327, 3717614411, 3697393085, 2249034635, 2232388234, 2430627952, 1115438654, 3295786421, 2865522278, 3633334344, 84280067, 33027830, 303828494, 2747425121, 1600795957, 4188952407, 3496589753, 2434238086, 1486471617, 658119965, 3106381470, 953803233, 334231800, 3005978776, 857870609, 3151128937, 1890179545, 2298973838, 2805175444, 3056442267, 574365214, 2450884487, 550103529, 1233637070, 4289353045, 2018519080, 2057691103, 2399374476, 4166623649, 2148108681, 387583245, 3664101311, 836232934, 3330556482, 3100665960, 3280093505, 2955516313, 2002398509, 287182607, 3413881008, 4238890068, 3597515707, 975967766],
+  Bt = [1671808611, 2089089148, 2006576759, 2072901243, 4061003762, 1807603307, 1873927791, 3310653893, 810573872, 16974337, 1739181671, 729634347, 4263110654, 3613570519, 2883997099, 1989864566, 3393556426, 2191335298, 3376449993, 2106063485, 4195741690, 1508618841, 1204391495, 4027317232, 2917941677, 3563566036, 2734514082, 2951366063, 2629772188, 2767672228, 1922491506, 3227229120, 3082974647, 4246528509, 2477669779, 644500518, 911895606, 1061256767, 4144166391, 3427763148, 878471220, 2784252325, 3845444069, 4043897329, 1905517169, 3631459288, 827548209, 356461077, 67897348, 3344078279, 593839651, 3277757891, 405286936, 2527147926, 84871685, 2595565466, 118033927, 305538066, 2157648768, 3795705826, 3945188843, 661212711, 2999812018, 1973414517, 152769033, 2208177539, 745822252, 439235610, 455947803, 1857215598, 1525593178, 2700827552, 1391895634, 994932283, 3596728278, 3016654259, 695947817, 3812548067, 795958831, 2224493444, 1408607827, 3513301457, 0, 3979133421, 543178784, 4229948412, 2982705585, 1542305371, 1790891114, 3410398667, 3201918910, 961245753, 1256100938, 1289001036, 1491644504, 3477767631, 3496721360, 4012557807, 2867154858, 4212583931, 1137018435, 1305975373, 861234739, 2241073541, 1171229253, 4178635257, 33948674, 2139225727, 1357946960, 1011120188, 2679776671, 2833468328, 1374921297, 2751356323, 1086357568, 2408187279, 2460827538, 2646352285, 944271416, 4110742005, 3168756668, 3066132406, 3665145818, 560153121, 271589392, 4279952895, 4077846003, 3530407890, 3444343245, 202643468, 322250259, 3962553324, 1608629855, 2543990167, 1154254916, 389623319, 3294073796, 2817676711, 2122513534, 1028094525, 1689045092, 1575467613, 422261273, 1939203699, 1621147744, 2174228865, 1339137615, 3699352540, 577127458, 712922154, 2427141008, 2290289544, 1187679302, 3995715566, 3100863416, 339486740, 3732514782, 1591917662, 186455563, 3681988059, 3762019296, 844522546, 978220090, 169743370, 1239126601, 101321734, 611076132, 1558493276, 3260915650, 3547250131, 2901361580, 1655096418, 2443721105, 2510565781, 3828863972, 2039214713, 3878868455, 3359869896, 928607799, 1840765549, 2374762893, 3580146133, 1322425422, 2850048425, 1823791212, 1459268694, 4094161908, 3928346602, 1706019429, 2056189050, 2934523822, 135794696, 3134549946, 2022240376, 628050469, 779246638, 472135708, 2800834470, 3032970164, 3327236038, 3894660072, 3715932637, 1956440180, 522272287, 1272813131, 3185336765, 2340818315, 2323976074, 1888542832, 1044544574, 3049550261, 1722469478, 1222152264, 50660867, 4127324150, 236067854, 1638122081, 895445557, 1475980887, 3117443513, 2257655686, 3243809217, 489110045, 2662934430, 3778599393, 4162055160, 2561878936, 288563729, 1773916777, 3648039385, 2391345038, 2493985684, 2612407707, 505560094, 2274497927, 3911240169, 3460925390, 1442818645, 678973480, 3749357023, 2358182796, 2717407649, 2306869641, 219617805, 3218761151, 3862026214, 1120306242, 1756942440, 1103331905, 2578459033, 762796589, 252780047, 2966125488, 1425844308, 3151392187, 372911126],
+  $t = [1667474886, 2088535288, 2004326894, 2071694838, 4075949567, 1802223062, 1869591006, 3318043793, 808472672, 16843522, 1734846926, 724270422, 4278065639, 3621216949, 2880169549, 1987484396, 3402253711, 2189597983, 3385409673, 2105378810, 4210693615, 1499065266, 1195886990, 4042263547, 2913856577, 3570689971, 2728590687, 2947541573, 2627518243, 2762274643, 1920112356, 3233831835, 3082273397, 4261223649, 2475929149, 640051788, 909531756, 1061110142, 4160160501, 3435941763, 875846760, 2779116625, 3857003729, 4059105529, 1903268834, 3638064043, 825316194, 353713962, 67374088, 3351728789, 589522246, 3284360861, 404236336, 2526454071, 84217610, 2593830191, 117901582, 303183396, 2155911963, 3806477791, 3958056653, 656894286, 2998062463, 1970642922, 151591698, 2206440989, 741110872, 437923380, 454765878, 1852748508, 1515908788, 2694904667, 1381168804, 993742198, 3604373943, 3014905469, 690584402, 3823320797, 791638366, 2223281939, 1398011302, 3520161977, 0, 3991743681, 538992704, 4244381667, 2981218425, 1532751286, 1785380564, 3419096717, 3200178535, 960056178, 1246420628, 1280103576, 1482221744, 3486468741, 3503319995, 4025428677, 2863326543, 4227536621, 1128514950, 1296947098, 859002214, 2240123921, 1162203018, 4193849577, 33687044, 2139062782, 1347481760, 1010582648, 2678045221, 2829640523, 1364325282, 2745433693, 1077985408, 2408548869, 2459086143, 2644360225, 943212656, 4126475505, 3166494563, 3065430391, 3671750063, 555836226, 269496352, 4294908645, 4092792573, 3537006015, 3452783745, 202118168, 320025894, 3974901699, 1600119230, 2543297077, 1145359496, 387397934, 3301201811, 2812801621, 2122220284, 1027426170, 1684319432, 1566435258, 421079858, 1936954854, 1616945344, 2172753945, 1330631070, 3705438115, 572679748, 707427924, 2425400123, 2290647819, 1179044492, 4008585671, 3099120491, 336870440, 3739122087, 1583276732, 185277718, 3688593069, 3772791771, 842159716, 976899700, 168435220, 1229577106, 101059084, 606366792, 1549591736, 3267517855, 3553849021, 2897014595, 1650632388, 2442242105, 2509612081, 3840161747, 2038008818, 3890688725, 3368567691, 926374254, 1835907034, 2374863873, 3587531953, 1313788572, 2846482505, 1819063512, 1448540844, 4109633523, 3941213647, 1701162954, 2054852340, 2930698567, 134748176, 3132806511, 2021165296, 623210314, 774795868, 471606328, 2795958615, 3031746419, 3334885783, 3907527627, 3722280097, 1953799400, 522133822, 1263263126, 3183336545, 2341176845, 2324333839, 1886425312, 1044267644, 3048588401, 1718004428, 1212733584, 50529542, 4143317495, 235803164, 1633788866, 892690282, 1465383342, 3115962473, 2256965911, 3250673817, 488449850, 2661202215, 3789633753, 4177007595, 2560144171, 286339874, 1768537042, 3654906025, 2391705863, 2492770099, 2610673197, 505291324, 2273808917, 3924369609, 3469625735, 1431699370, 673740880, 3755965093, 2358021891, 2711746649, 2307489801, 218961690, 3217021541, 3873845719, 1111672452, 1751693520, 1094828930, 2576986153, 757954394, 252645662, 2964376443, 1414855848, 3149649517, 370555436],
+  Wt = [1374988112, 2118214995, 437757123, 975658646, 1001089995, 530400753, 2902087851, 1273168787, 540080725, 2910219766, 2295101073, 4110568485, 1340463100, 3307916247, 641025152, 3043140495, 3736164937, 632953703, 1172967064, 1576976609, 3274667266, 2169303058, 2370213795, 1809054150, 59727847, 361929877, 3211623147, 2505202138, 3569255213, 1484005843, 1239443753, 2395588676, 1975683434, 4102977912, 2572697195, 666464733, 3202437046, 4035489047, 3374361702, 2110667444, 1675577880, 3843699074, 2538681184, 1649639237, 2976151520, 3144396420, 4269907996, 4178062228, 1883793496, 2403728665, 2497604743, 1383856311, 2876494627, 1917518562, 3810496343, 1716890410, 3001755655, 800440835, 2261089178, 3543599269, 807962610, 599762354, 33778362, 3977675356, 2328828971, 2809771154, 4077384432, 1315562145, 1708848333, 101039829, 3509871135, 3299278474, 875451293, 2733856160, 92987698, 2767645557, 193195065, 1080094634, 1584504582, 3178106961, 1042385657, 2531067453, 3711829422, 1306967366, 2438237621, 1908694277, 67556463, 1615861247, 429456164, 3602770327, 2302690252, 1742315127, 2968011453, 126454664, 3877198648, 2043211483, 2709260871, 2084704233, 4169408201, 0, 159417987, 841739592, 504459436, 1817866830, 4245618683, 260388950, 1034867998, 908933415, 168810852, 1750902305, 2606453969, 607530554, 202008497, 2472011535, 3035535058, 463180190, 2160117071, 1641816226, 1517767529, 470948374, 3801332234, 3231722213, 1008918595, 303765277, 235474187, 4069246893, 766945465, 337553864, 1475418501, 2943682380, 4003061179, 2743034109, 4144047775, 1551037884, 1147550661, 1543208500, 2336434550, 3408119516, 3069049960, 3102011747, 3610369226, 1113818384, 328671808, 2227573024, 2236228733, 3535486456, 2935566865, 3341394285, 496906059, 3702665459, 226906860, 2009195472, 733156972, 2842737049, 294930682, 1206477858, 2835123396, 2700099354, 1451044056, 573804783, 2269728455, 3644379585, 2362090238, 2564033334, 2801107407, 2776292904, 3669462566, 1068351396, 742039012, 1350078989, 1784663195, 1417561698, 4136440770, 2430122216, 775550814, 2193862645, 2673705150, 1775276924, 1876241833, 3475313331, 3366754619, 270040487, 3902563182, 3678124923, 3441850377, 1851332852, 3969562369, 2203032232, 3868552805, 2868897406, 566021896, 4011190502, 3135740889, 1248802510, 3936291284, 699432150, 832877231, 708780849, 3332740144, 899835584, 1951317047, 4236429990, 3767586992, 866637845, 4043610186, 1106041591, 2144161806, 395441711, 1984812685, 1139781709, 3433712980, 3835036895, 2664543715, 1282050075, 3240894392, 1181045119, 2640243204, 25965917, 4203181171, 4211818798, 3009879386, 2463879762, 3910161971, 1842759443, 2597806476, 933301370, 1509430414, 3943906441, 3467192302, 3076639029, 3776767469, 2051518780, 2631065433, 1441952575, 404016761, 1942435775, 1408749034, 1610459739, 3745345300, 2017778566, 3400528769, 3110650942, 941896748, 3265478751, 371049330, 3168937228, 675039627, 4279080257, 967311729, 135050206, 3635733660, 1683407248, 2076935265, 3576870512, 1215061108, 3501741890],
+  zt = [1347548327, 1400783205, 3273267108, 2520393566, 3409685355, 4045380933, 2880240216, 2471224067, 1428173050, 4138563181, 2441661558, 636813900, 4233094615, 3620022987, 2149987652, 2411029155, 1239331162, 1730525723, 2554718734, 3781033664, 46346101, 310463728, 2743944855, 3328955385, 3875770207, 2501218972, 3955191162, 3667219033, 768917123, 3545789473, 692707433, 1150208456, 1786102409, 2029293177, 1805211710, 3710368113, 3065962831, 401639597, 1724457132, 3028143674, 409198410, 2196052529, 1620529459, 1164071807, 3769721975, 2226875310, 486441376, 2499348523, 1483753576, 428819965, 2274680428, 3075636216, 598438867, 3799141122, 1474502543, 711349675, 129166120, 53458370, 2592523643, 2782082824, 4063242375, 2988687269, 3120694122, 1559041666, 730517276, 2460449204, 4042459122, 2706270690, 3446004468, 3573941694, 533804130, 2328143614, 2637442643, 2695033685, 839224033, 1973745387, 957055980, 2856345839, 106852767, 1371368976, 4181598602, 1033297158, 2933734917, 1179510461, 3046200461, 91341917, 1862534868, 4284502037, 605657339, 2547432937, 3431546947, 2003294622, 3182487618, 2282195339, 954669403, 3682191598, 1201765386, 3917234703, 3388507166, 0, 2198438022, 1211247597, 2887651696, 1315723890, 4227665663, 1443857720, 507358933, 657861945, 1678381017, 560487590, 3516619604, 975451694, 2970356327, 261314535, 3535072918, 2652609425, 1333838021, 2724322336, 1767536459, 370938394, 182621114, 3854606378, 1128014560, 487725847, 185469197, 2918353863, 3106780840, 3356761769, 2237133081, 1286567175, 3152976349, 4255350624, 2683765030, 3160175349, 3309594171, 878443390, 1988838185, 3704300486, 1756818940, 1673061617, 3403100636, 272786309, 1075025698, 545572369, 2105887268, 4174560061, 296679730, 1841768865, 1260232239, 4091327024, 3960309330, 3497509347, 1814803222, 2578018489, 4195456072, 575138148, 3299409036, 446754879, 3629546796, 4011996048, 3347532110, 3252238545, 4270639778, 915985419, 3483825537, 681933534, 651868046, 2755636671, 3828103837, 223377554, 2607439820, 1649704518, 3270937875, 3901806776, 1580087799, 4118987695, 3198115200, 2087309459, 2842678573, 3016697106, 1003007129, 2802849917, 1860738147, 2077965243, 164439672, 4100872472, 32283319, 2827177882, 1709610350, 2125135846, 136428751, 3874428392, 3652904859, 3460984630, 3572145929, 3593056380, 2939266226, 824852259, 818324884, 3224740454, 930369212, 2801566410, 2967507152, 355706840, 1257309336, 4148292826, 243256656, 790073846, 2373340630, 1296297904, 1422699085, 3756299780, 3818836405, 457992840, 3099667487, 2135319889, 77422314, 1560382517, 1945798516, 788204353, 1521706781, 1385356242, 870912086, 325965383, 2358957921, 2050466060, 2388260884, 2313884476, 4006521127, 901210569, 3990953189, 1014646705, 1503449823, 1062597235, 2031621326, 3212035895, 3931371469, 1533017514, 350174575, 2256028891, 2177544179, 1052338372, 741876788, 1606591296, 1914052035, 213705253, 2334669897, 1107234197, 1899603969, 3725069491, 2631447780, 2422494913, 1635502980, 1893020342, 1950903388, 1120974935],
+  Jt = [2807058932, 1699970625, 2764249623, 1586903591, 1808481195, 1173430173, 1487645946, 59984867, 4199882800, 1844882806, 1989249228, 1277555970, 3623636965, 3419915562, 1149249077, 2744104290, 1514790577, 459744698, 244860394, 3235995134, 1963115311, 4027744588, 2544078150, 4190530515, 1608975247, 2627016082, 2062270317, 1507497298, 2200818878, 567498868, 1764313568, 3359936201, 2305455554, 2037970062, 1047239e3, 1910319033, 1337376481, 2904027272, 2892417312, 984907214, 1243112415, 830661914, 861968209, 2135253587, 2011214180, 2927934315, 2686254721, 731183368, 1750626376, 4246310725, 1820824798, 4172763771, 3542330227, 48394827, 2404901663, 2871682645, 671593195, 3254988725, 2073724613, 145085239, 2280796200, 2779915199, 1790575107, 2187128086, 472615631, 3029510009, 4075877127, 3802222185, 4107101658, 3201631749, 1646252340, 4270507174, 1402811438, 1436590835, 3778151818, 3950355702, 3963161475, 4020912224, 2667994737, 273792366, 2331590177, 104699613, 95345982, 3175501286, 2377486676, 1560637892, 3564045318, 369057872, 4213447064, 3919042237, 1137477952, 2658625497, 1119727848, 2340947849, 1530455833, 4007360968, 172466556, 266959938, 516552836, 0, 2256734592, 3980931627, 1890328081, 1917742170, 4294704398, 945164165, 3575528878, 958871085, 3647212047, 2787207260, 1423022939, 775562294, 1739656202, 3876557655, 2530391278, 2443058075, 3310321856, 547512796, 1265195639, 437656594, 3121275539, 719700128, 3762502690, 387781147, 218828297, 3350065803, 2830708150, 2848461854, 428169201, 122466165, 3720081049, 1627235199, 648017665, 4122762354, 1002783846, 2117360635, 695634755, 3336358691, 4234721005, 4049844452, 3704280881, 2232435299, 574624663, 287343814, 612205898, 1039717051, 840019705, 2708326185, 793451934, 821288114, 1391201670, 3822090177, 376187827, 3113855344, 1224348052, 1679968233, 2361698556, 1058709744, 752375421, 2431590963, 1321699145, 3519142200, 2734591178, 188127444, 2177869557, 3727205754, 2384911031, 3215212461, 2648976442, 2450346104, 3432737375, 1180849278, 331544205, 3102249176, 4150144569, 2952102595, 2159976285, 2474404304, 766078933, 313773861, 2570832044, 2108100632, 1668212892, 3145456443, 2013908262, 418672217, 3070356634, 2594734927, 1852171925, 3867060991, 3473416636, 3907448597, 2614737639, 919489135, 164948639, 2094410160, 2997825956, 590424639, 2486224549, 1723872674, 3157750862, 3399941250, 3501252752, 3625268135, 2555048196, 3673637356, 1343127501, 4130281361, 3599595085, 2957853679, 1297403050, 81781910, 3051593425, 2283490410, 532201772, 1367295589, 3926170974, 895287692, 1953757831, 1093597963, 492483431, 3528626907, 1446242576, 1192455638, 1636604631, 209336225, 344873464, 1015671571, 669961897, 3375740769, 3857572124, 2973530695, 3747192018, 1933530610, 3464042516, 935293895, 3454686199, 2858115069, 1863638845, 3683022916, 4085369519, 3292445032, 875313188, 1080017571, 3279033885, 621591778, 1233856572, 2504130317, 24197544, 3017672716, 3835484340, 3247465558, 2220981195, 3060847922, 1551124588, 1463996600],
+  Ht = [4104605777, 1097159550, 396673818, 660510266, 2875968315, 2638606623, 4200115116, 3808662347, 821712160, 1986918061, 3430322568, 38544885, 3856137295, 718002117, 893681702, 1654886325, 2975484382, 3122358053, 3926825029, 4274053469, 796197571, 1290801793, 1184342925, 3556361835, 2405426947, 2459735317, 1836772287, 1381620373, 3196267988, 1948373848, 3764988233, 3385345166, 3263785589, 2390325492, 1480485785, 3111247143, 3780097726, 2293045232, 548169417, 3459953789, 3746175075, 439452389, 1362321559, 1400849762, 1685577905, 1806599355, 2174754046, 137073913, 1214797936, 1174215055, 3731654548, 2079897426, 1943217067, 1258480242, 529487843, 1437280870, 3945269170, 3049390895, 3313212038, 923313619, 679998e3, 3215307299, 57326082, 377642221, 3474729866, 2041877159, 133361907, 1776460110, 3673476453, 96392454, 878845905, 2801699524, 777231668, 4082475170, 2330014213, 4142626212, 2213296395, 1626319424, 1906247262, 1846563261, 562755902, 3708173718, 1040559837, 3871163981, 1418573201, 3294430577, 114585348, 1343618912, 2566595609, 3186202582, 1078185097, 3651041127, 3896688048, 2307622919, 425408743, 3371096953, 2081048481, 1108339068, 2216610296, 0, 2156299017, 736970802, 292596766, 1517440620, 251657213, 2235061775, 2933202493, 758720310, 265905162, 1554391400, 1532285339, 908999204, 174567692, 1474760595, 4002861748, 2610011675, 3234156416, 3693126241, 2001430874, 303699484, 2478443234, 2687165888, 585122620, 454499602, 151849742, 2345119218, 3064510765, 514443284, 4044981591, 1963412655, 2581445614, 2137062819, 19308535, 1928707164, 1715193156, 4219352155, 1126790795, 600235211, 3992742070, 3841024952, 836553431, 1669664834, 2535604243, 3323011204, 1243905413, 3141400786, 4180808110, 698445255, 2653899549, 2989552604, 2253581325, 3252932727, 3004591147, 1891211689, 2487810577, 3915653703, 4237083816, 4030667424, 2100090966, 865136418, 1229899655, 953270745, 3399679628, 3557504664, 4118925222, 2061379749, 3079546586, 2915017791, 983426092, 2022837584, 1607244650, 2118541908, 2366882550, 3635996816, 972512814, 3283088770, 1568718495, 3499326569, 3576539503, 621982671, 2895723464, 410887952, 2623762152, 1002142683, 645401037, 1494807662, 2595684844, 1335535747, 2507040230, 4293295786, 3167684641, 367585007, 3885750714, 1865862730, 2668221674, 2960971305, 2763173681, 1059270954, 2777952454, 2724642869, 1320957812, 2194319100, 2429595872, 2815956275, 77089521, 3973773121, 3444575871, 2448830231, 1305906550, 4021308739, 2857194700, 2516901860, 3518358430, 1787304780, 740276417, 1699839814, 1592394909, 2352307457, 2272556026, 188821243, 1729977011, 3687994002, 274084841, 3594982253, 3613494426, 2701949495, 4162096729, 322734571, 2837966542, 1640576439, 484830689, 1202797690, 3537852828, 4067639125, 349075736, 3342319475, 4157467219, 4255800159, 1030690015, 1155237496, 2951971274, 1757691577, 607398968, 2738905026, 499347990, 3794078908, 1011452712, 227885567, 2818666809, 213114376, 3034881240, 1455525988, 3414450555, 850817237, 1817998408, 3092726480],
+  Vt = [0, 235474187, 470948374, 303765277, 941896748, 908933415, 607530554, 708780849, 1883793496, 2118214995, 1817866830, 1649639237, 1215061108, 1181045119, 1417561698, 1517767529, 3767586992, 4003061179, 4236429990, 4069246893, 3635733660, 3602770327, 3299278474, 3400528769, 2430122216, 2664543715, 2362090238, 2193862645, 2835123396, 2801107407, 3035535058, 3135740889, 3678124923, 3576870512, 3341394285, 3374361702, 3810496343, 3977675356, 4279080257, 4043610186, 2876494627, 2776292904, 3076639029, 3110650942, 2472011535, 2640243204, 2403728665, 2169303058, 1001089995, 899835584, 666464733, 699432150, 59727847, 226906860, 530400753, 294930682, 1273168787, 1172967064, 1475418501, 1509430414, 1942435775, 2110667444, 1876241833, 1641816226, 2910219766, 2743034109, 2976151520, 3211623147, 2505202138, 2606453969, 2302690252, 2269728455, 3711829422, 3543599269, 3240894392, 3475313331, 3843699074, 3943906441, 4178062228, 4144047775, 1306967366, 1139781709, 1374988112, 1610459739, 1975683434, 2076935265, 1775276924, 1742315127, 1034867998, 866637845, 566021896, 800440835, 92987698, 193195065, 429456164, 395441711, 1984812685, 2017778566, 1784663195, 1683407248, 1315562145, 1080094634, 1383856311, 1551037884, 101039829, 135050206, 437757123, 337553864, 1042385657, 807962610, 573804783, 742039012, 2531067453, 2564033334, 2328828971, 2227573024, 2935566865, 2700099354, 3001755655, 3168937228, 3868552805, 3902563182, 4203181171, 4102977912, 3736164937, 3501741890, 3265478751, 3433712980, 1106041591, 1340463100, 1576976609, 1408749034, 2043211483, 2009195472, 1708848333, 1809054150, 832877231, 1068351396, 766945465, 599762354, 159417987, 126454664, 361929877, 463180190, 2709260871, 2943682380, 3178106961, 3009879386, 2572697195, 2538681184, 2236228733, 2336434550, 3509871135, 3745345300, 3441850377, 3274667266, 3910161971, 3877198648, 4110568485, 4211818798, 2597806476, 2497604743, 2261089178, 2295101073, 2733856160, 2902087851, 3202437046, 2968011453, 3936291284, 3835036895, 4136440770, 4169408201, 3535486456, 3702665459, 3467192302, 3231722213, 2051518780, 1951317047, 1716890410, 1750902305, 1113818384, 1282050075, 1584504582, 1350078989, 168810852, 67556463, 371049330, 404016761, 841739592, 1008918595, 775550814, 540080725, 3969562369, 3801332234, 4035489047, 4269907996, 3569255213, 3669462566, 3366754619, 3332740144, 2631065433, 2463879762, 2160117071, 2395588676, 2767645557, 2868897406, 3102011747, 3069049960, 202008497, 33778362, 270040487, 504459436, 875451293, 975658646, 675039627, 641025152, 2084704233, 1917518562, 1615861247, 1851332852, 1147550661, 1248802510, 1484005843, 1451044056, 933301370, 967311729, 733156972, 632953703, 260388950, 25965917, 328671808, 496906059, 1206477858, 1239443753, 1543208500, 1441952575, 2144161806, 1908694277, 1675577880, 1842759443, 3610369226, 3644379585, 3408119516, 3307916247, 4011190502, 3776767469, 4077384432, 4245618683, 2809771154, 2842737049, 3144396420, 3043140495, 2673705150, 2438237621, 2203032232, 2370213795],
+  Gt = [0, 185469197, 370938394, 487725847, 741876788, 657861945, 975451694, 824852259, 1483753576, 1400783205, 1315723890, 1164071807, 1950903388, 2135319889, 1649704518, 1767536459, 2967507152, 3152976349, 2801566410, 2918353863, 2631447780, 2547432937, 2328143614, 2177544179, 3901806776, 3818836405, 4270639778, 4118987695, 3299409036, 3483825537, 3535072918, 3652904859, 2077965243, 1893020342, 1841768865, 1724457132, 1474502543, 1559041666, 1107234197, 1257309336, 598438867, 681933534, 901210569, 1052338372, 261314535, 77422314, 428819965, 310463728, 3409685355, 3224740454, 3710368113, 3593056380, 3875770207, 3960309330, 4045380933, 4195456072, 2471224067, 2554718734, 2237133081, 2388260884, 3212035895, 3028143674, 2842678573, 2724322336, 4138563181, 4255350624, 3769721975, 3955191162, 3667219033, 3516619604, 3431546947, 3347532110, 2933734917, 2782082824, 3099667487, 3016697106, 2196052529, 2313884476, 2499348523, 2683765030, 1179510461, 1296297904, 1347548327, 1533017514, 1786102409, 1635502980, 2087309459, 2003294622, 507358933, 355706840, 136428751, 53458370, 839224033, 957055980, 605657339, 790073846, 2373340630, 2256028891, 2607439820, 2422494913, 2706270690, 2856345839, 3075636216, 3160175349, 3573941694, 3725069491, 3273267108, 3356761769, 4181598602, 4063242375, 4011996048, 3828103837, 1033297158, 915985419, 730517276, 545572369, 296679730, 446754879, 129166120, 213705253, 1709610350, 1860738147, 1945798516, 2029293177, 1239331162, 1120974935, 1606591296, 1422699085, 4148292826, 4233094615, 3781033664, 3931371469, 3682191598, 3497509347, 3446004468, 3328955385, 2939266226, 2755636671, 3106780840, 2988687269, 2198438022, 2282195339, 2501218972, 2652609425, 1201765386, 1286567175, 1371368976, 1521706781, 1805211710, 1620529459, 2105887268, 1988838185, 533804130, 350174575, 164439672, 46346101, 870912086, 954669403, 636813900, 788204353, 2358957921, 2274680428, 2592523643, 2441661558, 2695033685, 2880240216, 3065962831, 3182487618, 3572145929, 3756299780, 3270937875, 3388507166, 4174560061, 4091327024, 4006521127, 3854606378, 1014646705, 930369212, 711349675, 560487590, 272786309, 457992840, 106852767, 223377554, 1678381017, 1862534868, 1914052035, 2031621326, 1211247597, 1128014560, 1580087799, 1428173050, 32283319, 182621114, 401639597, 486441376, 768917123, 651868046, 1003007129, 818324884, 1503449823, 1385356242, 1333838021, 1150208456, 1973745387, 2125135846, 1673061617, 1756818940, 2970356327, 3120694122, 2802849917, 2887651696, 2637442643, 2520393566, 2334669897, 2149987652, 3917234703, 3799141122, 4284502037, 4100872472, 3309594171, 3460984630, 3545789473, 3629546796, 2050466060, 1899603969, 1814803222, 1730525723, 1443857720, 1560382517, 1075025698, 1260232239, 575138148, 692707433, 878443390, 1062597235, 243256656, 91341917, 409198410, 325965383, 3403100636, 3252238545, 3704300486, 3620022987, 3874428392, 3990953189, 4042459122, 4227665663, 2460449204, 2578018489, 2226875310, 2411029155, 3198115200, 3046200461, 2827177882, 2743944855],
+  Yt = [0, 218828297, 437656594, 387781147, 875313188, 958871085, 775562294, 590424639, 1750626376, 1699970625, 1917742170, 2135253587, 1551124588, 1367295589, 1180849278, 1265195639, 3501252752, 3720081049, 3399941250, 3350065803, 3835484340, 3919042237, 4270507174, 4085369519, 3102249176, 3051593425, 2734591178, 2952102595, 2361698556, 2177869557, 2530391278, 2614737639, 3145456443, 3060847922, 2708326185, 2892417312, 2404901663, 2187128086, 2504130317, 2555048196, 3542330227, 3727205754, 3375740769, 3292445032, 3876557655, 3926170974, 4246310725, 4027744588, 1808481195, 1723872674, 1910319033, 2094410160, 1608975247, 1391201670, 1173430173, 1224348052, 59984867, 244860394, 428169201, 344873464, 935293895, 984907214, 766078933, 547512796, 1844882806, 1627235199, 2011214180, 2062270317, 1507497298, 1423022939, 1137477952, 1321699145, 95345982, 145085239, 532201772, 313773861, 830661914, 1015671571, 731183368, 648017665, 3175501286, 2957853679, 2807058932, 2858115069, 2305455554, 2220981195, 2474404304, 2658625497, 3575528878, 3625268135, 3473416636, 3254988725, 3778151818, 3963161475, 4213447064, 4130281361, 3599595085, 3683022916, 3432737375, 3247465558, 3802222185, 4020912224, 4172763771, 4122762354, 3201631749, 3017672716, 2764249623, 2848461854, 2331590177, 2280796200, 2431590963, 2648976442, 104699613, 188127444, 472615631, 287343814, 840019705, 1058709744, 671593195, 621591778, 1852171925, 1668212892, 1953757831, 2037970062, 1514790577, 1463996600, 1080017571, 1297403050, 3673637356, 3623636965, 3235995134, 3454686199, 4007360968, 3822090177, 4107101658, 4190530515, 2997825956, 3215212461, 2830708150, 2779915199, 2256734592, 2340947849, 2627016082, 2443058075, 172466556, 122466165, 273792366, 492483431, 1047239e3, 861968209, 612205898, 695634755, 1646252340, 1863638845, 2013908262, 1963115311, 1446242576, 1530455833, 1277555970, 1093597963, 1636604631, 1820824798, 2073724613, 1989249228, 1436590835, 1487645946, 1337376481, 1119727848, 164948639, 81781910, 331544205, 516552836, 1039717051, 821288114, 669961897, 719700128, 2973530695, 3157750862, 2871682645, 2787207260, 2232435299, 2283490410, 2667994737, 2450346104, 3647212047, 3564045318, 3279033885, 3464042516, 3980931627, 3762502690, 4150144569, 4199882800, 3070356634, 3121275539, 2904027272, 2686254721, 2200818878, 2384911031, 2570832044, 2486224549, 3747192018, 3528626907, 3310321856, 3359936201, 3950355702, 3867060991, 4049844452, 4234721005, 1739656202, 1790575107, 2108100632, 1890328081, 1402811438, 1586903591, 1233856572, 1149249077, 266959938, 48394827, 369057872, 418672217, 1002783846, 919489135, 567498868, 752375421, 209336225, 24197544, 376187827, 459744698, 945164165, 895287692, 574624663, 793451934, 1679968233, 1764313568, 2117360635, 1933530610, 1343127501, 1560637892, 1243112415, 1192455638, 3704280881, 3519142200, 3336358691, 3419915562, 3907448597, 3857572124, 4075877127, 4294704398, 3029510009, 3113855344, 2927934315, 2744104290, 2159976285, 2377486676, 2594734927, 2544078150],
+  Qt = [0, 151849742, 303699484, 454499602, 607398968, 758720310, 908999204, 1059270954, 1214797936, 1097159550, 1517440620, 1400849762, 1817998408, 1699839814, 2118541908, 2001430874, 2429595872, 2581445614, 2194319100, 2345119218, 3034881240, 3186202582, 2801699524, 2951971274, 3635996816, 3518358430, 3399679628, 3283088770, 4237083816, 4118925222, 4002861748, 3885750714, 1002142683, 850817237, 698445255, 548169417, 529487843, 377642221, 227885567, 77089521, 1943217067, 2061379749, 1640576439, 1757691577, 1474760595, 1592394909, 1174215055, 1290801793, 2875968315, 2724642869, 3111247143, 2960971305, 2405426947, 2253581325, 2638606623, 2487810577, 3808662347, 3926825029, 4044981591, 4162096729, 3342319475, 3459953789, 3576539503, 3693126241, 1986918061, 2137062819, 1685577905, 1836772287, 1381620373, 1532285339, 1078185097, 1229899655, 1040559837, 923313619, 740276417, 621982671, 439452389, 322734571, 137073913, 19308535, 3871163981, 4021308739, 4104605777, 4255800159, 3263785589, 3414450555, 3499326569, 3651041127, 2933202493, 2815956275, 3167684641, 3049390895, 2330014213, 2213296395, 2566595609, 2448830231, 1305906550, 1155237496, 1607244650, 1455525988, 1776460110, 1626319424, 2079897426, 1928707164, 96392454, 213114376, 396673818, 514443284, 562755902, 679998e3, 865136418, 983426092, 3708173718, 3557504664, 3474729866, 3323011204, 4180808110, 4030667424, 3945269170, 3794078908, 2507040230, 2623762152, 2272556026, 2390325492, 2975484382, 3092726480, 2738905026, 2857194700, 3973773121, 3856137295, 4274053469, 4157467219, 3371096953, 3252932727, 3673476453, 3556361835, 2763173681, 2915017791, 3064510765, 3215307299, 2156299017, 2307622919, 2459735317, 2610011675, 2081048481, 1963412655, 1846563261, 1729977011, 1480485785, 1362321559, 1243905413, 1126790795, 878845905, 1030690015, 645401037, 796197571, 274084841, 425408743, 38544885, 188821243, 3613494426, 3731654548, 3313212038, 3430322568, 4082475170, 4200115116, 3780097726, 3896688048, 2668221674, 2516901860, 2366882550, 2216610296, 3141400786, 2989552604, 2837966542, 2687165888, 1202797690, 1320957812, 1437280870, 1554391400, 1669664834, 1787304780, 1906247262, 2022837584, 265905162, 114585348, 499347990, 349075736, 736970802, 585122620, 972512814, 821712160, 2595684844, 2478443234, 2293045232, 2174754046, 3196267988, 3079546586, 2895723464, 2777952454, 3537852828, 3687994002, 3234156416, 3385345166, 4142626212, 4293295786, 3841024952, 3992742070, 174567692, 57326082, 410887952, 292596766, 777231668, 660510266, 1011452712, 893681702, 1108339068, 1258480242, 1343618912, 1494807662, 1715193156, 1865862730, 1948373848, 2100090966, 2701949495, 2818666809, 3004591147, 3122358053, 2235061775, 2352307457, 2535604243, 2653899549, 3915653703, 3764988233, 4219352155, 4067639125, 3444575871, 3294430577, 3746175075, 3594982253, 836553431, 953270745, 600235211, 718002117, 367585007, 484830689, 133361907, 251657213, 2041877159, 1891211689, 1806599355, 1654886325, 1568718495, 1418573201, 1335535747, 1184342925];
+function Xt(e) {
+  for (var t = [], n = 0; n < e.length; n += 4) t.push(e[n] << 24 | e[n + 1] << 16 | e[n + 2] << 8 | e[n + 3]);
+  return t;
+}
+class Zt {
+  constructor(e) {
+    if (!(this instanceof Zt)) throw Error("AES must be instanitated with `new`");
+    Object.defineProperty(this, "key", {
+      value: Ot(e, !0)
+    }), this._prepare();
+  }
+  _prepare() {
+    var e = Dt[this.key.length];
+    if (null == e) throw new Error("invalid key size (must be 16, 24 or 32 bytes)");
+    this._Ke = [], this._Kd = [];
+    for (var t = 0; t <= e; t++) this._Ke.push([0, 0, 0, 0]), this._Kd.push([0, 0, 0, 0]);
+    var n,
+      s = 4 * (e + 1),
+      r = this.key.length / 4,
+      i = Xt(this.key);
+    for (t = 0; t < r; t++) n = t >> 2, this._Ke[n][t % 4] = i[t], this._Kd[e - n][t % 4] = i[t];
+    for (var o, a = 0, c = r; c < s;) {
+      if (o = i[r - 1], i[0] ^= qt[o >> 16 & 255] << 24 ^ qt[o >> 8 & 255] << 16 ^ qt[255 & o] << 8 ^ qt[o >> 24 & 255] ^ Ft[a] << 24, a += 1, 8 != r) for (t = 1; t < r; t++) i[t] ^= i[t - 1];else {
+        for (t = 1; t < r / 2; t++) i[t] ^= i[t - 1];
+        o = i[r / 2 - 1], i[r / 2] ^= qt[255 & o] ^ qt[o >> 8 & 255] << 8 ^ qt[o >> 16 & 255] << 16 ^ qt[o >> 24 & 255] << 24;
+        for (t = r / 2 + 1; t < r; t++) i[t] ^= i[t - 1];
+      }
+      for (t = 0; t < r && c < s;) u = c >> 2, l = c % 4, this._Ke[u][l] = i[t], this._Kd[e - u][l] = i[t++], c++;
+    }
+    for (var u = 1; u < e; u++) for (var l = 0; l < 4; l++) o = this._Kd[u][l], this._Kd[u][l] = Vt[o >> 24 & 255] ^ Gt[o >> 16 & 255] ^ Yt[o >> 8 & 255] ^ Qt[255 & o];
+  }
+  encrypt(e) {
+    if (16 != e.length) throw new Error("invalid plaintext size (must be 16 bytes)");
+    for (var t = this._Ke.length - 1, n = [0, 0, 0, 0], s = Xt(e), r = 0; r < 4; r++) s[r] ^= this._Ke[0][r];
+    for (var i = 1; i < t; i++) {
+      for (r = 0; r < 4; r++) n[r] = Mt[s[r] >> 24 & 255] ^ jt[s[(r + 1) % 4] >> 16 & 255] ^ Bt[s[(r + 2) % 4] >> 8 & 255] ^ $t[255 & s[(r + 3) % 4]] ^ this._Ke[i][r];
+      s = n.slice();
+    }
+    var o,
+      a = xt(16);
+    for (r = 0; r < 4; r++) o = this._Ke[t][r], a[4 * r] = 255 & (qt[s[r] >> 24 & 255] ^ o >> 24), a[4 * r + 1] = 255 & (qt[s[(r + 1) % 4] >> 16 & 255] ^ o >> 16), a[4 * r + 2] = 255 & (qt[s[(r + 2) % 4] >> 8 & 255] ^ o >> 8), a[4 * r + 3] = 255 & (qt[255 & s[(r + 3) % 4]] ^ o);
+    return a;
+  }
+  decrypt(e) {
+    if (16 != e.length) throw new Error("invalid ciphertext size (must be 16 bytes)");
+    for (var t = this._Kd.length - 1, n = [0, 0, 0, 0], s = Xt(e), r = 0; r < 4; r++) s[r] ^= this._Kd[0][r];
+    for (var i = 1; i < t; i++) {
+      for (r = 0; r < 4; r++) n[r] = Wt[s[r] >> 24 & 255] ^ zt[s[(r + 3) % 4] >> 16 & 255] ^ Jt[s[(r + 2) % 4] >> 8 & 255] ^ Ht[255 & s[(r + 1) % 4]] ^ this._Kd[i][r];
+      s = n.slice();
+    }
+    var o,
+      a = xt(16);
+    for (r = 0; r < 4; r++) o = this._Kd[t][r], a[4 * r] = 255 & (Kt[s[r] >> 24 & 255] ^ o >> 24), a[4 * r + 1] = 255 & (Kt[s[(r + 3) % 4] >> 16 & 255] ^ o >> 16), a[4 * r + 2] = 255 & (Kt[s[(r + 2) % 4] >> 8 & 255] ^ o >> 8), a[4 * r + 3] = 255 & (Kt[255 & s[(r + 1) % 4]] ^ o);
+    return a;
+  }
+}
+class en {
+  constructor(e) {
+    if (!(this instanceof en)) throw Error("AES must be instanitated with `new`");
+    this.description = "Electronic Code Block", this.name = "ecb", this._aes = new Zt(e);
+  }
+  encrypt(e) {
+    if ((e = Ot(e)).length % 16 != 0) throw new Error("invalid plaintext size (must be multiple of 16 bytes)");
+    for (var t = xt(e.length), n = xt(16), s = 0; s < e.length; s += 16) Ut(e, n, 0, s, s + 16), Ut(n = this._aes.encrypt(n), t, s);
+    return t;
+  }
+  decrypt(e) {
+    if ((e = Ot(e)).length % 16 != 0) throw new Error("invalid ciphertext size (must be multiple of 16 bytes)");
+    for (var t = xt(e.length), n = xt(16), s = 0; s < e.length; s += 16) Ut(e, n, 0, s, s + 16), Ut(n = this._aes.decrypt(n), t, s);
+    return t;
+  }
+}
+class tn {
+  constructor(e, t) {
+    if (!(this instanceof tn)) throw Error("AES must be instanitated with `new`");
+    if (this.description = "Cipher Block Chaining", this.name = "cbc", t) {
+      if (16 != t.length) throw new Error("invalid initialation vector size (must be 16 bytes)");
+    } else t = xt(16);
+    this._lastCipherblock = Ot(t, !0), this._aes = new Zt(e);
+  }
+  encrypt(e) {
+    if ((e = Ot(e)).length % 16 != 0) throw new Error("invalid plaintext size (must be multiple of 16 bytes)");
+    for (var t = xt(e.length), n = xt(16), s = 0; s < e.length; s += 16) {
+      Ut(e, n, 0, s, s + 16);
+      for (var r = 0; r < 16; r++) n[r] ^= this._lastCipherblock[r];
+      this._lastCipherblock = this._aes.encrypt(n), Ut(this._lastCipherblock, t, s);
+    }
+    return t;
+  }
+  decrypt(e) {
+    if ((e = Ot(e)).length % 16 != 0) throw new Error("invalid ciphertext size (must be multiple of 16 bytes)");
+    for (var t = xt(e.length), n = xt(16), s = 0; s < e.length; s += 16) {
+      Ut(e, n, 0, s, s + 16), n = this._aes.decrypt(n);
+      for (var r = 0; r < 16; r++) t[s + r] = n[r] ^ this._lastCipherblock[r];
+      Ut(e, this._lastCipherblock, 0, s, s + 16);
+    }
+    return t;
+  }
+}
+class nn {
+  constructor(e, t, n) {
+    if (!(this instanceof nn)) throw Error("AES must be instanitated with `new`");
+    if (this.description = "Cipher Feedback", this.name = "cfb", t) {
+      if (16 != t.length) throw new Error("invalid initialation vector size (must be 16 size)");
+    } else t = xt(16);
+    n || (n = 1), this.segmentSize = n, this._shiftRegister = Ot(t, !0), this._aes = new Zt(e);
+  }
+  encrypt(e) {
+    if (e.length % this.segmentSize != 0) throw new Error("invalid plaintext size (must be segmentSize bytes)");
+    for (var t, n = Ot(e, !0), s = 0; s < n.length; s += this.segmentSize) {
+      t = this._aes.encrypt(this._shiftRegister);
+      for (var r = 0; r < this.segmentSize; r++) n[s + r] ^= t[r];
+      Ut(this._shiftRegister, this._shiftRegister, 0, this.segmentSize), Ut(n, this._shiftRegister, 16 - this.segmentSize, s, s + this.segmentSize);
+    }
+    return n;
+  }
+  decrypt(e) {
+    if (e.length % this.segmentSize != 0) throw new Error("invalid ciphertext size (must be segmentSize bytes)");
+    for (var t, n = Ot(e, !0), s = 0; s < n.length; s += this.segmentSize) {
+      t = this._aes.encrypt(this._shiftRegister);
+      for (var r = 0; r < this.segmentSize; r++) n[s + r] ^= t[r];
+      Ut(this._shiftRegister, this._shiftRegister, 0, this.segmentSize), Ut(e, this._shiftRegister, 16 - this.segmentSize, s, s + this.segmentSize);
+    }
+    return n;
+  }
+}
+class sn {
+  constructor(e, t) {
+    if (!(this instanceof sn)) throw Error("AES must be instanitated with `new`");
+    if (this.description = "Output Feedback", this.name = "ofb", t) {
+      if (16 != t.length) throw new Error("invalid initialation vector size (must be 16 bytes)");
+    } else t = xt(16);
+    this._lastPrecipher = Ot(t, !0), this._lastPrecipherIndex = 16, this._aes = new Zt(e);
+  }
+  encrypt(e) {
+    for (var t = Ot(e, !0), n = 0; n < t.length; n++) 16 === this._lastPrecipherIndex && (this._lastPrecipher = this._aes.encrypt(this._lastPrecipher), this._lastPrecipherIndex = 0), t[n] ^= this._lastPrecipher[this._lastPrecipherIndex++];
+    return t;
+  }
+  decrypt(e) {
+    return this.encrypt(e);
+  }
+}
+class rn {
+  constructor(e) {
+    if (!(this instanceof rn)) throw Error("Counter must be instanitated with `new`");
+    0 === e || e || (e = 1), "number" == typeof e ? (this._counter = xt(16), this.setValue(e)) : this.setBytes(e);
+  }
+  setValue(e) {
+    if ("number" != typeof e || parseInt(e) != e) throw new Error("invalid counter value (must be an integer)");
+    if (e > Number.MAX_SAFE_INTEGER) throw new Error("integer value out of safe range");
+    for (var t = 15; t >= 0; --t) this._counter[t] = e % 256, e = parseInt(e / 256);
+  }
+  setBytes(e) {
+    if (16 != (e = Ot(e, !0)).length) throw new Error("invalid counter bytes size (must be 16 bytes)");
+    this._counter = e;
+  }
+  increment() {
+    for (var e = 15; e >= 0; e--) {
+      if (255 !== this._counter[e]) {
+        this._counter[e]++;
+        break;
+      }
+      this._counter[e] = 0;
+    }
+  }
+}
+class on {
+  constructor(e, t) {
+    if (!(this instanceof on)) throw Error("AES must be instanitated with `new`");
+    this.description = "Counter", this.name = "ctr", t instanceof rn || (t = new rn(t)), this._counter = t, this._remainingCounter = null, this._remainingCounterIndex = 16, this._aes = new Zt(e);
+  }
+  encrypt(e) {
+    for (var t = Ot(e, !0), n = 0; n < t.length; n++) 16 === this._remainingCounterIndex && (this._remainingCounter = this._aes.encrypt(this._counter._counter), this._remainingCounterIndex = 0, this._counter.increment()), t[n] ^= this._remainingCounter[this._remainingCounterIndex++];
+    return t;
+  }
+  decrypt(e) {
+    return this.encrypt(e);
+  }
+}
+var an = {
+  AES: Zt,
+  Counter: rn,
+  ModeOfOperation: {
+    ecb: en,
+    cbc: tn,
+    cfb: nn,
+    ofb: sn,
+    ctr: on
+  },
+  utils: {
+    hex: Nt,
+    utf8: Lt
+  },
+  padding: {
+    pkcs7: {
+      pad: function (e) {
+        var t = 16 - (e = Ot(e, !0)).length % 16,
+          n = xt(e.length + t);
+        Ut(e, n);
+        for (var s = e.length; s < n.length; s++) n[s] = t;
+        return n;
+      },
+      strip: function (e) {
+        if ((e = Ot(e, !0)).length < 16) throw new Error("PKCS#7 invalid length");
+        var t = e[e.length - 1];
+        if (t > 16) throw new Error("PKCS#7 padding byte out of range");
+        for (var n = e.length - t, s = 0; s < t; s++) if (e[n + s] !== t) throw new Error("PKCS#7 invalid padding byte");
+        var r = xt(n);
+        return Ut(e, r, 0, 0, n), r;
+      }
+    }
+  },
+  _arrayTest: {
+    coerceArray: Ot,
+    createArray: xt,
+    copyArray: Ut
+  }
+};
+function cn(e, t, n) {
+  const s = new Uint8Array(uni.base64ToArrayBuffer(t)),
+    r = an.utils.utf8.toBytes(n),
+    i = an.utils.utf8.toBytes(e),
+    o = new an.ModeOfOperation.cbc(s, r),
+    a = an.padding.pkcs7.pad(i),
+    c = o.encrypt(a);
+  return uni.arrayBufferToBase64(c);
+}
+const un = {
+    code: 2e4,
+    message: "System error"
+  },
+  ln = {
+    code: 20101,
+    message: "Invalid client"
+  },
+  hn = {
+    code: 20102,
+    message: "Get encrypt key failed"
+  },
+  dn = {
+    10001: "Secure network is not supported on current base",
+    10003: "Config missing in current base. If the problem pesist, please contact us.",
+    10009: "Encrypt payload failed",
+    10010: "Decrypt response failed"
+  };
+function fn(e) {
+  const {
+    errSubject: t,
+    subject: n,
+    errCode: s,
+    errMsg: r,
+    code: i,
+    message: o,
+    cause: a
+  } = e || {};
+  return new V({
+    subject: t || n || "uni-secure-network",
+    code: s || i || un.code,
+    message: r || o,
+    cause: a
+  });
+}
+let pn,
+  gn,
+  mn = null;
+class yn extends Ct {
+  constructor(e) {
+    super(e), this.userEncryptKey = null;
+  }
+  isLogin() {
+    return !!this.scopedGlobalCache.mpWeixinCode;
+  }
+  async prepare() {
+    if (!this.isLogin()) {
+      if (!this.scopedGlobalCache.initPromise) throw new Error("`uniCloud.initSecureNetworkByWeixin` has not yet been called");
+      if (await this.scopedGlobalCache.initPromise, !this.scopedGlobalCache.mpWeixinCode) throw new Error("uniCloud.initSecureNetworkByWeixin` has not yet been called or successfully excuted");
+    }
+  }
+  async getUserEncryptKey() {
+    if (this.userEncryptKey) return this.userEncryptKey;
+    if (mn && mn.expireTime) {
+      const e = Date.now();
+      if (mn.expireTime - e > 0) return this.userEncryptKey = mn, this.userEncryptKey;
+    }
+    return new Promise((e, t) => {
+      uni.getUserCryptoManager().getLatestUserKey({
+        success: t => {
+          mn = t, this.userEncryptKey = t, e(this.userEncryptKey);
+        },
+        fail: e => {
+          t(fn({
+            ...hn,
+            cause: e
+          }));
+        }
+      });
+    });
+  }
+  getWxAppId() {
+    return wx.getAccountInfoSync().miniProgram.appId;
+  }
+  async platformGetSignOption() {
+    const {
+      encryptKey: e,
+      iv: t,
+      version: n
+    } = await this.getUserEncryptKey();
+    return {
+      verifyClientSign: cn(JSON.stringify({
+        data: JSON.stringify({}),
+        appId: this.appId,
+        deviceId: this.deviceId,
+        wxAppId: this.getWxAppId(),
+        simulator: "devtools" === te().platform,
+        timestamp: Date.now()
+      }), e, t),
+      encryptKeyId: n,
+      mpWeixinCode: this.scopedGlobalCache.mpWeixinCode
+    };
+  }
+  async platformEncryptData(e) {
+    const {
+        encryptKey: t,
+        iv: n,
+        version: s
+      } = await this.getUserEncryptKey(),
+      r = {
+        secretType: this.secretType,
+        encryptKeyId: s,
+        mpWeixinCode: this.scopedGlobalCache.mpWeixinCode
+      };
+    return this.secretType === Tt ? {
+      content: e,
+      _uniCloudOptions: r
+    } : {
+      content: cn(JSON.stringify({
+        data: JSON.stringify(e),
+        appId: this.appId,
+        deviceId: this.deviceId,
+        wxAppId: this.getWxAppId(),
+        simulator: "devtools" === te().platform,
+        timestamp: Date.now()
+      }), t, n),
+      _uniCloudOptions: r
+    };
+  }
+  async platformDecryptResult(e) {
+    const {
+        content: t
+      } = e,
+      {
+        encryptKey: n,
+        iv: s
+      } = await this.getUserEncryptKey();
+    return JSON.parse(function (e, t, n) {
+      const s = new Uint8Array(uni.base64ToArrayBuffer(e)),
+        r = new Uint8Array(uni.base64ToArrayBuffer(t)),
+        i = an.utils.utf8.toBytes(n),
+        o = new an.ModeOfOperation.cbc(r, i),
+        a = an.padding.pkcs7.strip(o.decrypt(s));
+      return an.utils.utf8.fromBytes(a);
+    }(t, n, s));
+  }
+}
+function _n(e) {
+  const t = ["hasClientKey", "encryptGetClientKeyPayload", "setClientKey", "encrypt", "decrypt"],
+    n = {};
+  for (let s = 0; s < t.length; s++) {
+    const r = t[s];
+    n[r] = function (...t) {
+      return new Promise((n, s) => {
+        "function" == typeof e[r] ? e[r](...t, function ({
+          type: e,
+          data: t,
+          errCode: r,
+          errMsg: i,
+          errSubject: o,
+          message: a
+        } = {}) {
+          "success" === e ? n(t) : s(fn({
+            errCode: r,
+            errMsg: dn[r] || i || a,
+            errSubject: o
+          }));
+        }) : s(fn({
+          message: "请检查manifest.json内是否开启安全网络模块，另外注意标准基座不支持安全网络模块"
+        }));
+      });
+    };
+  }
+  return n;
+}
+class wn extends Ct {
+  constructor(e) {
+    super(e), this.appUtils = {
+      ..._n(uni.requireNativePlugin("plus"))
+    }, this.systemInfo = pn || (pn = te());
+  }
+  async hasClientKey() {
+    return this._hasClientKey = await this.appUtils.hasClientKey({
+      provider: this.provider,
+      spaceId: this.spaceId
+    }), this._hasClientKey;
+  }
+  async getAppClientKey() {
+    const {
+        data: e,
+        key: t
+      } = await this.appUtils.encryptGetClientKeyPayload({
+        data: JSON.stringify({})
+      }),
+      n = (await this.uniCloudIns.callFunction({
+        name: "DCloud-clientDB",
+        data: {
+          redirectTo: "encryption",
+          action: "getAppClientKey",
+          data: e,
+          key: t
+        }
+      })).result || {};
+    if (0 !== n.errCode) throw function (e) {
+      return new V({
+        subject: e.errSubject || "uni-secure-network",
+        code: e.errCode || e.code || un.code,
+        message: e.errMsg || e.message
+      });
+    }(n);
+    const {
+      clientKey: s,
+      key: r
+    } = n;
+    await this.appUtils.setClientKey({
+      provider: this.provider,
+      spaceId: this.spaceId,
+      clientKey: s,
+      key: r
+    });
+  }
+  async ensureClientKey() {
+    if (!0 !== (await this.hasClientKey())) return this.scopedGlobalCache.initPromise && "rejected" !== this.scopedGlobalCache.initStatus || (this.scopedGlobalCache.initPromise = this.getAppClientKey(), this.getAppClientKey().then(e => {
+      this.scopedGlobalCache.initStatus = "fullfilled";
+    }).catch(e => {
+      throw this.scopedGlobalCache.initStatus = "rejected", e;
+    })), this.scopedGlobalCache.initPromise;
+  }
+  async prepare() {
+    await this.ensureClientKey();
+  }
+  async platformGetSignOption() {
+    const {
+      data: e,
+      key: t
+    } = await this.appUtils.encrypt({
+      provider: this.provider,
+      spaceId: this.spaceId,
+      data: JSON.stringify({})
+    });
+    return {
+      verifyClientSign: e,
+      encryptKeyId: t
+    };
+  }
+  async platformEncryptData(e) {
+    const {
+        data: t,
+        key: n
+      } = await this.appUtils.encrypt({
+        provider: this.provider,
+        spaceId: this.spaceId,
+        data: JSON.stringify(e)
+      }),
+      s = {
+        secretType: this.secretType,
+        encryptKeyId: n
+      };
+    return this.secretType === Tt ? {
+      content: e,
+      _uniCloudOptions: s
+    } : {
+      content: t,
+      _uniCloudOptions: s
+    };
+  }
+  async platformDecryptResult(e) {
+    const {
+        content: t,
+        _uniCloudOptions: n = {}
+      } = e,
+      s = n.encryptKeyId,
+      r = await this.appUtils.decrypt({
+        provider: this.provider,
+        spaceId: this.spaceId,
+        data: t,
+        key: s
+      });
+    return JSON.parse(r.data);
+  }
+}
+function vn({
+  secretType: e
+} = {}) {
+  return e === bt || e === Tt || e === At;
+}
+function Sn({
+  name: e,
+  data: t = {}
+} = {}) {
+  return "app" === w && "DCloud-clientDB" === e && "encryption" === t.redirectTo && "getAppClientKey" === t.action;
+}
+function kn({
+  provider: e,
+  spaceId: t,
+  functionName: n
+} = {}) {
+  const {
+    appId: s,
+    uniPlatform: r,
+    osName: i
+  } = te();
+  let o = r;
+  "app" === r && (o = i);
+  const a = function ({
+    provider: e,
+    spaceId: t
+  } = {}) {
+    const n = _;
+    if (!n) return {};
+    e = function (e) {
+      return "tencent" === e ? "tcb" : e;
+    }(e);
+    const s = n.find(n => n.provider === e && n.spaceId === t);
+    return s && s.config;
+  }({
+    provider: e,
+    spaceId: t
+  });
+  if (!a || !a.accessControl || !a.accessControl.enable) return !1;
+  const c = a.accessControl.function || {},
+    u = Object.keys(c);
+  if (0 === u.length) return !0;
+  const l = function (e, t) {
+    let n, s, r;
+    for (let i = 0; i < e.length; i++) {
+      const o = e[i];
+      o !== t ? "*" !== o ? o.split(",").map(e => e.trim()).indexOf(t) > -1 && (s = o) : r = o : n = o;
+    }
+    return n || s || r;
+  }(u, n);
+  if (!l) return !1;
+  if ((c[l] || []).find((e = {}) => e.appId === s && (e.platform || "").toLowerCase() === o.toLowerCase())) return !0;
+  throw console.error(`此应用[appId: ${s}, platform: ${o}]不在云端配置的允许访问的应用列表内，参考：https://uniapp.dcloud.net.cn/uniCloud/secure-network.html#verify-client`), fn(ln);
+}
+function In({
+  functionName: e,
+  result: t,
+  logPvd: n
+}) {
+  if (this.__dev__.debugLog && t && t.requestId) {
+    const s = JSON.stringify({
+      spaceId: this.config.spaceId,
+      functionName: e,
+      requestId: t.requestId
+    });
+    console.log(`[${n}-request]${s}[/${n}-request]`);
+  }
+}
+function bn(e) {
+  const t = e.callFunction,
+    n = function (n) {
+      const s = n.name;
+      n.data = yt.call(e, {
+        data: n.data
+      });
+      const r = {
+          aliyun: "aliyun",
+          tencent: "tcb",
+          tcb: "tcb"
+        }[this.config.provider],
+        i = vn(n),
+        o = Sn(n),
+        a = i || o;
+      return t.call(this, n).then(e => (e.errCode = 0, !a && In.call(this, {
+        functionName: s,
+        result: e,
+        logPvd: r
+      }), Promise.resolve(e)), e => (!a && In.call(this, {
+        functionName: s,
+        result: e,
+        logPvd: r
+      }), e && e.message && (e.message = function ({
+        message: e = "",
+        extraInfo: t = {},
+        formatter: n = []
+      } = {}) {
+        for (let s = 0; s < n.length; s++) {
+          const {
+              rule: r,
+              content: i,
+              mode: o
+            } = n[s],
+            a = e.match(r);
+          if (!a) continue;
+          let c = i;
+          for (let e = 1; e < a.length; e++) c = kt(c, `{$${e}}`, a[e]);
+          for (const e in t) c = kt(c, `{${e}}`, t[e]);
+          return "replace" === o ? c : e + c;
+        }
+        return e;
+      }({
+        message: `[${n.name}]: ${e.message}`,
+        formatter: wt,
+        extraInfo: {
+          functionName: s
+        }
+      })), Promise.reject(e)));
+    };
+  e.callFunction = function (t) {
+    const {
+        provider: s,
+        spaceId: r
+      } = e.config,
+      i = t.name;
+    let o, a;
+    if (t.data = t.data || {}, g && e.__dev__.debugInfo && !e.__dev__.debugInfo.forceRemote && S ? (e._callCloudFunction || (e._callCloudFunction = n, e._callLocalFunction = _t), o = _t) : o = n, o = o.bind(e), Sn(t)) a = n.call(e, t);else if (function ({
+      name: e,
+      data: t = {}
+    }) {
+      return "mp-weixin" === w && "uni-id-co" === e && "secureNetworkHandshakeByWeixin" === t.method;
+    }(t)) a = o.call(e, t);else if (vn(t)) {
+      a = new gn({
+        secretType: t.secretType,
+        uniCloudIns: e
+      }).wrapEncryptDataCallFunction(n.bind(e))(t);
+    } else if (kn({
+      provider: s,
+      spaceId: r,
+      functionName: i
+    })) {
+      a = new gn({
+        secretType: t.secretType,
+        uniCloudIns: e
+      }).wrapVerifyClientCallFunction(n.bind(e))(t);
+    } else a = o(t);
+    return Object.defineProperty(a, "result", {
+      get: () => (console.warn("当前返回结果为Promise类型，不可直接访问其result属性，详情请参考：https://uniapp.dcloud.net.cn/uniCloud/faq?id=promise"), {})
+    }), a;
+  };
+}
+gn = "mp-weixin" !== w && "app" !== w ? class {
+  constructor() {
+    throw fn({
+      message: `Platform ${w} is not supported by secure network`
+    });
+  }
+} : y ? "mp-weixin" === w ? yn : wn : class {
+  constructor() {
+    throw fn({
+      message: `Platform ${w} is not enabled, please check whether secure network module is enabled in your manifest.json`
+    });
+  }
+};
+const Tn = Symbol("CLIENT_DB_INTERNAL");
+function An(e, t) {
+  return e.then = "DoNotReturnProxyWithAFunctionNamedThen", e._internalType = Tn, e.inspect = null, e.__ob__ = void 0, new Proxy(e, {
+    get(e, n, s) {
+      if ("_uniClient" === n) return null;
+      if ("symbol" == typeof n) return e[n];
+      if (n in e || "string" != typeof n) {
+        const t = e[n];
+        return "function" == typeof t ? t.bind(e) : t;
+      }
+      return t.get(e, n, s);
+    }
+  });
+}
+function Cn(e) {
+  return {
+    on: (t, n) => {
+      e[t] = e[t] || [], e[t].indexOf(n) > -1 || e[t].push(n);
+    },
+    off: (t, n) => {
+      e[t] = e[t] || [];
+      const s = e[t].indexOf(n);
+      -1 !== s && e[t].splice(s, 1);
+    }
+  };
+}
+const Pn = ["db.Geo", "db.command", "command.aggregate"];
+function En(e, t) {
+  return Pn.indexOf(`${e}.${t}`) > -1;
+}
+function On(e) {
+  switch (d(e)) {
+    case "array":
+      return e.map(e => On(e));
+    case "object":
+      return e._internalType === Tn || Object.keys(e).forEach(t => {
+        e[t] = On(e[t]);
+      }), e;
+    case "regexp":
+      return {
+        $regexp: {
+          source: e.source,
+          flags: e.flags
+        }
+      };
+    case "date":
+      return {
+        $date: e.toISOString()
+      };
+    default:
+      return e;
+  }
+}
+function xn(e) {
+  return e && e.content && e.content.$method;
+}
+class Un {
+  constructor(e, t, n) {
+    this.content = e, this.prevStage = t || null, this.udb = null, this._database = n;
+  }
+  toJSON() {
+    let e = this;
+    const t = [e.content];
+    for (; e.prevStage;) e = e.prevStage, t.push(e.content);
+    return {
+      $db: t.reverse().map(e => ({
+        $method: e.$method,
+        $param: On(e.$param)
+      }))
+    };
+  }
+  getAction() {
+    const e = this.toJSON().$db.find(e => "action" === e.$method);
+    return e && e.$param && e.$param[0];
+  }
+  getCommand() {
+    return {
+      $db: this.toJSON().$db.filter(e => "action" !== e.$method)
+    };
+  }
+  get isAggregate() {
+    let e = this;
+    for (; e;) {
+      const t = xn(e),
+        n = xn(e.prevStage);
+      if ("aggregate" === t && "collection" === n || "pipeline" === t) return !0;
+      e = e.prevStage;
+    }
+    return !1;
+  }
+  get isCommand() {
+    let e = this;
+    for (; e;) {
+      if ("command" === xn(e)) return !0;
+      e = e.prevStage;
+    }
+    return !1;
+  }
+  get isAggregateCommand() {
+    let e = this;
+    for (; e;) {
+      const t = xn(e),
+        n = xn(e.prevStage);
+      if ("aggregate" === t && "command" === n) return !0;
+      e = e.prevStage;
+    }
+    return !1;
+  }
+  getNextStageFn(e) {
+    const t = this;
+    return function () {
+      return Rn({
+        $method: e,
+        $param: On(Array.from(arguments))
+      }, t, t._database);
+    };
+  }
+  get count() {
+    return this.isAggregate ? this.getNextStageFn("count") : function () {
+      return this._send("count", Array.from(arguments));
+    };
+  }
+  get remove() {
+    return this.isCommand ? this.getNextStageFn("remove") : function () {
+      return this._send("remove", Array.from(arguments));
+    };
+  }
+  get() {
+    return this._send("get", Array.from(arguments));
+  }
+  get add() {
+    return this.isCommand ? this.getNextStageFn("add") : function () {
+      return this._send("add", Array.from(arguments));
+    };
+  }
+  update() {
+    return this._send("update", Array.from(arguments));
+  }
+  end() {
+    return this._send("end", Array.from(arguments));
+  }
+  get set() {
+    return this.isCommand ? this.getNextStageFn("set") : function () {
+      throw new Error("JQL禁止使用set方法");
+    };
+  }
+  _send(e, t) {
+    const n = this.getAction(),
+      s = this.getCommand();
+    if (s.$db.push({
+      $method: e,
+      $param: On(t)
+    }), g) {
+      const e = s.$db.find(e => "collection" === e.$method),
+        t = e && e.$param;
+      t && 1 === t.length && "string" == typeof e.$param[0] && e.$param[0].indexOf(",") > -1 && console.warn("检测到使用JQL语法联表查询时，未使用getTemp先过滤主表数据，在主表数据量大的情况下可能会查询缓慢。\n- 如何优化请参考此文档：https://uniapp.dcloud.net.cn/uniCloud/jql?id=lookup-with-temp \n- 如果主表数据量很小请忽略此信息，项目发行时不会出现此提示。");
+    }
+    return this._database._callCloudFunction({
+      action: n,
+      command: s
+    });
+  }
+}
+function Rn(e, t, n) {
+  return An(new Un(e, t, n), {
+    get(e, t) {
+      let s = "db";
+      return e && e.content && (s = e.content.$method), En(s, t) ? Rn({
+        $method: t
+      }, e, n) : function () {
+        return Rn({
+          $method: t,
+          $param: On(Array.from(arguments))
+        }, e, n);
+      };
+    }
+  });
+}
+function Ln({
+  path: e,
+  method: t
+}) {
+  return class {
+    constructor() {
+      this.param = Array.from(arguments);
+    }
+    toJSON() {
+      return {
+        $newDb: [...e.map(e => ({
+          $method: e
+        })), {
+          $method: t,
+          $param: this.param
+        }]
+      };
+    }
+  };
+}
+function Nn(e, t = {}) {
+  return An(new e(t), {
+    get: (e, t) => En("db", t) ? Rn({
+      $method: t
+    }, null, e) : function () {
+      return Rn({
+        $method: t,
+        $param: On(Array.from(arguments))
+      }, null, e);
+    }
+  });
+}
+class Dn extends class {
+  constructor({
+    uniClient: e = {},
+    isJQL: t = !1
+  } = {}) {
+    this._uniClient = e, this._authCallBacks = {}, this._dbCallBacks = {}, e.isDefault && (this._dbCallBacks = T("_globalUniCloudDatabaseCallback")), t || (this.auth = Cn(this._authCallBacks)), this._isJQL = t, Object.assign(this, Cn(this._dbCallBacks)), this.env = An({}, {
+      get: (e, t) => ({
+        $env: t
+      })
+    }), this.Geo = An({}, {
+      get: (e, t) => Ln({
+        path: ["Geo"],
+        method: t
+      })
+    }), this.serverDate = Ln({
+      path: [],
+      method: "serverDate"
+    }), this.RegExp = Ln({
+      path: [],
+      method: "RegExp"
+    });
+  }
+  getCloudEnv(e) {
+    if ("string" != typeof e || !e.trim()) throw new Error("getCloudEnv参数错误");
+    return {
+      $env: e.replace("$cloudEnv_", "")
+    };
+  }
+  _callback(e, t) {
+    const n = this._dbCallBacks;
+    n[e] && n[e].forEach(e => {
+      e(...t);
+    });
+  }
+  _callbackAuth(e, t) {
+    const n = this._authCallBacks;
+    n[e] && n[e].forEach(e => {
+      e(...t);
+    });
+  }
+  multiSend() {
+    const e = Array.from(arguments),
+      t = e.map(e => {
+        const t = e.getAction(),
+          n = e.getCommand();
+        if ("getTemp" !== n.$db[n.$db.length - 1].$method) throw new Error("multiSend只支持子命令内使用getTemp");
+        return {
+          action: t,
+          command: n
+        };
+      });
+    return this._callCloudFunction({
+      multiCommand: t,
+      queryList: e
+    });
+  }
+} {
+  _parseResult(e) {
+    return this._isJQL ? e.result : e;
+  }
+  _callCloudFunction({
+    action: e,
+    command: t,
+    multiCommand: n,
+    queryList: s
+  }) {
+    function r(e, t) {
+      if (n && s) for (let n = 0; n < s.length; n++) {
+        const r = s[n];
+        r.udb && "function" == typeof r.udb.setResult && (t ? r.udb.setResult(t) : r.udb.setResult(e.result.dataList[n]));
+      }
+    }
+    const i = this,
+      o = this._isJQL ? "databaseForJQL" : "database";
+    function a(e) {
+      return i._callback("error", [e]), O(x(o, "fail"), e).then(() => O(x(o, "complete"), e)).then(() => (r(null, e), $(L, {
+        type: F,
+        content: e
+      }), Promise.reject(e)));
+    }
+    const c = O(x(o, "invoke")),
+      u = this._uniClient;
+    return c.then(() => u.callFunction({
+      name: "DCloud-clientDB",
+      type: h,
+      data: {
+        action: e,
+        command: t,
+        multiCommand: n
+      }
+    })).then(e => {
+      const {
+        code: t,
+        message: n,
+        token: s,
+        tokenExpired: c,
+        systemInfo: u = []
+      } = e.result;
+      if (u) for (let e = 0; e < u.length; e++) {
+        const {
+            level: t,
+            message: n,
+            detail: s
+          } = u[e],
+          r = console["app" === w && "warn" === t ? "error" : t] || console.log;
+        let i = "[System Info]" + n;
+        s && (i = `${i}\n详细信息：${s}`), r(i);
+      }
+      if (t) {
+        return a(new V({
+          code: t,
+          message: n,
+          requestId: e.requestId
+        }));
+      }
+      e.result.errCode = e.result.errCode || e.result.code, e.result.errMsg = e.result.errMsg || e.result.message, s && c && (Q({
+        token: s,
+        tokenExpired: c
+      }), this._callbackAuth("refreshToken", [{
+        token: s,
+        tokenExpired: c
+      }]), this._callback("refreshToken", [{
+        token: s,
+        tokenExpired: c
+      }]), $(D, {
+        token: s,
+        tokenExpired: c
+      }));
+      const l = [{
+        prop: "affectedDocs",
+        tips: "affectedDocs不再推荐使用，请使用inserted/deleted/updated/data.length替代"
+      }, {
+        prop: "code",
+        tips: "code不再推荐使用，请使用errCode替代"
+      }, {
+        prop: "message",
+        tips: "message不再推荐使用，请使用errMsg替代"
+      }];
+      for (let t = 0; t < l.length; t++) {
+        const {
+          prop: n,
+          tips: s
+        } = l[t];
+        if (n in e.result) {
+          const t = e.result[n];
+          Object.defineProperty(e.result, n, {
+            get: () => (console.warn(s), t)
+          });
+        }
+      }
+      return function (e) {
+        return O(x(o, "success"), e).then(() => O(x(o, "complete"), e)).then(() => {
+          r(e, null);
+          const t = i._parseResult(e);
+          return $(L, {
+            type: F,
+            content: t
+          }), Promise.resolve(t);
+        });
+      }(e);
+    }, e => {
+      /fc_function_not_found|FUNCTION_NOT_FOUND/g.test(e.message) && console.warn("clientDB未初始化，请在web控制台保存一次schema以开启clientDB");
+      return a(new V({
+        code: e.code || "SYSTEM_ERROR",
+        message: e.message,
+        requestId: e.requestId
+      }));
+    });
+  }
+}
+const Fn = "token无效，跳转登录页面",
+  qn = "token过期，跳转登录页面",
+  Kn = {
+    TOKEN_INVALID_TOKEN_EXPIRED: qn,
+    TOKEN_INVALID_INVALID_CLIENTID: Fn,
+    TOKEN_INVALID: Fn,
+    TOKEN_INVALID_WRONG_TOKEN: Fn,
+    TOKEN_INVALID_ANONYMOUS_USER: Fn
+  },
+  Mn = {
+    "uni-id-token-expired": qn,
+    "uni-id-check-token-failed": Fn,
+    "uni-id-token-not-exist": Fn,
+    "uni-id-check-device-feature-failed": Fn
+  };
+function jn(e, t) {
+  let n = "";
+  return n = e ? `${e}/${t}` : t, n.replace(/^\//, "");
+}
+function Bn(e = [], t = "") {
+  const n = [],
+    s = [];
+  return e.forEach(e => {
+    !0 === e.needLogin ? n.push(jn(t, e.path)) : !1 === e.needLogin && s.push(jn(t, e.path));
+  }), {
+    needLoginPage: n,
+    notNeedLoginPage: s
+  };
+}
+function $n(e) {
+  return e.split("?")[0].replace(/^\//, "");
+}
+function Wn() {
+  return function (e) {
+    let t = e && e.$page && e.$page.fullPath || "";
+    return t ? ("/" !== t.charAt(0) && (t = "/" + t), t) : t;
+  }(function () {
+    const e = getCurrentPages();
+    return e[e.length - 1];
+  }());
+}
+function zn() {
+  return $n(Wn());
+}
+function Jn(e = "", t = {}) {
+  if (!e) return !1;
+  if (!(t && t.list && t.list.length)) return !1;
+  const n = t.list,
+    s = $n(e);
+  return n.some(e => e.pagePath === s);
+}
+const Hn = !!_pages.default.uniIdRouter;
+const {
+  loginPage: Vn,
+  routerNeedLogin: Gn,
+  resToLogin: Yn,
+  needLoginPage: Qn,
+  notNeedLoginPage: Xn,
+  loginPageInTabBar: Zn
+} = function ({
+  pages: e = [],
+  subPackages: n = [],
+  uniIdRouter: s = {},
+  tabBar: r = {}
+} = _pages.default) {
+  const {
+      loginPage: i,
+      needLogin: o = [],
+      resToLogin: a = !0
+    } = s,
+    {
+      needLoginPage: c,
+      notNeedLoginPage: u
+    } = Bn(e),
+    {
+      needLoginPage: l,
+      notNeedLoginPage: h
+    } = function (e = []) {
+      const t = [],
+        n = [];
+      return e.forEach(e => {
+        const {
+            root: s,
+            pages: r = []
+          } = e,
+          {
+            needLoginPage: i,
+            notNeedLoginPage: o
+          } = Bn(r, s);
+        t.push(...i), n.push(...o);
+      }), {
+        needLoginPage: t,
+        notNeedLoginPage: n
+      };
+    }(n);
+  return {
+    loginPage: i,
+    routerNeedLogin: o,
+    resToLogin: a,
+    needLoginPage: [...c, ...l],
+    notNeedLoginPage: [...u, ...h],
+    loginPageInTabBar: Jn(i, r)
+  };
+}();
+if (Qn.indexOf(Vn) > -1) throw new Error(`Login page [${Vn}] should not be "needLogin", please check your pages.json`);
+function es(e) {
+  const t = zn();
+  if ("/" === e.charAt(0)) return e;
+  const [n, s] = e.split("?"),
+    r = n.replace(/^\//, "").split("/"),
+    i = t.split("/");
+  i.pop();
+  for (let e = 0; e < r.length; e++) {
+    const t = r[e];
+    ".." === t ? i.pop() : "." !== t && i.push(t);
+  }
+  return "" === i[0] && i.shift(), "/" + i.join("/") + (s ? "?" + s : "");
+}
+function ts(e) {
+  const t = $n(es(e));
+  return !(Xn.indexOf(t) > -1) && (Qn.indexOf(t) > -1 || Gn.some(t => function (e, t) {
+    return new RegExp(t).test(e);
+  }(e, t)));
+}
+function ns({
+  redirect: e
+}) {
+  const t = $n(e),
+    n = $n(Vn);
+  return zn() !== n && t !== n;
+}
+function ss({
+  api: e,
+  redirect: t
+} = {}) {
+  if (!t || !ns({
+    redirect: t
+  })) return;
+  const n = function (e, t) {
+    return "/" !== e.charAt(0) && (e = "/" + e), t ? e.indexOf("?") > -1 ? e + `&uniIdRedirectUrl=${encodeURIComponent(t)}` : e + `?uniIdRedirectUrl=${encodeURIComponent(t)}` : e;
+  }(Vn, t);
+  Zn ? "navigateTo" !== e && "redirectTo" !== e || (e = "switchTab") : "switchTab" === e && (e = "navigateTo"), setTimeout(() => {
+    uni[e]({
+      url: n
+    });
+  });
+}
+function rs({
+  url: e
+} = {}) {
+  const t = {
+      abortLoginPageJump: !1,
+      autoToLoginPage: !1
+    },
+    n = function () {
+      const {
+        token: e,
+        tokenExpired: t
+      } = Y();
+      let n;
+      if (e) {
+        if (t < Date.now()) {
+          const e = "uni-id-token-expired";
+          n = {
+            errCode: e,
+            errMsg: Mn[e]
+          };
+        }
+      } else {
+        const e = "uni-id-check-token-failed";
+        n = {
+          errCode: e,
+          errMsg: Mn[e]
+        };
+      }
+      return n;
+    }();
+  if (ts(e) && n) {
+    n.uniIdRedirectUrl = e;
+    if (M(N).length > 0) return setTimeout(() => {
+      $(N, n);
+    }, 0), t.abortLoginPageJump = !0, t;
+    t.autoToLoginPage = !0;
+  }
+  return t;
+}
+function is() {
+  !function () {
+    const e = Wn(),
+      {
+        abortLoginPageJump: t,
+        autoToLoginPage: n
+      } = rs({
+        url: e
+      });
+    t || n && ss({
+      api: "redirectTo",
+      redirect: e
+    });
+  }();
+  const e = ["navigateTo", "redirectTo", "reLaunch", "switchTab"];
+  for (let t = 0; t < e.length; t++) {
+    const n = e[t];
+    uni.addInterceptor(n, {
+      invoke(e) {
+        const {
+          abortLoginPageJump: t,
+          autoToLoginPage: s
+        } = rs({
+          url: e.url
+        });
+        return t ? e : s ? (ss({
+          api: n,
+          redirect: es(e.url)
+        }), !1) : e;
+      }
+    });
+  }
+}
+function os() {
+  this.onResponse(e => {
+    const {
+      type: t,
+      content: n
+    } = e;
+    let s = !1;
+    switch (t) {
+      case "cloudobject":
+        s = function (e) {
+          const {
+            errCode: t
+          } = e;
+          return t in Mn;
+        }(n);
+        break;
+      case "clientdb":
+        s = function (e) {
+          const {
+            errCode: t
+          } = e;
+          return t in Kn;
+        }(n);
+    }
+    s && function (e = {}) {
+      const t = M(N);
+      J().then(() => {
+        const n = Wn();
+        if (n && ns({
+          redirect: n
+        })) return t.length > 0 ? $(N, Object.assign({
+          uniIdRedirectUrl: n
+        }, e)) : void (Vn && ss({
+          api: "navigateTo",
+          redirect: n
+        }));
+      });
+    }(n);
+  });
+}
+function as(e) {
+  !function (e) {
+    e.onResponse = function (e) {
+      j(L, e);
+    }, e.offResponse = function (e) {
+      B(L, e);
+    };
+  }(e), function (e) {
+    e.onNeedLogin = function (e) {
+      j(N, e);
+    }, e.offNeedLogin = function (e) {
+      B(N, e);
+    }, Hn && (T("_globalUniCloudStatus").needLoginInit || (T("_globalUniCloudStatus").needLoginInit = !0, J().then(() => {
+      is.call(e);
+    }), Yn && os.call(e)));
+  }(e), function (e) {
+    e.onRefreshToken = function (e) {
+      j(D, e);
+    }, e.offRefreshToken = function (e) {
+      B(D, e);
+    };
+  }(e);
+}
+let cs;
+const us = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+  ls = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
+function hs() {
+  const e = Y().token || "",
+    t = e.split(".");
+  if (!e || 3 !== t.length) return {
+    uid: null,
+    role: [],
+    permission: [],
+    tokenExpired: 0
+  };
+  let n;
+  try {
+    n = JSON.parse((s = t[1], decodeURIComponent(cs(s).split("").map(function (e) {
+      return "%" + ("00" + e.charCodeAt(0).toString(16)).slice(-2);
+    }).join(""))));
+  } catch (e) {
+    throw new Error("获取当前用户信息出错，详细错误信息为：" + e.message);
+  }
+  var s;
+  return n.tokenExpired = 1e3 * n.exp, delete n.exp, delete n.iat, n;
+}
+cs = "function" != typeof atob ? function (e) {
+  if (e = String(e).replace(/[\t\n\f\r ]+/g, ""), !ls.test(e)) throw new Error("Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded.");
+  var t;
+  e += "==".slice(2 - (3 & e.length));
+  for (var n, s, r = "", i = 0; i < e.length;) t = us.indexOf(e.charAt(i++)) << 18 | us.indexOf(e.charAt(i++)) << 12 | (n = us.indexOf(e.charAt(i++))) << 6 | (s = us.indexOf(e.charAt(i++))), r += 64 === n ? String.fromCharCode(t >> 16 & 255) : 64 === s ? String.fromCharCode(t >> 16 & 255, t >> 8 & 255) : String.fromCharCode(t >> 16 & 255, t >> 8 & 255, 255 & t);
+  return r;
+} : atob;
+var ds = s(function (e, t) {
+    Object.defineProperty(t, "__esModule", {
+      value: !0
+    });
+    const n = "chooseAndUploadFile:ok",
+      s = "chooseAndUploadFile:fail";
+    function r(e, t) {
+      return e.tempFiles.forEach((e, n) => {
+        e.name || (e.name = e.path.substring(e.path.lastIndexOf("/") + 1)), t && (e.fileType = t), e.cloudPath = Date.now() + "_" + n + e.name.substring(e.name.lastIndexOf("."));
+      }), e.tempFilePaths || (e.tempFilePaths = e.tempFiles.map(e => e.path)), e;
+    }
+    function i(e, t, {
+      onChooseFile: s,
+      onUploadProgress: r
+    }) {
+      return t.then(e => {
+        if (s) {
+          const t = s(e);
+          if (void 0 !== t) return Promise.resolve(t).then(t => void 0 === t ? e : t);
+        }
+        return e;
+      }).then(t => !1 === t ? {
+        errMsg: n,
+        tempFilePaths: [],
+        tempFiles: []
+      } : function (e, t, s = 5, r) {
+        (t = Object.assign({}, t)).errMsg = n;
+        const i = t.tempFiles,
+          o = i.length;
+        let a = 0;
+        return new Promise(n => {
+          for (; a < s;) c();
+          function c() {
+            const s = a++;
+            if (s >= o) return void (!i.find(e => !e.url && !e.errMsg) && n(t));
+            const u = i[s];
+            e.uploadFile({
+              filePath: u.path,
+              cloudPath: u.cloudPath,
+              fileType: u.fileType,
+              onUploadProgress(e) {
+                e.index = s, e.tempFile = u, e.tempFilePath = u.path, r && r(e);
+              }
+            }).then(e => {
+              u.url = e.fileID, s < o && c();
+            }).catch(e => {
+              u.errMsg = e.errMsg || e.message, s < o && c();
+            });
+          }
+        });
+      }(e, t, 5, r));
+    }
+    t.initChooseAndUploadFile = function (e) {
+      return function (t = {
+        type: "all"
+      }) {
+        return "image" === t.type ? i(e, function (e) {
+          const {
+            count: t,
+            sizeType: n,
+            sourceType: i = ["album", "camera"],
+            extension: o
+          } = e;
+          return new Promise((e, a) => {
+            uni.chooseImage({
+              count: t,
+              sizeType: n,
+              sourceType: i,
+              extension: o,
+              success(t) {
+                e(r(t, "image"));
+              },
+              fail(e) {
+                a({
+                  errMsg: e.errMsg.replace("chooseImage:fail", s)
+                });
+              }
+            });
+          });
+        }(t), t) : "video" === t.type ? i(e, function (e) {
+          const {
+            camera: t,
+            compressed: n,
+            maxDuration: i,
+            sourceType: o = ["album", "camera"],
+            extension: a
+          } = e;
+          return new Promise((e, c) => {
+            uni.chooseVideo({
+              camera: t,
+              compressed: n,
+              maxDuration: i,
+              sourceType: o,
+              extension: a,
+              success(t) {
+                const {
+                  tempFilePath: n,
+                  duration: s,
+                  size: i,
+                  height: o,
+                  width: a
+                } = t;
+                e(r({
+                  errMsg: "chooseVideo:ok",
+                  tempFilePaths: [n],
+                  tempFiles: [{
+                    name: t.tempFile && t.tempFile.name || "",
+                    path: n,
+                    size: i,
+                    type: t.tempFile && t.tempFile.type || "",
+                    width: a,
+                    height: o,
+                    duration: s,
+                    fileType: "video",
+                    cloudPath: ""
+                  }]
+                }, "video"));
+              },
+              fail(e) {
+                c({
+                  errMsg: e.errMsg.replace("chooseVideo:fail", s)
+                });
+              }
+            });
+          });
+        }(t), t) : i(e, function (e) {
+          const {
+            count: t,
+            extension: n
+          } = e;
+          return new Promise((e, i) => {
+            let o = uni.chooseFile;
+            if ("undefined" != typeof wx && "function" == typeof wx.chooseMessageFile && (o = wx.chooseMessageFile), "function" != typeof o) return i({
+              errMsg: s + " 请指定 type 类型，该平台仅支持选择 image 或 video。"
+            });
+            o({
+              type: "all",
+              count: t,
+              extension: n,
+              success(t) {
+                e(r(t));
+              },
+              fail(e) {
+                i({
+                  errMsg: e.errMsg.replace("chooseFile:fail", s)
+                });
+              }
+            });
+          });
+        }(t), t);
+      };
+    };
+  }),
+  fs = n(ds);
+const ps = "manual";
+function gs(e) {
+  return {
+    props: {
+      localdata: {
+        type: Array,
+        default: () => []
+      },
+      options: {
+        type: [Object, Array],
+        default: () => ({})
+      },
+      spaceInfo: {
+        type: Object,
+        default: () => ({})
+      },
+      collection: {
+        type: [String, Array],
+        default: ""
+      },
+      action: {
+        type: String,
+        default: ""
+      },
+      field: {
+        type: String,
+        default: ""
+      },
+      orderby: {
+        type: String,
+        default: ""
+      },
+      where: {
+        type: [String, Object],
+        default: ""
+      },
+      pageData: {
+        type: String,
+        default: "add"
+      },
+      pageCurrent: {
+        type: Number,
+        default: 1
+      },
+      pageSize: {
+        type: Number,
+        default: 20
+      },
+      getcount: {
+        type: [Boolean, String],
+        default: !1
+      },
+      gettree: {
+        type: [Boolean, String],
+        default: !1
+      },
+      gettreepath: {
+        type: [Boolean, String],
+        default: !1
+      },
+      startwith: {
+        type: String,
+        default: ""
+      },
+      limitlevel: {
+        type: Number,
+        default: 10
+      },
+      groupby: {
+        type: String,
+        default: ""
+      },
+      groupField: {
+        type: String,
+        default: ""
+      },
+      distinct: {
+        type: [Boolean, String],
+        default: !1
+      },
+      foreignKey: {
+        type: String,
+        default: ""
+      },
+      loadtime: {
+        type: String,
+        default: "auto"
+      },
+      manual: {
+        type: Boolean,
+        default: !1
+      }
+    },
+    data: () => ({
+      mixinDatacomLoading: !1,
+      mixinDatacomHasMore: !1,
+      mixinDatacomResData: [],
+      mixinDatacomErrorMessage: "",
+      mixinDatacomPage: {}
+    }),
+    created() {
+      this.mixinDatacomPage = {
+        current: this.pageCurrent,
+        size: this.pageSize,
+        count: 0
+      }, this.$watch(() => {
+        var e = [];
+        return ["pageCurrent", "pageSize", "localdata", "collection", "action", "field", "orderby", "where", "getont", "getcount", "gettree", "groupby", "groupField", "distinct"].forEach(t => {
+          e.push(this[t]);
+        }), e;
+      }, (e, t) => {
+        if (this.loadtime === ps) return;
+        let n = !1;
+        const s = [];
+        for (let r = 2; r < e.length; r++) e[r] !== t[r] && (s.push(e[r]), n = !0);
+        e[0] !== t[0] && (this.mixinDatacomPage.current = this.pageCurrent), this.mixinDatacomPage.size = this.pageSize, this.onMixinDatacomPropsChange(n, s);
+      });
+    },
+    methods: {
+      onMixinDatacomPropsChange(e, t) {},
+      mixinDatacomEasyGet({
+        getone: e = !1,
+        success: t,
+        fail: n
+      } = {}) {
+        this.mixinDatacomLoading || (this.mixinDatacomLoading = !0, this.mixinDatacomErrorMessage = "", this.mixinDatacomGet().then(n => {
+          this.mixinDatacomLoading = !1;
+          const {
+            data: s,
+            count: r
+          } = n.result;
+          this.getcount && (this.mixinDatacomPage.count = r), this.mixinDatacomHasMore = s.length < this.pageSize;
+          const i = e ? s.length ? s[0] : void 0 : s;
+          this.mixinDatacomResData = i, t && t(i);
+        }).catch(e => {
+          this.mixinDatacomLoading = !1, this.mixinDatacomErrorMessage = e, n && n(e);
+        }));
+      },
+      mixinDatacomGet(t = {}) {
+        let n = e.database(this.spaceInfo);
+        const s = t.action || this.action;
+        s && (n = n.action(s));
+        const r = t.collection || this.collection;
+        n = Array.isArray(r) ? n.collection(...r) : n.collection(r);
+        const i = t.where || this.where;
+        i && Object.keys(i).length && (n = n.where(i));
+        const o = t.field || this.field;
+        o && (n = n.field(o));
+        const a = t.foreignKey || this.foreignKey;
+        a && (n = n.foreignKey(a));
+        const c = t.groupby || this.groupby;
+        c && (n = n.groupBy(c));
+        const u = t.groupField || this.groupField;
+        u && (n = n.groupField(u));
+        !0 === (void 0 !== t.distinct ? t.distinct : this.distinct) && (n = n.distinct());
+        const l = t.orderby || this.orderby;
+        l && (n = n.orderBy(l));
+        const h = void 0 !== t.pageCurrent ? t.pageCurrent : this.mixinDatacomPage.current,
+          d = void 0 !== t.pageSize ? t.pageSize : this.mixinDatacomPage.size,
+          f = void 0 !== t.getcount ? t.getcount : this.getcount,
+          p = void 0 !== t.gettree ? t.gettree : this.gettree,
+          g = void 0 !== t.gettreepath ? t.gettreepath : this.gettreepath,
+          m = {
+            getCount: f
+          },
+          y = {
+            limitLevel: void 0 !== t.limitlevel ? t.limitlevel : this.limitlevel,
+            startWith: void 0 !== t.startwith ? t.startwith : this.startwith
+          };
+        return p && (m.getTree = y), g && (m.getTreePath = y), n = n.skip(d * (h - 1)).limit(d).get(m), n;
+      }
+    }
+  };
+}
+function ms(e) {
+  return function (t, n = {}) {
+    n = function (e, t = {}) {
+      return e.customUI = t.customUI || e.customUI, e.parseSystemError = t.parseSystemError || e.parseSystemError, Object.assign(e.loadingOptions, t.loadingOptions), Object.assign(e.errorOptions, t.errorOptions), "object" == typeof t.secretMethods && (e.secretMethods = t.secretMethods), e;
+    }({
+      customUI: !1,
+      loadingOptions: {
+        title: "加载中...",
+        mask: !0
+      },
+      errorOptions: {
+        type: "modal",
+        retry: !1
+      }
+    }, n);
+    const {
+        customUI: s,
+        loadingOptions: r,
+        errorOptions: i,
+        parseSystemError: o
+      } = n,
+      a = !s;
+    return new Proxy({}, {
+      get: (s, c) => function ({
+        fn: e,
+        interceptorName: t,
+        getCallbackArgs: n
+      } = {}) {
+        return async function (...s) {
+          const r = n ? n({
+            params: s
+          }) : {};
+          let i, o;
+          try {
+            return await O(x(t, "invoke"), {
+              ...r
+            }), i = await e(...s), await O(x(t, "success"), {
+              ...r,
+              result: i
+            }), i;
+          } catch (e) {
+            throw o = e, await O(x(t, "fail"), {
+              ...r,
+              error: o
+            }), o;
+          } finally {
+            await O(x(t, "complete"), o ? {
+              ...r,
+              error: o
+            } : {
+              ...r,
+              result: i
+            });
+          }
+        };
+      }({
+        fn: async function s(...u) {
+          let h;
+          a && uni.showLoading({
+            title: r.title,
+            mask: r.mask
+          });
+          const d = {
+            name: t,
+            type: l,
+            data: {
+              method: c,
+              params: u
+            }
+          };
+          "object" == typeof n.secretMethods && function (e, t) {
+            const n = t.data.method,
+              s = e.secretMethods || {},
+              r = s[n] || s["*"];
+            r && (t.secretType = r);
+          }(n, d);
+          let f = !1;
+          try {
+            h = await e.callFunction(d);
+          } catch (e) {
+            f = !0, h = {
+              result: new V(e)
+            };
+          }
+          const {
+            errSubject: p,
+            errCode: g,
+            errMsg: m,
+            newToken: y
+          } = h.result || {};
+          if (a && uni.hideLoading(), y && y.token && y.tokenExpired && (Q(y), $(D, {
+            ...y
+          })), g) {
+            let e = m;
+            if (f && o) {
+              e = (await o({
+                objectName: t,
+                methodName: c,
+                params: u,
+                errSubject: p,
+                errCode: g,
+                errMsg: m
+              })).errMsg || m;
+            }
+            if (a) if ("toast" === i.type) uni.showToast({
+              title: e,
+              icon: "none"
+            });else {
+              if ("modal" !== i.type) throw new Error(`Invalid errorOptions.type: ${i.type}`);
+              {
+                const {
+                  confirm: t
+                } = await async function ({
+                  title: e,
+                  content: t,
+                  showCancel: n,
+                  cancelText: s,
+                  confirmText: r
+                } = {}) {
+                  return new Promise((i, o) => {
+                    uni.showModal({
+                      title: e,
+                      content: t,
+                      showCancel: n,
+                      cancelText: s,
+                      confirmText: r,
+                      success(e) {
+                        i(e);
+                      },
+                      fail() {
+                        i({
+                          confirm: !1,
+                          cancel: !0
+                        });
+                      }
+                    });
+                  });
+                }({
+                  title: "提示",
+                  content: e,
+                  showCancel: i.retry,
+                  cancelText: "取消",
+                  confirmText: i.retry ? "重试" : "确定"
+                });
+                if (i.retry && t) return s(...u);
+              }
+            }
+            const n = new V({
+              subject: p,
+              code: g,
+              message: m,
+              requestId: h.requestId
+            });
+            throw n.detail = h.result, $(L, {
+              type: K,
+              content: n
+            }), n;
+          }
+          return $(L, {
+            type: K,
+            content: h.result
+          }), h.result;
+        },
+        interceptorName: "callObject",
+        getCallbackArgs: function ({
+          params: e
+        } = {}) {
+          return {
+            objectName: t,
+            methodName: c,
+            params: e
+          };
+        }
+      })
+    });
+  };
+}
+function ys(e) {
+  return T("_globalUniCloudSecureNetworkCache__{spaceId}".replace("{spaceId}", e.config.spaceId));
+}
+async function _s({
+  callLoginByWeixin: e = !1
+} = {}) {
+  const t = ys(this);
+  if ("mp-weixin" !== w) throw new Error(`[SecureNetwork] API \`initSecureNetworkByWeixin\` is not supported on platform \`${w}\``);
+  const n = await new Promise((e, t) => {
+      uni.login({
+        success(t) {
+          e(t.code);
+        },
+        fail(e) {
+          t(new Error(e.errMsg));
+        }
+      });
+    }),
+    s = this.importObject("uni-id-co", {
+      customUI: !0
+    });
+  return await s.secureNetworkHandshakeByWeixin({
+    code: n,
+    callLoginByWeixin: e
+  }), t.mpWeixinCode = n, {
+    code: n
+  };
+}
+async function ws(e) {
+  const t = ys(this);
+  return t.initPromise || (t.initPromise = _s.call(this, e)), t.initPromise;
+}
+function vs(e) {
+  return function ({
+    callLoginByWeixin: t = !1
+  } = {}) {
+    return ws.call(e, {
+      callLoginByWeixin: t
+    });
+  };
+}
+async function Ss(e, t) {
+  const n = `http://${e}:${t}/system/ping`;
+  try {
+    const e = await (s = {
+      url: n,
+      timeout: 500
+    }, new Promise((e, t) => {
+      G.request({
+        ...s,
+        success(t) {
+          e(t);
+        },
+        fail(e) {
+          t(e);
+        }
+      });
+    }));
+    return !(!e.data || 0 !== e.data.code);
+  } catch (e) {
+    return !1;
+  }
+  var s;
+}
+function ks(e) {
+  if (e.initUniCloudStatus && "rejected" !== e.initUniCloudStatus) return;
+  let t = Promise.resolve();
+  var n;
+  n = 1, t = new Promise(e => {
+    setTimeout(() => {
+      e();
+    }, n);
+  }), e.isReady = !1, e.isDefault = !1;
+  const s = e.auth();
+  e.initUniCloudStatus = "pending", e.initUniCloud = t.then(() => s.getLoginState()).then(e => e ? Promise.resolve() : s.signInAnonymously()).then(() => {
+    if (!g) return Promise.resolve();
+    if ("app" === w) {
+      const {
+        osName: e,
+        osVersion: t
+      } = te();
+      "ios" === e && function (e) {
+        if (!e || "string" != typeof e) return 0;
+        const t = e.match(/^(\d+)./);
+        return t && t[1] ? parseInt(t[1]) : 0;
+      }(t) >= 14 && console.warn("iOS 14及以上版本连接uniCloud本地调试服务需要允许客户端查找并连接到本地网络上的设备（仅开发模式生效，发行模式会连接uniCloud云端服务）");
+    }
+    if (g && e.__dev__.debugInfo) {
+      const {
+        address: t,
+        servePort: n
+      } = e.__dev__.debugInfo;
+      return async function (e, t) {
+        let n;
+        for (let s = 0; s < e.length; s++) {
+          const r = e[s];
+          if (await Ss(r, t)) {
+            n = r;
+            break;
+          }
+        }
+        return {
+          address: n,
+          port: t
+        };
+      }(t, n);
+    }
+  }).then(({
+    address: t,
+    port: n
+  } = {}) => {
+    if (!g) return Promise.resolve();
+    const s = console["app" === w ? "error" : "warn"];
+    if (t) e.__dev__.localAddress = t, e.__dev__.localPort = n;else if (e.__dev__.debugInfo) {
+      let t = "";
+      "remote" === e.__dev__.debugInfo.initialLaunchType ? (e.__dev__.debugInfo.forceRemote = !0, t = "当前客户端和HBuilderX不在同一局域网下（或其他网络原因无法连接HBuilderX），uniCloud本地调试服务不对当前客户端生效。\n- 如果不使用uniCloud本地调试服务，请直接忽略此信息。\n- 如需使用uniCloud本地调试服务，请将客户端与主机连接到同一局域网下并重新运行到客户端。\n- 如果在HBuilderX开启的状态下切换过网络环境，请重启HBuilderX后再试\n- 检查系统防火墙是否拦截了HBuilderX自带的nodejs") : t = "无法连接uniCloud本地调试服务，请检查当前客户端是否与主机在同一局域网下。\n- 如需使用uniCloud本地调试服务，请将客户端与主机连接到同一局域网下并重新运行到客户端。\n- 如果在HBuilderX开启的状态下切换过网络环境，请重启HBuilderX后再试\n- 检查系统防火墙是否拦截了HBuilderX自带的nodejs", "web" === w && (t += "\n- 部分浏览器开启节流模式之后访问本地地址受限，请检查是否启用了节流模式"), 0 === w.indexOf("mp-") && (t += "\n- 小程序中如何使用uniCloud，请参考：https://uniapp.dcloud.net.cn/uniCloud/publish.html#useinmp"), s(t);
+    }
+  }).then(() => {
+    X(), e.isReady = !0, e.initUniCloudStatus = "fulfilled";
+  }).catch(t => {
+    console.error(t), e.initUniCloudStatus = "rejected";
+  });
+}
+const Is = {
+  tcb: pt,
+  tencent: pt,
+  aliyun: ce,
+  private: mt
+};
+let bs = new class {
+  init(e) {
+    let t = {};
+    const n = Is[e.provider];
+    if (!n) throw new Error("未提供正确的provider参数");
+    t = n.init(e), t.__dev__ = {}, t.__dev__.debugLog = g && ("web" === w && navigator.userAgent.indexOf("HBuilderX") > 0 || "app" === w);
+    const s = v;
+    g && s && !s.code && (t.__dev__.debugInfo = s), ks(t), t.reInit = function () {
+      ks(this);
+    }, bn(t), function (e) {
+      const t = e.uploadFile;
+      e.uploadFile = function (e) {
+        return t.call(this, e);
+      };
+    }(t), function (e) {
+      e.database = function (t) {
+        if (t && Object.keys(t).length > 0) return e.init(t).database();
+        if (this._database) return this._database;
+        const n = Nn(Dn, {
+          uniClient: e
+        });
+        return this._database = n, n;
+      }, e.databaseForJQL = function (t) {
+        if (t && Object.keys(t).length > 0) return e.init(t).databaseForJQL();
+        if (this._databaseForJQL) return this._databaseForJQL;
+        const n = Nn(Dn, {
+          uniClient: e,
+          isJQL: !0
+        });
+        return this._databaseForJQL = n, n;
+      };
+    }(t), function (e) {
+      e.getCurrentUserInfo = hs, e.chooseAndUploadFile = fs.initChooseAndUploadFile(e), Object.assign(e, {
+        get mixinDatacom() {
+          return gs(e);
+        }
+      }), e.importObject = ms(e), e.initSecureNetworkByWeixin = vs(e);
+    }(t);
+    return ["callFunction", "uploadFile", "deleteFile", "getTempFileURL", "downloadFile", "chooseAndUploadFile"].forEach(e => {
+      if (!t[e]) return;
+      const n = t[e];
+      t[e] = function () {
+        return t.reInit(), n.apply(t, Array.from(arguments));
+      }, t[e] = H(t[e], e).bind(t);
+    }), t.init = this.init, t;
+  }
+}();
+(() => {
+  const e = S;
+  let t = {};
+  if (e && 1 === e.length) t = e[0], bs = bs.init(t), bs.isDefault = !0;else {
+    const t = ["auth", "callFunction", "uploadFile", "deleteFile", "getTempFileURL", "downloadFile", "database", "getCurrentUSerInfo", "importObject"];
+    let n;
+    n = e && e.length > 0 ? "应用有多个服务空间，请通过uniCloud.init方法指定要使用的服务空间" : k ? "应用未关联服务空间，请在uniCloud目录右键关联服务空间" : "uni-app cli项目内使用uniCloud需要使用HBuilderX的运行菜单运行项目，且需要在uniCloud目录关联服务空间", t.forEach(e => {
+      bs[e] = function () {
+        return console.error(n), Promise.reject(new V({
+          code: "SYS_ERR",
+          message: n
+        }));
+      };
+    });
+  }
+  Object.assign(bs, {
+    get mixinDatacom() {
+      return gs(bs);
+    }
+  }), as(bs), bs.addInterceptor = P, bs.removeInterceptor = E, bs.interceptObject = U, g && "web" === w && (window.uniCloud = bs);
+})();
+var Ts = exports.default = bs;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../../../webpack/buildin/global.js */ 2), __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
+
+/***/ }),
+/* 331 */
+/*!*****************************************************!*\
+  !*** ./src/pages.json?{"type":"origin-pages-json"} ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = exports.default = {
+  "pages": [{
+    "path": "pages/index",
+    "style": {
+      "navigationBarTitleText": "首页"
+    }
+  }],
+  "subPackages": [{
+    "root": "pages-sub",
+    "pages": [{
+      "path": "login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "mp-weixin": {
+          "usingComponents": {
+            "loginform": "plugin://myPlugin/loginform"
+          }
+        }
+      }
+    }, {
+      "path": "ai-ceyan/index",
+      "style": {
+        "navigationBarTitleText": "AI测颈纹"
+      }
+    }],
+    "plugins": {
+      "myPlugin": {
+        "version": "1.0.25",
+        "provider": "wx49ba8c2e81bce02f"
+      }
+    }
+  }, {
+    "root": "pages/mine",
+    "pages": [{
+      "path": "address/list",
+      "style": {
+        "navigationBarTitleText": "我的地址"
+      }
+    }, {
+      "path": "address/manage",
+      "style": {
+        "navigationBarTitleText": "编辑地址"
+      }
+    }]
+  }],
+  "sitemapLocation": "sitemap.json",
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^form-(.*)": "@/components/form/$1.vue",
+      "^x-(.*)": "@/components/x/$1.vue",
+      "^global-(.*)": "@/components/global/$1.vue"
+    }
+  },
+  "globalStyle": {
+    "pageOrientation": "portrait",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "IMEIK 爱+",
+    "navigationBarTextStyle": "black",
+    "usingComponents": {
+      "t-captcha": "plugin://captcha/t-captcha"
+    }
+  },
+  "insetLoader": {
+    "config": {
+      "toast": "<x-toast ref='toast'></x-toast>",
+      "captcha": "<global-captcha ref='captcha'></global-captcha>",
+      "privacyPopup": "<global-privacy-popup ref='privacyComponent'></global-privacy-popup>"
+    },
+    "label": ["login", "captcha", "privacyPopup", "toast"],
+    "rootEle": ".*"
+  }
+};
+
+/***/ }),
+/* 332 */
+/*!****************************************!*\
+  !*** ./src/pages.json?{"type":"stat"} ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = exports.default = {
+  "appid": "__UNI__54D91B4"
+};
+
+/***/ }),
+/* 333 */,
+/* 334 */,
+/* 335 */,
+/* 336 */,
+/* 337 */,
+/* 338 */,
+/* 339 */,
+/* 340 */,
+/* 341 */,
+/* 342 */,
+/* 343 */,
+/* 344 */,
+/* 345 */,
+/* 346 */,
+/* 347 */,
+/* 348 */,
+/* 349 */,
+/* 350 */,
+/* 351 */,
+/* 352 */,
+/* 353 */,
+/* 354 */
+/*!*****************************************************************!*\
+  !*** ./src/uni_modules/uni-icons/components/uni-icons/icons.js ***!
+  \*****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = exports.default = {
+  "id": "2852637",
+  "name": "uniui图标库",
+  "font_family": "uniicons",
+  "css_prefix_text": "uniui-",
+  "description": "",
+  "glyphs": [{
+    "icon_id": "25027049",
+    "name": "yanse",
+    "font_class": "color",
+    "unicode": "e6cf",
+    "unicode_decimal": 59087
+  }, {
+    "icon_id": "25027048",
+    "name": "wallet",
+    "font_class": "wallet",
+    "unicode": "e6b1",
+    "unicode_decimal": 59057
+  }, {
+    "icon_id": "25015720",
+    "name": "settings-filled",
+    "font_class": "settings-filled",
+    "unicode": "e6ce",
+    "unicode_decimal": 59086
+  }, {
+    "icon_id": "25015434",
+    "name": "shimingrenzheng-filled",
+    "font_class": "auth-filled",
+    "unicode": "e6cc",
+    "unicode_decimal": 59084
+  }, {
+    "icon_id": "24934246",
+    "name": "shop-filled",
+    "font_class": "shop-filled",
+    "unicode": "e6cd",
+    "unicode_decimal": 59085
+  }, {
+    "icon_id": "24934159",
+    "name": "staff-filled-01",
+    "font_class": "staff-filled",
+    "unicode": "e6cb",
+    "unicode_decimal": 59083
+  }, {
+    "icon_id": "24932461",
+    "name": "VIP-filled",
+    "font_class": "vip-filled",
+    "unicode": "e6c6",
+    "unicode_decimal": 59078
+  }, {
+    "icon_id": "24932462",
+    "name": "plus_circle_fill",
+    "font_class": "plus-filled",
+    "unicode": "e6c7",
+    "unicode_decimal": 59079
+  }, {
+    "icon_id": "24932463",
+    "name": "folder_add-filled",
+    "font_class": "folder-add-filled",
+    "unicode": "e6c8",
+    "unicode_decimal": 59080
+  }, {
+    "icon_id": "24932464",
+    "name": "yanse-filled",
+    "font_class": "color-filled",
+    "unicode": "e6c9",
+    "unicode_decimal": 59081
+  }, {
+    "icon_id": "24932465",
+    "name": "tune-filled",
+    "font_class": "tune-filled",
+    "unicode": "e6ca",
+    "unicode_decimal": 59082
+  }, {
+    "icon_id": "24932455",
+    "name": "a-rilidaka-filled",
+    "font_class": "calendar-filled",
+    "unicode": "e6c0",
+    "unicode_decimal": 59072
+  }, {
+    "icon_id": "24932456",
+    "name": "notification-filled",
+    "font_class": "notification-filled",
+    "unicode": "e6c1",
+    "unicode_decimal": 59073
+  }, {
+    "icon_id": "24932457",
+    "name": "wallet-filled",
+    "font_class": "wallet-filled",
+    "unicode": "e6c2",
+    "unicode_decimal": 59074
+  }, {
+    "icon_id": "24932458",
+    "name": "paihangbang-filled",
+    "font_class": "medal-filled",
+    "unicode": "e6c3",
+    "unicode_decimal": 59075
+  }, {
+    "icon_id": "24932459",
+    "name": "gift-filled",
+    "font_class": "gift-filled",
+    "unicode": "e6c4",
+    "unicode_decimal": 59076
+  }, {
+    "icon_id": "24932460",
+    "name": "fire-filled",
+    "font_class": "fire-filled",
+    "unicode": "e6c5",
+    "unicode_decimal": 59077
+  }, {
+    "icon_id": "24928001",
+    "name": "refreshempty",
+    "font_class": "refreshempty",
+    "unicode": "e6bf",
+    "unicode_decimal": 59071
+  }, {
+    "icon_id": "24926853",
+    "name": "location-ellipse",
+    "font_class": "location-filled",
+    "unicode": "e6af",
+    "unicode_decimal": 59055
+  }, {
+    "icon_id": "24926735",
+    "name": "person-filled",
+    "font_class": "person-filled",
+    "unicode": "e69d",
+    "unicode_decimal": 59037
+  }, {
+    "icon_id": "24926703",
+    "name": "personadd-filled",
+    "font_class": "personadd-filled",
+    "unicode": "e698",
+    "unicode_decimal": 59032
+  }, {
+    "icon_id": "24923351",
+    "name": "back",
+    "font_class": "back",
+    "unicode": "e6b9",
+    "unicode_decimal": 59065
+  }, {
+    "icon_id": "24923352",
+    "name": "forward",
+    "font_class": "forward",
+    "unicode": "e6ba",
+    "unicode_decimal": 59066
+  }, {
+    "icon_id": "24923353",
+    "name": "arrowthinright",
+    "font_class": "arrow-right",
+    "unicode": "e6bb",
+    "unicode_decimal": 59067
+  }, {
+    "icon_id": "24923353",
+    "name": "arrowthinright",
+    "font_class": "arrowthinright",
+    "unicode": "e6bb",
+    "unicode_decimal": 59067
+  }, {
+    "icon_id": "24923354",
+    "name": "arrowthinleft",
+    "font_class": "arrow-left",
+    "unicode": "e6bc",
+    "unicode_decimal": 59068
+  }, {
+    "icon_id": "24923354",
+    "name": "arrowthinleft",
+    "font_class": "arrowthinleft",
+    "unicode": "e6bc",
+    "unicode_decimal": 59068
+  }, {
+    "icon_id": "24923355",
+    "name": "arrowthinup",
+    "font_class": "arrow-up",
+    "unicode": "e6bd",
+    "unicode_decimal": 59069
+  }, {
+    "icon_id": "24923355",
+    "name": "arrowthinup",
+    "font_class": "arrowthinup",
+    "unicode": "e6bd",
+    "unicode_decimal": 59069
+  }, {
+    "icon_id": "24923356",
+    "name": "arrowthindown",
+    "font_class": "arrow-down",
+    "unicode": "e6be",
+    "unicode_decimal": 59070
+  }, {
+    "icon_id": "24923356",
+    "name": "arrowthindown",
+    "font_class": "arrowthindown",
+    "unicode": "e6be",
+    "unicode_decimal": 59070
+  }, {
+    "icon_id": "24923349",
+    "name": "arrowdown",
+    "font_class": "bottom",
+    "unicode": "e6b8",
+    "unicode_decimal": 59064
+  }, {
+    "icon_id": "24923349",
+    "name": "arrowdown",
+    "font_class": "arrowdown",
+    "unicode": "e6b8",
+    "unicode_decimal": 59064
+  }, {
+    "icon_id": "24923346",
+    "name": "arrowright",
+    "font_class": "right",
+    "unicode": "e6b5",
+    "unicode_decimal": 59061
+  }, {
+    "icon_id": "24923346",
+    "name": "arrowright",
+    "font_class": "arrowright",
+    "unicode": "e6b5",
+    "unicode_decimal": 59061
+  }, {
+    "icon_id": "24923347",
+    "name": "arrowup",
+    "font_class": "top",
+    "unicode": "e6b6",
+    "unicode_decimal": 59062
+  }, {
+    "icon_id": "24923347",
+    "name": "arrowup",
+    "font_class": "arrowup",
+    "unicode": "e6b6",
+    "unicode_decimal": 59062
+  }, {
+    "icon_id": "24923348",
+    "name": "arrowleft",
+    "font_class": "left",
+    "unicode": "e6b7",
+    "unicode_decimal": 59063
+  }, {
+    "icon_id": "24923348",
+    "name": "arrowleft",
+    "font_class": "arrowleft",
+    "unicode": "e6b7",
+    "unicode_decimal": 59063
+  }, {
+    "icon_id": "24923334",
+    "name": "eye",
+    "font_class": "eye",
+    "unicode": "e651",
+    "unicode_decimal": 58961
+  }, {
+    "icon_id": "24923335",
+    "name": "eye-filled",
+    "font_class": "eye-filled",
+    "unicode": "e66a",
+    "unicode_decimal": 58986
+  }, {
+    "icon_id": "24923336",
+    "name": "eye-slash",
+    "font_class": "eye-slash",
+    "unicode": "e6b3",
+    "unicode_decimal": 59059
+  }, {
+    "icon_id": "24923337",
+    "name": "eye-slash-filled",
+    "font_class": "eye-slash-filled",
+    "unicode": "e6b4",
+    "unicode_decimal": 59060
+  }, {
+    "icon_id": "24923305",
+    "name": "info-filled",
+    "font_class": "info-filled",
+    "unicode": "e649",
+    "unicode_decimal": 58953
+  }, {
+    "icon_id": "24923299",
+    "name": "reload-01",
+    "font_class": "reload",
+    "unicode": "e6b2",
+    "unicode_decimal": 59058
+  }, {
+    "icon_id": "24923195",
+    "name": "mic_slash_fill",
+    "font_class": "micoff-filled",
+    "unicode": "e6b0",
+    "unicode_decimal": 59056
+  }, {
+    "icon_id": "24923165",
+    "name": "map-pin-ellipse",
+    "font_class": "map-pin-ellipse",
+    "unicode": "e6ac",
+    "unicode_decimal": 59052
+  }, {
+    "icon_id": "24923166",
+    "name": "map-pin",
+    "font_class": "map-pin",
+    "unicode": "e6ad",
+    "unicode_decimal": 59053
+  }, {
+    "icon_id": "24923167",
+    "name": "location",
+    "font_class": "location",
+    "unicode": "e6ae",
+    "unicode_decimal": 59054
+  }, {
+    "icon_id": "24923064",
+    "name": "starhalf",
+    "font_class": "starhalf",
+    "unicode": "e683",
+    "unicode_decimal": 59011
+  }, {
+    "icon_id": "24923065",
+    "name": "star",
+    "font_class": "star",
+    "unicode": "e688",
+    "unicode_decimal": 59016
+  }, {
+    "icon_id": "24923066",
+    "name": "star-filled",
+    "font_class": "star-filled",
+    "unicode": "e68f",
+    "unicode_decimal": 59023
+  }, {
+    "icon_id": "24899646",
+    "name": "a-rilidaka",
+    "font_class": "calendar",
+    "unicode": "e6a0",
+    "unicode_decimal": 59040
+  }, {
+    "icon_id": "24899647",
+    "name": "fire",
+    "font_class": "fire",
+    "unicode": "e6a1",
+    "unicode_decimal": 59041
+  }, {
+    "icon_id": "24899648",
+    "name": "paihangbang",
+    "font_class": "medal",
+    "unicode": "e6a2",
+    "unicode_decimal": 59042
+  }, {
+    "icon_id": "24899649",
+    "name": "font",
+    "font_class": "font",
+    "unicode": "e6a3",
+    "unicode_decimal": 59043
+  }, {
+    "icon_id": "24899650",
+    "name": "gift",
+    "font_class": "gift",
+    "unicode": "e6a4",
+    "unicode_decimal": 59044
+  }, {
+    "icon_id": "24899651",
+    "name": "link",
+    "font_class": "link",
+    "unicode": "e6a5",
+    "unicode_decimal": 59045
+  }, {
+    "icon_id": "24899652",
+    "name": "notification",
+    "font_class": "notification",
+    "unicode": "e6a6",
+    "unicode_decimal": 59046
+  }, {
+    "icon_id": "24899653",
+    "name": "staff",
+    "font_class": "staff",
+    "unicode": "e6a7",
+    "unicode_decimal": 59047
+  }, {
+    "icon_id": "24899654",
+    "name": "VIP",
+    "font_class": "vip",
+    "unicode": "e6a8",
+    "unicode_decimal": 59048
+  }, {
+    "icon_id": "24899655",
+    "name": "folder_add",
+    "font_class": "folder-add",
+    "unicode": "e6a9",
+    "unicode_decimal": 59049
+  }, {
+    "icon_id": "24899656",
+    "name": "tune",
+    "font_class": "tune",
+    "unicode": "e6aa",
+    "unicode_decimal": 59050
+  }, {
+    "icon_id": "24899657",
+    "name": "shimingrenzheng",
+    "font_class": "auth",
+    "unicode": "e6ab",
+    "unicode_decimal": 59051
+  }, {
+    "icon_id": "24899565",
+    "name": "person",
+    "font_class": "person",
+    "unicode": "e699",
+    "unicode_decimal": 59033
+  }, {
+    "icon_id": "24899566",
+    "name": "email-filled",
+    "font_class": "email-filled",
+    "unicode": "e69a",
+    "unicode_decimal": 59034
+  }, {
+    "icon_id": "24899567",
+    "name": "phone-filled",
+    "font_class": "phone-filled",
+    "unicode": "e69b",
+    "unicode_decimal": 59035
+  }, {
+    "icon_id": "24899568",
+    "name": "phone",
+    "font_class": "phone",
+    "unicode": "e69c",
+    "unicode_decimal": 59036
+  }, {
+    "icon_id": "24899570",
+    "name": "email",
+    "font_class": "email",
+    "unicode": "e69e",
+    "unicode_decimal": 59038
+  }, {
+    "icon_id": "24899571",
+    "name": "personadd",
+    "font_class": "personadd",
+    "unicode": "e69f",
+    "unicode_decimal": 59039
+  }, {
+    "icon_id": "24899558",
+    "name": "chatboxes-filled",
+    "font_class": "chatboxes-filled",
+    "unicode": "e692",
+    "unicode_decimal": 59026
+  }, {
+    "icon_id": "24899559",
+    "name": "contact",
+    "font_class": "contact",
+    "unicode": "e693",
+    "unicode_decimal": 59027
+  }, {
+    "icon_id": "24899560",
+    "name": "chatbubble-filled",
+    "font_class": "chatbubble-filled",
+    "unicode": "e694",
+    "unicode_decimal": 59028
+  }, {
+    "icon_id": "24899561",
+    "name": "contact-filled",
+    "font_class": "contact-filled",
+    "unicode": "e695",
+    "unicode_decimal": 59029
+  }, {
+    "icon_id": "24899562",
+    "name": "chatboxes",
+    "font_class": "chatboxes",
+    "unicode": "e696",
+    "unicode_decimal": 59030
+  }, {
+    "icon_id": "24899563",
+    "name": "chatbubble",
+    "font_class": "chatbubble",
+    "unicode": "e697",
+    "unicode_decimal": 59031
+  }, {
+    "icon_id": "24881290",
+    "name": "upload-filled",
+    "font_class": "upload-filled",
+    "unicode": "e68e",
+    "unicode_decimal": 59022
+  }, {
+    "icon_id": "24881292",
+    "name": "upload",
+    "font_class": "upload",
+    "unicode": "e690",
+    "unicode_decimal": 59024
+  }, {
+    "icon_id": "24881293",
+    "name": "weixin",
+    "font_class": "weixin",
+    "unicode": "e691",
+    "unicode_decimal": 59025
+  }, {
+    "icon_id": "24881274",
+    "name": "compose",
+    "font_class": "compose",
+    "unicode": "e67f",
+    "unicode_decimal": 59007
+  }, {
+    "icon_id": "24881275",
+    "name": "qq",
+    "font_class": "qq",
+    "unicode": "e680",
+    "unicode_decimal": 59008
+  }, {
+    "icon_id": "24881276",
+    "name": "download-filled",
+    "font_class": "download-filled",
+    "unicode": "e681",
+    "unicode_decimal": 59009
+  }, {
+    "icon_id": "24881277",
+    "name": "pengyouquan",
+    "font_class": "pyq",
+    "unicode": "e682",
+    "unicode_decimal": 59010
+  }, {
+    "icon_id": "24881279",
+    "name": "sound",
+    "font_class": "sound",
+    "unicode": "e684",
+    "unicode_decimal": 59012
+  }, {
+    "icon_id": "24881280",
+    "name": "trash-filled",
+    "font_class": "trash-filled",
+    "unicode": "e685",
+    "unicode_decimal": 59013
+  }, {
+    "icon_id": "24881281",
+    "name": "sound-filled",
+    "font_class": "sound-filled",
+    "unicode": "e686",
+    "unicode_decimal": 59014
+  }, {
+    "icon_id": "24881282",
+    "name": "trash",
+    "font_class": "trash",
+    "unicode": "e687",
+    "unicode_decimal": 59015
+  }, {
+    "icon_id": "24881284",
+    "name": "videocam-filled",
+    "font_class": "videocam-filled",
+    "unicode": "e689",
+    "unicode_decimal": 59017
+  }, {
+    "icon_id": "24881285",
+    "name": "spinner-cycle",
+    "font_class": "spinner-cycle",
+    "unicode": "e68a",
+    "unicode_decimal": 59018
+  }, {
+    "icon_id": "24881286",
+    "name": "weibo",
+    "font_class": "weibo",
+    "unicode": "e68b",
+    "unicode_decimal": 59019
+  }, {
+    "icon_id": "24881288",
+    "name": "videocam",
+    "font_class": "videocam",
+    "unicode": "e68c",
+    "unicode_decimal": 59020
+  }, {
+    "icon_id": "24881289",
+    "name": "download",
+    "font_class": "download",
+    "unicode": "e68d",
+    "unicode_decimal": 59021
+  }, {
+    "icon_id": "24879601",
+    "name": "help",
+    "font_class": "help",
+    "unicode": "e679",
+    "unicode_decimal": 59001
+  }, {
+    "icon_id": "24879602",
+    "name": "navigate-filled",
+    "font_class": "navigate-filled",
+    "unicode": "e67a",
+    "unicode_decimal": 59002
+  }, {
+    "icon_id": "24879603",
+    "name": "plusempty",
+    "font_class": "plusempty",
+    "unicode": "e67b",
+    "unicode_decimal": 59003
+  }, {
+    "icon_id": "24879604",
+    "name": "smallcircle",
+    "font_class": "smallcircle",
+    "unicode": "e67c",
+    "unicode_decimal": 59004
+  }, {
+    "icon_id": "24879605",
+    "name": "minus-filled",
+    "font_class": "minus-filled",
+    "unicode": "e67d",
+    "unicode_decimal": 59005
+  }, {
+    "icon_id": "24879606",
+    "name": "micoff",
+    "font_class": "micoff",
+    "unicode": "e67e",
+    "unicode_decimal": 59006
+  }, {
+    "icon_id": "24879588",
+    "name": "closeempty",
+    "font_class": "closeempty",
+    "unicode": "e66c",
+    "unicode_decimal": 58988
+  }, {
+    "icon_id": "24879589",
+    "name": "clear",
+    "font_class": "clear",
+    "unicode": "e66d",
+    "unicode_decimal": 58989
+  }, {
+    "icon_id": "24879590",
+    "name": "navigate",
+    "font_class": "navigate",
+    "unicode": "e66e",
+    "unicode_decimal": 58990
+  }, {
+    "icon_id": "24879591",
+    "name": "minus",
+    "font_class": "minus",
+    "unicode": "e66f",
+    "unicode_decimal": 58991
+  }, {
+    "icon_id": "24879592",
+    "name": "image",
+    "font_class": "image",
+    "unicode": "e670",
+    "unicode_decimal": 58992
+  }, {
+    "icon_id": "24879593",
+    "name": "mic",
+    "font_class": "mic",
+    "unicode": "e671",
+    "unicode_decimal": 58993
+  }, {
+    "icon_id": "24879594",
+    "name": "paperplane",
+    "font_class": "paperplane",
+    "unicode": "e672",
+    "unicode_decimal": 58994
+  }, {
+    "icon_id": "24879595",
+    "name": "close",
+    "font_class": "close",
+    "unicode": "e673",
+    "unicode_decimal": 58995
+  }, {
+    "icon_id": "24879596",
+    "name": "help-filled",
+    "font_class": "help-filled",
+    "unicode": "e674",
+    "unicode_decimal": 58996
+  }, {
+    "icon_id": "24879597",
+    "name": "plus-filled",
+    "font_class": "paperplane-filled",
+    "unicode": "e675",
+    "unicode_decimal": 58997
+  }, {
+    "icon_id": "24879598",
+    "name": "plus",
+    "font_class": "plus",
+    "unicode": "e676",
+    "unicode_decimal": 58998
+  }, {
+    "icon_id": "24879599",
+    "name": "mic-filled",
+    "font_class": "mic-filled",
+    "unicode": "e677",
+    "unicode_decimal": 58999
+  }, {
+    "icon_id": "24879600",
+    "name": "image-filled",
+    "font_class": "image-filled",
+    "unicode": "e678",
+    "unicode_decimal": 59000
+  }, {
+    "icon_id": "24855900",
+    "name": "locked-filled",
+    "font_class": "locked-filled",
+    "unicode": "e668",
+    "unicode_decimal": 58984
+  }, {
+    "icon_id": "24855901",
+    "name": "info",
+    "font_class": "info",
+    "unicode": "e669",
+    "unicode_decimal": 58985
+  }, {
+    "icon_id": "24855903",
+    "name": "locked",
+    "font_class": "locked",
+    "unicode": "e66b",
+    "unicode_decimal": 58987
+  }, {
+    "icon_id": "24855884",
+    "name": "camera-filled",
+    "font_class": "camera-filled",
+    "unicode": "e658",
+    "unicode_decimal": 58968
+  }, {
+    "icon_id": "24855885",
+    "name": "chat-filled",
+    "font_class": "chat-filled",
+    "unicode": "e659",
+    "unicode_decimal": 58969
+  }, {
+    "icon_id": "24855886",
+    "name": "camera",
+    "font_class": "camera",
+    "unicode": "e65a",
+    "unicode_decimal": 58970
+  }, {
+    "icon_id": "24855887",
+    "name": "circle",
+    "font_class": "circle",
+    "unicode": "e65b",
+    "unicode_decimal": 58971
+  }, {
+    "icon_id": "24855888",
+    "name": "checkmarkempty",
+    "font_class": "checkmarkempty",
+    "unicode": "e65c",
+    "unicode_decimal": 58972
+  }, {
+    "icon_id": "24855889",
+    "name": "chat",
+    "font_class": "chat",
+    "unicode": "e65d",
+    "unicode_decimal": 58973
+  }, {
+    "icon_id": "24855890",
+    "name": "circle-filled",
+    "font_class": "circle-filled",
+    "unicode": "e65e",
+    "unicode_decimal": 58974
+  }, {
+    "icon_id": "24855891",
+    "name": "flag",
+    "font_class": "flag",
+    "unicode": "e65f",
+    "unicode_decimal": 58975
+  }, {
+    "icon_id": "24855892",
+    "name": "flag-filled",
+    "font_class": "flag-filled",
+    "unicode": "e660",
+    "unicode_decimal": 58976
+  }, {
+    "icon_id": "24855893",
+    "name": "gear-filled",
+    "font_class": "gear-filled",
+    "unicode": "e661",
+    "unicode_decimal": 58977
+  }, {
+    "icon_id": "24855894",
+    "name": "home",
+    "font_class": "home",
+    "unicode": "e662",
+    "unicode_decimal": 58978
+  }, {
+    "icon_id": "24855895",
+    "name": "home-filled",
+    "font_class": "home-filled",
+    "unicode": "e663",
+    "unicode_decimal": 58979
+  }, {
+    "icon_id": "24855896",
+    "name": "gear",
+    "font_class": "gear",
+    "unicode": "e664",
+    "unicode_decimal": 58980
+  }, {
+    "icon_id": "24855897",
+    "name": "smallcircle-filled",
+    "font_class": "smallcircle-filled",
+    "unicode": "e665",
+    "unicode_decimal": 58981
+  }, {
+    "icon_id": "24855898",
+    "name": "map-filled",
+    "font_class": "map-filled",
+    "unicode": "e666",
+    "unicode_decimal": 58982
+  }, {
+    "icon_id": "24855899",
+    "name": "map",
+    "font_class": "map",
+    "unicode": "e667",
+    "unicode_decimal": 58983
+  }, {
+    "icon_id": "24855825",
+    "name": "refresh-filled",
+    "font_class": "refresh-filled",
+    "unicode": "e656",
+    "unicode_decimal": 58966
+  }, {
+    "icon_id": "24855826",
+    "name": "refresh",
+    "font_class": "refresh",
+    "unicode": "e657",
+    "unicode_decimal": 58967
+  }, {
+    "icon_id": "24855808",
+    "name": "cloud-upload",
+    "font_class": "cloud-upload",
+    "unicode": "e645",
+    "unicode_decimal": 58949
+  }, {
+    "icon_id": "24855809",
+    "name": "cloud-download-filled",
+    "font_class": "cloud-download-filled",
+    "unicode": "e646",
+    "unicode_decimal": 58950
+  }, {
+    "icon_id": "24855810",
+    "name": "cloud-download",
+    "font_class": "cloud-download",
+    "unicode": "e647",
+    "unicode_decimal": 58951
+  }, {
+    "icon_id": "24855811",
+    "name": "cloud-upload-filled",
+    "font_class": "cloud-upload-filled",
+    "unicode": "e648",
+    "unicode_decimal": 58952
+  }, {
+    "icon_id": "24855813",
+    "name": "redo",
+    "font_class": "redo",
+    "unicode": "e64a",
+    "unicode_decimal": 58954
+  }, {
+    "icon_id": "24855814",
+    "name": "images-filled",
+    "font_class": "images-filled",
+    "unicode": "e64b",
+    "unicode_decimal": 58955
+  }, {
+    "icon_id": "24855815",
+    "name": "undo-filled",
+    "font_class": "undo-filled",
+    "unicode": "e64c",
+    "unicode_decimal": 58956
+  }, {
+    "icon_id": "24855816",
+    "name": "more",
+    "font_class": "more",
+    "unicode": "e64d",
+    "unicode_decimal": 58957
+  }, {
+    "icon_id": "24855817",
+    "name": "more-filled",
+    "font_class": "more-filled",
+    "unicode": "e64e",
+    "unicode_decimal": 58958
+  }, {
+    "icon_id": "24855818",
+    "name": "undo",
+    "font_class": "undo",
+    "unicode": "e64f",
+    "unicode_decimal": 58959
+  }, {
+    "icon_id": "24855819",
+    "name": "images",
+    "font_class": "images",
+    "unicode": "e650",
+    "unicode_decimal": 58960
+  }, {
+    "icon_id": "24855821",
+    "name": "paperclip",
+    "font_class": "paperclip",
+    "unicode": "e652",
+    "unicode_decimal": 58962
+  }, {
+    "icon_id": "24855822",
+    "name": "settings",
+    "font_class": "settings",
+    "unicode": "e653",
+    "unicode_decimal": 58963
+  }, {
+    "icon_id": "24855823",
+    "name": "search",
+    "font_class": "search",
+    "unicode": "e654",
+    "unicode_decimal": 58964
+  }, {
+    "icon_id": "24855824",
+    "name": "redo-filled",
+    "font_class": "redo-filled",
+    "unicode": "e655",
+    "unicode_decimal": 58965
+  }, {
+    "icon_id": "24841702",
+    "name": "list",
+    "font_class": "list",
+    "unicode": "e644",
+    "unicode_decimal": 58948
+  }, {
+    "icon_id": "24841489",
+    "name": "mail-open-filled",
+    "font_class": "mail-open-filled",
+    "unicode": "e63a",
+    "unicode_decimal": 58938
+  }, {
+    "icon_id": "24841491",
+    "name": "hand-thumbsdown-filled",
+    "font_class": "hand-down-filled",
+    "unicode": "e63c",
+    "unicode_decimal": 58940
+  }, {
+    "icon_id": "24841492",
+    "name": "hand-thumbsdown",
+    "font_class": "hand-down",
+    "unicode": "e63d",
+    "unicode_decimal": 58941
+  }, {
+    "icon_id": "24841493",
+    "name": "hand-thumbsup-filled",
+    "font_class": "hand-up-filled",
+    "unicode": "e63e",
+    "unicode_decimal": 58942
+  }, {
+    "icon_id": "24841494",
+    "name": "hand-thumbsup",
+    "font_class": "hand-up",
+    "unicode": "e63f",
+    "unicode_decimal": 58943
+  }, {
+    "icon_id": "24841496",
+    "name": "heart-filled",
+    "font_class": "heart-filled",
+    "unicode": "e641",
+    "unicode_decimal": 58945
+  }, {
+    "icon_id": "24841498",
+    "name": "mail-open",
+    "font_class": "mail-open",
+    "unicode": "e643",
+    "unicode_decimal": 58947
+  }, {
+    "icon_id": "24841488",
+    "name": "heart",
+    "font_class": "heart",
+    "unicode": "e639",
+    "unicode_decimal": 58937
+  }, {
+    "icon_id": "24839963",
+    "name": "loop",
+    "font_class": "loop",
+    "unicode": "e633",
+    "unicode_decimal": 58931
+  }, {
+    "icon_id": "24839866",
+    "name": "pulldown",
+    "font_class": "pulldown",
+    "unicode": "e632",
+    "unicode_decimal": 58930
+  }, {
+    "icon_id": "24813798",
+    "name": "scan",
+    "font_class": "scan",
+    "unicode": "e62a",
+    "unicode_decimal": 58922
+  }, {
+    "icon_id": "24813786",
+    "name": "bars",
+    "font_class": "bars",
+    "unicode": "e627",
+    "unicode_decimal": 58919
+  }, {
+    "icon_id": "24813788",
+    "name": "cart-filled",
+    "font_class": "cart-filled",
+    "unicode": "e629",
+    "unicode_decimal": 58921
+  }, {
+    "icon_id": "24813790",
+    "name": "checkbox",
+    "font_class": "checkbox",
+    "unicode": "e62b",
+    "unicode_decimal": 58923
+  }, {
+    "icon_id": "24813791",
+    "name": "checkbox-filled",
+    "font_class": "checkbox-filled",
+    "unicode": "e62c",
+    "unicode_decimal": 58924
+  }, {
+    "icon_id": "24813794",
+    "name": "shop",
+    "font_class": "shop",
+    "unicode": "e62f",
+    "unicode_decimal": 58927
+  }, {
+    "icon_id": "24813795",
+    "name": "headphones",
+    "font_class": "headphones",
+    "unicode": "e630",
+    "unicode_decimal": 58928
+  }, {
+    "icon_id": "24813796",
+    "name": "cart",
+    "font_class": "cart",
+    "unicode": "e631",
+    "unicode_decimal": 58929
+  }]
+};
+
+/***/ }),
+/* 355 */,
+/* 356 */,
+/* 357 */,
+/* 358 */,
+/* 359 */,
+/* 360 */,
+/* 361 */,
+/* 362 */
+/*!******************************************************************************!*\
+  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/index.js ***!
+  \******************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _en = _interopRequireDefault(__webpack_require__(/*! ./en.json */ 363));
+var _zhHans = _interopRequireDefault(__webpack_require__(/*! ./zh-Hans.json */ 364));
+var _zhHant = _interopRequireDefault(__webpack_require__(/*! ./zh-Hant.json */ 365));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+var _default = exports.default = {
+  en: _en.default,
+  'zh-Hans': _zhHans.default,
+  'zh-Hant': _zhHant.default
+};
+
+/***/ }),
+/* 363 */
+/*!*****************************************************************************!*\
+  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/en.json ***!
+  \*****************************************************************************/
+/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"Pull up to show more\",\"uni-load-more.contentrefresh\":\"loading...\",\"uni-load-more.contentnomore\":\"No more data\"}");
+
+/***/ }),
+/* 364 */
+/*!**********************************************************************************!*\
+  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/zh-Hans.json ***!
+  \**********************************************************************************/
+/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"上拉显示更多\",\"uni-load-more.contentrefresh\":\"正在加载...\",\"uni-load-more.contentnomore\":\"没有更多数据了\"}");
+
+/***/ }),
+/* 365 */
+/*!**********************************************************************************!*\
+  !*** ./src/uni_modules/uni-load-more/components/uni-load-more/i18n/zh-Hant.json ***!
+  \**********************************************************************************/
+/*! exports provided: uni-load-more.contentdown, uni-load-more.contentrefresh, uni-load-more.contentnomore, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"uni-load-more.contentdown\":\"上拉顯示更多\",\"uni-load-more.contentrefresh\":\"正在加載...\",\"uni-load-more.contentnomore\":\"沒有更多數據了\"}");
+
+/***/ })
+]]);

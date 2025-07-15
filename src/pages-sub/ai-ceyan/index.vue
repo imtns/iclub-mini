@@ -13,7 +13,9 @@
     <span style="color: red">页面toast不要用wx.showLoading，要用这个，页面添加x-toast 标签</span>
     <x-btn @click="open">打开弹窗</x-btn>
     <uni-popup ref="popup" border-radius="10px 10px 0 0">
-      <div style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">这是弹窗</div>
+      <div
+        style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">
+        这是弹窗</div>
     </uni-popup>
     <x-btn @click="maidian">埋点记录</x-btn>
     <button type="primary" open-type="share" @click="handleShareClick">按钮分享</button>
@@ -30,7 +32,7 @@
 import { apiDianzan } from "./api";
 import { mapState } from "vuex";
 export default {
-  data() {
+  data () {
     return {
       responseData: null,
       addressInfo: "",
@@ -46,7 +48,7 @@ export default {
       },
     };
   },
-  onShow() {
+  onShow () {
     // 从地址页面选择完地址返回页面后会读取到地址信息
     const addressInfo = this.lsGet("address");
     if (addressInfo) {
@@ -58,11 +60,11 @@ export default {
     ...mapState(["isLogin", "userInfo"]),
   },
   methods: {
-    showToast(msg) {
+    showToast (msg) {
       this.$refs.toast.show({ message: msg });
     },
 
-    handleShareClick() {
+    handleShareClick () {
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
         ...this.shareInfo,
@@ -72,7 +74,7 @@ export default {
         buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
       };
     },
-    handleCaptcha() {
+    handleCaptcha () {
       if (!this.isLogin) {
         this.goLogin();
         return;
@@ -85,33 +87,33 @@ export default {
         this.showToast("点赞成功");
       });
     },
-    goAddress() {
+    goAddress () {
       uni.navigateTo({
         url: "/pages/mine/address/list",
       });
     },
-    maidian() {
+    maidian () {
       // 比如签到,点击就记录名称
       // 其他点击同样操作记录
       this.report("嗨嗨:签到点击");
     },
-    toast() {
+    toast () {
       this.showToast("提示信息");
     },
-    async TestAPI() {
+    async TestAPI () {
       if (!this.isLogin) {
         this.goLogin();
       }
     },
-    open() {
+    open () {
       // 参考https://uniapp.dcloud.net.cn/component/uniui/uni-popup.html
       // 通过组件定义的ref调用uni-popup方法 ,如果传入参数 ，type 属性将失效 ，仅支持 ['top','left','bottom','right','center']
       this.$refs.popup.open("center");
     },
-    showDrawer() {
+    showDrawer () {
       this.$refs.showRight.open();
     },
-    closeDrawer() {
+    closeDrawer () {
       this.$refs.showRight.close();
     },
   },
