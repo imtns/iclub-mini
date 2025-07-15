@@ -16,4 +16,14 @@ module.exports = {
     ),
   apiDianzan: (data) =>
     request('/iclub/api/content/upvote', 'post', data, true),
+  findAliToken: () =>
+    request(
+      '/iclub/openApi/fileUpload/findAliToken',
+      'post',
+      {},
+      true,
+      false,
+      false,
+      false
+    ),
 };

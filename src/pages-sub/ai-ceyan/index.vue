@@ -63,7 +63,7 @@
         <image class="" :src="`${ASSETSURL}photoUpload.png`" style="width: 272rpx; height: 114rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
-      <view @click="getUploadPhotoAlbum">
+      <view @click="handleUpload">
         <image class="" :src="`${ASSETSURL}UploadPhotoAlbum.png`" style="width: 274rpx; height: 116rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
@@ -81,6 +81,10 @@
         </image>
       </view>
     </uni-popup>
+    <!-- <x-btn @click="handleUpload">上传图片</x-btn>
+    <image :src="uploadImage" style="width: 200rpx; height: 200rpx" mode="aspectFill" />
+    <text style="color: red">图片地址<br />{{ uploadImage }}</text> -->
+    <!-- <x-toast ref="toast" /> -->
   </view>
 </template>
 
@@ -89,6 +93,7 @@ import xBtn from "@/components/x/btn.vue"
 import { testAPI, assistRemind } from './api'
 import { mapState } from "vuex";
 import Tool from './tool/tool.js'
+import { upload } from "./upload/upload";
 export default {
   data () {
     return {
@@ -98,6 +103,26 @@ export default {
       searchValue: '',
       ASSETSURL: Tool.ASSETSURL,
       titleText: '请上传您的颈部照片',
+      addressInfo: "",
+      uploadImage: "",
+      /**
+       * 注意~！！！ 分享的时候不要在页面添加
+       * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
+       * 如果要分享，在页面data里添加shareInfo对象，在shareInfo里定义分享的标题、路径、图片
+       */
+      shareInfo: {
+        title: "嗨嗨",
+        path: "/pages-sub/ai-ceyan/index",
+        imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
+      },
+    };
+  },
+  onShow () {
+    // 从地址页面选择完地址返回页面后会读取到地址信息
+    const addressInfo = this.lsGet("address");
+    if (addressInfo) {
+      this.addressInfo = addressInfo;
+      this.lsDel("address");
     }
   },
   computed: {
@@ -117,6 +142,46 @@ export default {
     this.intelligentAnimation = false
   },
   methods: {
+    getUploadImage () {
+      let thst = this
+      return new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          mediaType: ["image"],
+          count: 1,
+          sourceType: ["album", "camera"],
+          sizeType: ["original", "compressed"],
+          success: async (res) => {
+            const savePath = "image";
+            const filePath = res.tempFiles[0].tempFilePath;
+            thst.image = filePath
+            thst.intelligentAnimation = true
+
+            upload(filePath, savePath, (imageUrl) => {
+              console.log("imageUrl----------", imageUrl);
+              if (imageUrl) {
+                console.log("图片上传成功", imageUrl);
+                resolve(imageUrl);
+              } else {
+                console.log("图片上传失败，请稍后重试");
+              }
+            });
+          },
+          fail: reject,
+        });
+      });
+    },
+    async handleUpload () {
+      const imageUrl = await this.getUploadImage();
+      console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
+      this.uploadImage = imageUrl;
+      this.intelligentAnimation = false
+      setTimeout(() => {
+        uni.navigateTo({
+          url: '/pages-sub/ai-ceyan/uploaded'
+        })
+        //   this.$refs.popup.open('center')
+      }, 3000);
+    },
     leftClick () {
       uni.navigateBack()
     },
@@ -130,17 +195,6 @@ export default {
         console.log(err)
       }
     },
-    // open () {
-    //   // 参考https://uniapp.dcloud.net.cn/component/uniui/uni-popup.html
-    //   // 通过组件定义的ref调用uni-popup方法 ,如果传入参数 ，type 属性将失效 ，仅支持 ['top','left','bottom','right','center']
-    //   this.$refs.popup.open('center')
-    // },
-    // showDrawer () {
-    //   this.$refs.showRight.open()
-    // },
-    // closeDrawer () {
-    //   this.$refs.showRight.close()
-    // },
     //拒绝摄像头后
     onCameraError (e) {
       uni.showModal({
@@ -196,34 +250,34 @@ export default {
       });
     },
     // 相册上传
-    getUploadPhotoAlbum () {
-      let thst = this
-      uni.chooseImage({
-        count: 1, // 默认选择一张
-        sizeType: ['original', 'compressed'], // 可以选择原图或压缩图
-        sourceType: ['album'], // 只允许从相册选择
-        success: (res) => {
-          thst.titleText = '嗨嗨颈纹知识话术'
-          thst.intelligentAnimation = true
-          thst.image = res.tempFilePaths[0]
-          console.log(res, '相册上传');
+    // getUploadPhotoAlbum () {
+    //   let thst = this
+    //   uni.chooseImage({
+    //     count: 1, // 默认选择一张
+    //     sizeType: ['original', 'compressed'], // 可以选择原图或压缩图
+    //     sourceType: ['album'], // 只允许从相册选择
+    //     success: (res) => {
+    //       thst.titleText = '嗨嗨颈纹知识话术'
+    //       thst.intelligentAnimation = true
+    //       thst.image = res.tempFilePaths[0]
+    //       console.log(res, '相册上传');
 
-          setTimeout(() => {
-            uni.navigateTo({
-              url: '/pages-sub/ai-ceyan/uploaded'
-            })
-            //   this.$refs.popup.open('center')
-          }, 3000);
-        },
-        fail: (err) => {
-          uni.showToast({
-            title: '选择图片失败',
-            icon: 'none'
-          });
-          console.error('选择图片失败', err);
-        }
-      });
-    },
+    //       setTimeout(() => {
+    //         uni.navigateTo({
+    //           url: '/pages-sub/ai-ceyan/uploaded'
+    //         })
+    //         //   this.$refs.popup.open('center')
+    //       }, 3000);
+    //     },
+    //     fail: (err) => {
+    //       uni.showToast({
+    //         title: '选择图片失败',
+    //         icon: 'none'
+    //       });
+    //       console.error('选择图片失败', err);
+    //     }
+    //   });
+    // },
     //重新上传
     getReupload () {
       this.$refs.popup.close()
