@@ -19,7 +19,7 @@ module.exports = {
    * @param {*} hideLoading
    * @returns
    */
-  request: function (url, method = "GET", data = {}, isMessage = true, isJson = false, noToast = false, hideLoading = true, headers = {}) {
+  request: function (url, method = "GET", data = {}, isMessage = true, isJson = true, noToast = false, hideLoading = true, headers = {}) {
     const json = isJson ? "application/json" : "application/x-www-form-urlencoded";
     // iclub的请求走另外的接口域名
     const base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
@@ -37,6 +37,7 @@ module.exports = {
     return new Promise(async (resolve, reject) => {
       // 不需要登录就可以调用的接口白名单
       const whiteList = [
+        "burypoint",
         "http",
         "/biz-passport/passport/login/getOpenId",
         "iclub/api/operate/queryOperate",
@@ -112,14 +113,7 @@ module.exports = {
           if (res.header && res.header["x-imeik-refreshToken"]) {
             ls("iclubUserToken3", res.header["x-imeik-refreshToken"]);
           }
-          function isObject(value) {
-            return typeof value === "object" && value !== null;
-          }
-          if (res.data && isObject(res.data)) {
-            // 解密
-            resolve(res.data);
-            return;
-          }
+
           // 请求成功，清除ticket
           lsDel("ticket");
           if (res.data.code === 10000) {

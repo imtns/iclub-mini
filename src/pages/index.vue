@@ -5,7 +5,7 @@
       加载任何第三方UI库/方法，主包会超体积，所有组件请在pages-sub/ai-ceyan/components实现，样式，api，逻辑，均放在pages-sub/ai-ceyan目录下
     </div>
     <div>代码只在ai-ceyan的文件夹里更新哦~</div>
-    <button @click="go">跳转AI测颜</button>
+    <x-btn @click="go">跳转AI测颜</x-btn>
   </div>
 </template>
 

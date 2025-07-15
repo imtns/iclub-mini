@@ -13,4 +13,6 @@ module.exports = {
       'post',
       data
     ),
+  apiDianzan: (data) =>
+    request('/iclub/api/content/upvote', 'post', data, true),
 };

@@ -12,6 +12,17 @@
       "root": "pages-sub",
       "pages": [
         {
+          "path": "login/index",
+          "style": {
+            "navigationBarTitleText": "登录",
+            "mp-weixin": {
+              "usingComponents": {
+                "loginform": "plugin://myPlugin/loginform"
+              }
+            }
+          }
+        },
+        {
           "path": "ai-ceyan/index",
           "style": {
             "navigationBarTitleText": "AI测颈纹",
@@ -23,6 +34,29 @@
           "style": {
             "navigationBarTitleText": "上传成功海报",
             "navigationStyle": "custom"
+          }
+        }
+      ],
+      "plugins": {
+        "myPlugin": {
+          "version": "1.0.25",
+          "provider": "wx49ba8c2e81bce02f"
+        }
+      }
+    },
+    {
+      "root": "pages/mine",
+      "pages": [
+        {
+          "path": "address/list",
+          "style": {
+            "navigationBarTitleText": "我的地址"
+          }
+        },
+        {
+          "path": "address/manage",
+          "style": {
+            "navigationBarTitleText": "编辑地址"
           }
         }
       ]
