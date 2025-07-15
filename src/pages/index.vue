@@ -11,11 +11,11 @@
 
 <script>
 export default {
-  data() {
+  data () {
     return {};
   },
   methods: {
-    go() {
+    go () {
       wx.navigateTo({
         url: "/pages-sub/ai-ceyan/index",
       });
