@@ -104,7 +104,7 @@ try {
       return __webpack_require__.e(/*! import() | uni_modules/uni-nav-bar/components/uni-nav-bar/uni-nav-bar */ "uni_modules/uni-nav-bar/components/uni-nav-bar/uni-nav-bar").then(__webpack_require__.bind(null, /*! @/uni_modules/uni-nav-bar/components/uni-nav-bar/uni-nav-bar.vue */ 47))
     },
     uniPopup: function () {
-      return __webpack_require__.e(/*! import() | uni_modules/uni-popup/components/uni-popup/uni-popup */ "uni_modules/uni-popup/components/uni-popup/uni-popup").then(__webpack_require__.bind(null, /*! @/uni_modules/uni-popup/components/uni-popup/uni-popup.vue */ 74))
+      return __webpack_require__.e(/*! import() | uni_modules/uni-popup/components/uni-popup/uni-popup */ "uni_modules/uni-popup/components/uni-popup/uni-popup").then(__webpack_require__.bind(null, /*! @/uni_modules/uni-popup/components/uni-popup/uni-popup.vue */ 54))
     },
   }
 } catch (e) {
@@ -170,6 +170,10 @@ exports.default = void 0;
 var _api = __webpack_require__(/*! ./api */ 43);
 var _tool = _interopRequireDefault(__webpack_require__(/*! ./tool/tool.js */ 44));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i.return) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { if (r) i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n;else { var o = function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); }; o("next", 0), o("throw", 1), o("return", 2); } }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; } //
 //
 //
 //
@@ -237,7 +241,7 @@ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e
 //
 //
 var _default = exports.default = {
-  data() {
+  data: function data() {
     return {
       image: null,
       intelligentAnimation: false,
@@ -248,17 +252,34 @@ var _default = exports.default = {
       titleText: '请上传您的颈部照片'
     };
   },
-  onShow() {},
+  onShow: function onShow() {},
   methods: {
-    // async TestAPI () {
-    //   try {
-    //     const res = await testAPI()
-    //     this.responseData = JSON.stringify(res)
-    //     console.log(res)
-    //   } catch (err) {
-    //     console.log(err)
-    //   }
-    // },
+    TestAPI: function TestAPI() {
+      var _this = this;
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+        var res, _t;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.n) {
+            case 0:
+              _context.p = 0;
+              _context.n = 1;
+              return (0, _api.testAPI1)();
+            case 1:
+              res = _context.v;
+              _this.responseData = JSON.stringify(res);
+              console.log(res);
+              _context.n = 3;
+              break;
+            case 2:
+              _context.p = 2;
+              _t = _context.v;
+              console.log(_t);
+            case 3:
+              return _context.a(2);
+          }
+        }, _callee, null, [[0, 2]]);
+      }))();
+    },
     // open () {
     //   // 参考https://uniapp.dcloud.net.cn/component/uniui/uni-popup.html
     //   // 通过组件定义的ref调用uni-popup方法 ,如果传入参数 ，type 属性将失效 ，仅支持 ['top','left','bottom','right','center']
@@ -271,13 +292,13 @@ var _default = exports.default = {
     //   this.$refs.showRight.close()
     // },
     //拒绝摄像头后
-    onCameraError(e) {
+    onCameraError: function onCameraError(e) {
       uni.showModal({
         title: '提示',
         content: '请前往设置打开摄像头权限',
         confirmText: '去设置',
         cancelText: '取消',
-        success: function (modalRes) {
+        success: function success(modalRes) {
           if (modalRes.confirm) {
             uni.openSetting();
           }
@@ -285,17 +306,17 @@ var _default = exports.default = {
       });
     },
     // 拍照上传，先判断是否开启摄像头权限
-    getPhotoUpload() {
+    getPhotoUpload: function getPhotoUpload() {
       // 检查摄像头权限
       uni.getSetting({
-        success: res => {
-          const cameraAuth = res.authSetting['scope.camera'];
+        success: function success(res) {
+          var cameraAuth = res.authSetting['scope.camera'];
           if (cameraAuth) {
             // 已授权，拍照
-            const ctx = uni.createCameraContext();
+            var ctx = uni.createCameraContext();
             ctx.takePhoto({
               quality: 'high',
-              success: res => {
+              success: function success(res) {
                 console.log(res.tempImagePath, '拍照上传');
                 // {"errMsg": "operateCamera:ok", "width": 720, "tempImagePath": "wxfile://tmp_86c2f196b102a4fb1b2553ac442e40ca.jpg", "height": 828} 拍照上传
               }
@@ -307,7 +328,7 @@ var _default = exports.default = {
               content: '请前往设置打开摄像头权限',
               confirmText: '去设置',
               cancelText: '取消',
-              success: function (modalRes) {
+              success: function success(modalRes) {
                 if (modalRes.confirm) {
                   uni.openSetting();
                 }
@@ -315,7 +336,7 @@ var _default = exports.default = {
             });
           }
         },
-        fail: () => {
+        fail: function fail() {
           uni.showModal({
             title: '错误',
             content: '无法获取摄像头权限设置，请重试或检查系统设置。',
@@ -325,8 +346,9 @@ var _default = exports.default = {
       });
     },
     // 相册上传
-    getUploadPhotoAlbum() {
-      let thst = this;
+    getUploadPhotoAlbum: function getUploadPhotoAlbum() {
+      var _this2 = this;
+      var thst = this;
       uni.chooseImage({
         count: 1,
         // 默认选择一张
@@ -334,16 +356,16 @@ var _default = exports.default = {
         // 可以选择原图或压缩图
         sourceType: ['album'],
         // 只允许从相册选择
-        success: res => {
+        success: function success(res) {
           thst.titleText = '嗨嗨颈纹知识话术';
           thst.intelligentAnimation = true;
           thst.image = res.tempFilePaths[0];
           console.log(res, '相册上传');
-          setTimeout(() => {
-            this.$refs.popup.open('center');
+          setTimeout(function () {
+            _this2.$refs.popup.open('center');
           }, 3000);
         },
-        fail: err => {
+        fail: function fail(err) {
           uni.showToast({
             title: '选择图片失败',
             icon: 'none'
@@ -353,7 +375,7 @@ var _default = exports.default = {
       });
     },
     //重新上传
-    getReupload() {
+    getReupload: function getReupload() {
       this.$refs.popup.close();
       this.titleText = '请上传您的颈部照片';
       this.intelligentAnimation = false;
@@ -394,3 +416,4 @@ __webpack_require__.r(__webpack_exports__);
 /***/ })
 
 },[[37,"common/runtime","common/vendor","pages-sub/common/vendor"]]]);
+//# sourceMappingURL=../../../.sourcemap/mp-weixin/pages-sub/ai-ceyan/index.js.map

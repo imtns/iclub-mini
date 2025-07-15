@@ -17,6 +17,12 @@ var _spaCustomHooks = _interopRequireDefault(__webpack_require__(/*! spa-custom-
 var _polyfill = _interopRequireDefault(__webpack_require__(/*! ./polyfill/polyfill */ 29));
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 // @ts-ignore
 wx.__webpack_require_UNI_MP_PLUGIN__ = __webpack_require__;
 // 全局分享
@@ -41,12 +47,10 @@ _vue.default.use(_spaCustomHooks.default, _hooks.default, _store.default);
 _vue.default.config.productionTip = false;
 _App.default.mpType = 'app';
 _App.default.store = _store.default;
-_vue.default.prototype.$onLaunched = new Promise(resolve => {
+_vue.default.prototype.$onLaunched = new Promise(function (resolve) {
   _vue.default.prototype.$isResolve = resolve;
 });
-const app = new _vue.default({
-  ..._App.default
-});
+var app = new _vue.default(_objectSpread({}, _App.default));
 createApp(app).$mount();
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["createApp"]))
 
@@ -125,12 +129,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _default = exports.default = {
-  data() {
+  data: function data() {
     return {};
   },
-  onLaunch(options) {},
-  onShow(options) {},
-  onHide() {}
+  onLaunch: function onLaunch(options) {},
+  onShow: function onShow(options) {},
+  onHide: function onHide() {}
 };
 
 /***/ }),
@@ -162,3 +166,4 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ })
 ],[[0,"common/runtime","common/vendor"]]]);
+//# sourceMappingURL=../../.sourcemap/mp-weixin/common/main.js.map

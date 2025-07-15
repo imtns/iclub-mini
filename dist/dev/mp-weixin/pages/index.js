@@ -151,11 +151,11 @@ exports.default = void 0;
 //
 //
 var _default = exports.default = {
-  data() {
+  data: function data() {
     return {};
   },
   methods: {
-    go() {
+    go: function go() {
       wx.navigateTo({
         url: "/pages-sub/ai-ceyan/index"
       });
@@ -166,3 +166,4 @@ var _default = exports.default = {
 /***/ })
 
 },[[31,"common/runtime","common/vendor"]]]);
+//# sourceMappingURL=../../.sourcemap/mp-weixin/pages/index.js.map

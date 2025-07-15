@@ -1,5 +1,6 @@
 <template>
   <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}bg.png)` }">
+    <button type="primary" @click="TestAPI">测试请求</button>
     <!-- <button type="primary" @click="TestAPI">测试请求</button>
     {{ responseData }}
     <button type="primary" @click="showDrawer">右侧弹出 显示Drawer</button>
@@ -85,7 +86,7 @@
 </template>
 
 <script>
-import { testAPI } from './api'
+import { testAPI, testAPI1 } from './api'
 import Tool from './tool/tool.js'
 
 export default {
@@ -102,15 +103,15 @@ export default {
   onShow () {
   },
   methods: {
-    // async TestAPI () {
-    //   try {
-    //     const res = await testAPI()
-    //     this.responseData = JSON.stringify(res)
-    //     console.log(res)
-    //   } catch (err) {
-    //     console.log(err)
-    //   }
-    // },
+    async TestAPI () {
+      try {
+        const res = await testAPI1()
+        this.responseData = JSON.stringify(res)
+        console.log(res)
+      } catch (err) {
+        console.log(err)
+      }
+    },
     // open () {
     //   // 参考https://uniapp.dcloud.net.cn/component/uniui/uni-popup.html
     //   // 通过组件定义的ref调用uni-popup方法 ,如果传入参数 ，type 属性将失效 ，仅支持 ['top','left','bottom','right','center']

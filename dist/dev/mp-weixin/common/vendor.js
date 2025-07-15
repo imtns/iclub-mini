@@ -22,11 +22,30 @@ exports.default = void 0;
 var _uniI18n = __webpack_require__(/*! @dcloudio/uni-i18n */ 3);
 var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 4));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-let realAtob;
-const b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-const b64re = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _construct(t, e, r) { if (_isNativeReflectConstruct()) return Reflect.construct.apply(null, arguments); var o = [null]; o.push.apply(o, e); var p = new (t.bind.apply(t, o))(); return r && _setPrototypeOf(p, r.prototype), p; }
+function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+var realAtob;
+var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+var b64re = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
 if (typeof atob !== 'function') {
-  realAtob = function (str) {
+  realAtob = function realAtob(str) {
     str = String(str).replace(/[\t\n\f\r ]+/g, '');
     if (!b64re.test(str)) {
       throw new Error("Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded.");
@@ -55,8 +74,8 @@ function b64DecodeUnicode(str) {
   }).join(''));
 }
 function getCurrentUserInfo() {
-  const token = wx.getStorageSync('uni_id_token') || '';
-  const tokenArr = token.split('.');
+  var token = wx.getStorageSync('uni_id_token') || '';
+  var tokenArr = token.split('.');
   if (!token || tokenArr.length !== 3) {
     return {
       uid: null,
@@ -65,7 +84,7 @@ function getCurrentUserInfo() {
       tokenExpired: 0
     };
   }
-  let userInfo;
+  var userInfo;
   try {
     userInfo = JSON.parse(b64DecodeUnicode(tokenArr[1]));
   } catch (error) {
@@ -78,26 +97,23 @@ function getCurrentUserInfo() {
 }
 function uniIdMixin(Vue) {
   Vue.prototype.uniIDHasRole = function (roleId) {
-    const {
-      role
-    } = getCurrentUserInfo();
+    var _getCurrentUserInfo = getCurrentUserInfo(),
+      role = _getCurrentUserInfo.role;
     return role.indexOf(roleId) > -1;
   };
   Vue.prototype.uniIDHasPermission = function (permissionId) {
-    const {
-      permission
-    } = getCurrentUserInfo();
+    var _getCurrentUserInfo2 = getCurrentUserInfo(),
+      permission = _getCurrentUserInfo2.permission;
     return this.uniIDHasRole('admin') || permission.indexOf(permissionId) > -1;
   };
   Vue.prototype.uniIDTokenValid = function () {
-    const {
-      tokenExpired
-    } = getCurrentUserInfo();
+    var _getCurrentUserInfo3 = getCurrentUserInfo(),
+      tokenExpired = _getCurrentUserInfo3.tokenExpired;
     return tokenExpired > Date.now();
   };
 }
-const _toString = Object.prototype.toString;
-const hasOwnProperty = Object.prototype.hasOwnProperty;
+var _toString = Object.prototype.toString;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
 function isFn(fn) {
   return typeof fn === 'function';
 }
@@ -105,7 +121,7 @@ function isStr(str) {
   return typeof str === 'string';
 }
 function isObject(obj) {
-  return obj !== null && typeof obj === 'object';
+  return obj !== null && _typeof(obj) === 'object';
 }
 function isPlainObject(obj) {
   return _toString.call(obj) === '[object Object]';
@@ -119,9 +135,9 @@ function noop() {}
  * Create a cached version of a pure function.
  */
 function cached(fn) {
-  const cache = Object.create(null);
+  var cache = Object.create(null);
   return function cachedFn(str) {
-    const hit = cache[str];
+    var hit = cache[str];
     return hit || (cache[str] = fn(str));
   };
 }
@@ -129,29 +145,31 @@ function cached(fn) {
 /**
  * Camelize a hyphen-delimited string.
  */
-const camelizeRE = /-(\w)/g;
-const camelize = cached(str => {
-  return str.replace(camelizeRE, (_, c) => c ? c.toUpperCase() : '');
+var camelizeRE = /-(\w)/g;
+var camelize = cached(function (str) {
+  return str.replace(camelizeRE, function (_, c) {
+    return c ? c.toUpperCase() : '';
+  });
 });
 function sortObject(obj) {
-  const sortObj = {};
+  var sortObj = {};
   if (isPlainObject(obj)) {
-    Object.keys(obj).sort().forEach(key => {
+    Object.keys(obj).sort().forEach(function (key) {
       sortObj[key] = obj[key];
     });
   }
   return !Object.keys(sortObj) ? obj : sortObj;
 }
-const HOOKS = ['invoke', 'success', 'fail', 'complete', 'returnValue'];
-const globalInterceptors = {};
-const scopedInterceptors = {};
+var HOOKS = ['invoke', 'success', 'fail', 'complete', 'returnValue'];
+var globalInterceptors = {};
+var scopedInterceptors = {};
 function mergeHook(parentVal, childVal) {
-  const res = childVal ? parentVal ? parentVal.concat(childVal) : Array.isArray(childVal) ? childVal : [childVal] : parentVal;
+  var res = childVal ? parentVal ? parentVal.concat(childVal) : Array.isArray(childVal) ? childVal : [childVal] : parentVal;
   return res ? dedupeHooks(res) : res;
 }
 function dedupeHooks(hooks) {
-  const res = [];
-  for (let i = 0; i < hooks.length; i++) {
+  var res = [];
+  for (var i = 0; i < hooks.length; i++) {
     if (res.indexOf(hooks[i]) === -1) {
       res.push(hooks[i]);
     }
@@ -159,13 +177,13 @@ function dedupeHooks(hooks) {
   return res;
 }
 function removeHook(hooks, hook) {
-  const index = hooks.indexOf(hook);
+  var index = hooks.indexOf(hook);
   if (index !== -1) {
     hooks.splice(index, 1);
   }
 }
 function mergeInterceptorHook(interceptor, option) {
-  Object.keys(option).forEach(hook => {
+  Object.keys(option).forEach(function (hook) {
     if (HOOKS.indexOf(hook) !== -1 && isFn(option[hook])) {
       interceptor[hook] = mergeHook(interceptor[hook], option[hook]);
     }
@@ -175,7 +193,7 @@ function removeInterceptorHook(interceptor, option) {
   if (!interceptor || !option) {
     return;
   }
-  Object.keys(option).forEach(hook => {
+  Object.keys(option).forEach(function (hook) {
     if (HOOKS.indexOf(hook) !== -1 && isFn(option[hook])) {
       removeHook(interceptor[hook], option[hook]);
     }
@@ -205,38 +223,39 @@ function wrapperHook(hook) {
   };
 }
 function isPromise(obj) {
-  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
+  return !!obj && (_typeof(obj) === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
 function queue(hooks, data) {
-  let promise = false;
-  for (let i = 0; i < hooks.length; i++) {
-    const hook = hooks[i];
+  var promise = false;
+  for (var i = 0; i < hooks.length; i++) {
+    var hook = hooks[i];
     if (promise) {
       promise = Promise.resolve(wrapperHook(hook));
     } else {
-      const res = hook(data);
+      var res = hook(data);
       if (isPromise(res)) {
         promise = Promise.resolve(res);
       }
       if (res === false) {
         return {
-          then() {}
+          then: function then() {}
         };
       }
     }
   }
   return promise || {
-    then(callback) {
+    then: function then(callback) {
       return callback(data);
     }
   };
 }
-function wrapperOptions(interceptor, options = {}) {
-  ['success', 'fail', 'complete'].forEach(name => {
+function wrapperOptions(interceptor) {
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  ['success', 'fail', 'complete'].forEach(function (name) {
     if (Array.isArray(interceptor[name])) {
-      const oldCallback = options[name];
+      var oldCallback = options[name];
       options[name] = function callbackInterceptor(res) {
-        queue(interceptor[name], res).then(res => {
+        queue(interceptor[name], res).then(function (res) {
           /* eslint-disable no-mixed-operators */
           return isFn(oldCallback) && oldCallback(res) || res;
         });
@@ -246,29 +265,29 @@ function wrapperOptions(interceptor, options = {}) {
   return options;
 }
 function wrapperReturnValue(method, returnValue) {
-  const returnValueHooks = [];
+  var returnValueHooks = [];
   if (Array.isArray(globalInterceptors.returnValue)) {
-    returnValueHooks.push(...globalInterceptors.returnValue);
+    returnValueHooks.push.apply(returnValueHooks, _toConsumableArray(globalInterceptors.returnValue));
   }
-  const interceptor = scopedInterceptors[method];
+  var interceptor = scopedInterceptors[method];
   if (interceptor && Array.isArray(interceptor.returnValue)) {
-    returnValueHooks.push(...interceptor.returnValue);
+    returnValueHooks.push.apply(returnValueHooks, _toConsumableArray(interceptor.returnValue));
   }
-  returnValueHooks.forEach(hook => {
+  returnValueHooks.forEach(function (hook) {
     returnValue = hook(returnValue) || returnValue;
   });
   return returnValue;
 }
 function getApiInterceptorHooks(method) {
-  const interceptor = Object.create(null);
-  Object.keys(globalInterceptors).forEach(hook => {
+  var interceptor = Object.create(null);
+  Object.keys(globalInterceptors).forEach(function (hook) {
     if (hook !== 'returnValue') {
       interceptor[hook] = globalInterceptors[hook].slice();
     }
   });
-  const scopedInterceptor = scopedInterceptors[method];
+  var scopedInterceptor = scopedInterceptors[method];
   if (scopedInterceptor) {
-    Object.keys(scopedInterceptor).forEach(hook => {
+    Object.keys(scopedInterceptor).forEach(function (hook) {
       if (hook !== 'returnValue') {
         interceptor[hook] = (interceptor[hook] || []).concat(scopedInterceptor[hook]);
       }
@@ -276,27 +295,30 @@ function getApiInterceptorHooks(method) {
   }
   return interceptor;
 }
-function invokeApi(method, api, options, ...params) {
-  const interceptor = getApiInterceptorHooks(method);
+function invokeApi(method, api, options) {
+  for (var _len = arguments.length, params = new Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+    params[_key - 3] = arguments[_key];
+  }
+  var interceptor = getApiInterceptorHooks(method);
   if (interceptor && Object.keys(interceptor).length) {
     if (Array.isArray(interceptor.invoke)) {
-      const res = queue(interceptor.invoke, options);
-      return res.then(options => {
-        return api(wrapperOptions(interceptor, options), ...params);
+      var res = queue(interceptor.invoke, options);
+      return res.then(function (options) {
+        return api.apply(void 0, [wrapperOptions(interceptor, options)].concat(params));
       });
     } else {
-      return api(wrapperOptions(interceptor, options), ...params);
+      return api.apply(void 0, [wrapperOptions(interceptor, options)].concat(params));
     }
   }
-  return api(options, ...params);
+  return api.apply(void 0, [options].concat(params));
 }
-const promiseInterceptor = {
-  returnValue(res) {
+var promiseInterceptor = {
+  returnValue: function returnValue(res) {
     if (!isPromise(res)) {
       return res;
     }
-    return new Promise((resolve, reject) => {
-      res.then(res => {
+    return new Promise(function (resolve, reject) {
+      res.then(function (res) {
         if (res[0]) {
           reject(res[0]);
         } else {
@@ -306,15 +328,15 @@ const promiseInterceptor = {
     });
   }
 };
-const SYNC_API_RE = /^\$|Window$|WindowStyle$|sendHostEvent|sendNativeEvent|restoreGlobal|requireGlobal|getCurrentSubNVue|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64|getLocale|setLocale|invokePushCallback|getWindowInfo|getDeviceInfo|getAppBaseInfo|getSystemSetting|getAppAuthorizeSetting/;
-const CONTEXT_API_RE = /^create|Manager$/;
+var SYNC_API_RE = /^\$|Window$|WindowStyle$|sendHostEvent|sendNativeEvent|restoreGlobal|requireGlobal|getCurrentSubNVue|getMenuButtonBoundingClientRect|^report|interceptors|Interceptor$|getSubNVueById|requireNativePlugin|upx2px|hideKeyboard|canIUse|^create|Sync$|Manager$|base64ToArrayBuffer|arrayBufferToBase64|getLocale|setLocale|invokePushCallback|getWindowInfo|getDeviceInfo|getAppBaseInfo|getSystemSetting|getAppAuthorizeSetting/;
+var CONTEXT_API_RE = /^create|Manager$/;
 
 // Context例外情况
-const CONTEXT_API_RE_EXC = ['createBLEConnection'];
+var CONTEXT_API_RE_EXC = ['createBLEConnection'];
 
 // 同步例外情况
-const ASYNC_API = ['createBLEConnection', 'createPushMessage'];
-const CALLBACK_API_RE = /^on|^off/;
+var ASYNC_API = ['createBLEConnection', 'createPushMessage'];
+var CALLBACK_API_RE = /^on|^off/;
 function isContextApi(name) {
   return CONTEXT_API_RE.test(name) && CONTEXT_API_RE_EXC.indexOf(name) === -1;
 }
@@ -325,9 +347,11 @@ function isCallbackApi(name) {
   return CALLBACK_API_RE.test(name) && name !== 'onPush';
 }
 function handlePromise(promise) {
-  return promise.then(data => {
+  return promise.then(function (data) {
     return [null, data];
-  }).catch(err => [err]);
+  }).catch(function (err) {
+    return [err];
+  });
 }
 function shouldPromise(name) {
   if (isContextApi(name) || isSyncApi(name) || isCallbackApi(name)) {
@@ -339,39 +363,48 @@ function shouldPromise(name) {
 /* eslint-disable no-extend-native */
 if (!Promise.prototype.finally) {
   Promise.prototype.finally = function (callback) {
-    const promise = this.constructor;
-    return this.then(value => promise.resolve(callback()).then(() => value), reason => promise.resolve(callback()).then(() => {
-      throw reason;
-    }));
+    var promise = this.constructor;
+    return this.then(function (value) {
+      return promise.resolve(callback()).then(function () {
+        return value;
+      });
+    }, function (reason) {
+      return promise.resolve(callback()).then(function () {
+        throw reason;
+      });
+    });
   };
 }
 function promisify(name, api) {
   if (!shouldPromise(name)) {
     return api;
   }
-  return function promiseApi(options = {}, ...params) {
-    if (isFn(options.success) || isFn(options.fail) || isFn(options.complete)) {
-      return wrapperReturnValue(name, invokeApi(name, api, options, ...params));
+  return function promiseApi() {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    for (var _len2 = arguments.length, params = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+      params[_key2 - 1] = arguments[_key2];
     }
-    return wrapperReturnValue(name, handlePromise(new Promise((resolve, reject) => {
-      invokeApi(name, api, Object.assign({}, options, {
+    if (isFn(options.success) || isFn(options.fail) || isFn(options.complete)) {
+      return wrapperReturnValue(name, invokeApi.apply(void 0, [name, api, options].concat(params)));
+    }
+    return wrapperReturnValue(name, handlePromise(new Promise(function (resolve, reject) {
+      invokeApi.apply(void 0, [name, api, Object.assign({}, options, {
         success: resolve,
         fail: reject
-      }), ...params);
+      })].concat(params));
     })));
   };
 }
-const EPS = 1e-4;
-const BASE_DEVICE_WIDTH = 750;
-let isIOS = false;
-let deviceWidth = 0;
-let deviceDPR = 0;
+var EPS = 1e-4;
+var BASE_DEVICE_WIDTH = 750;
+var isIOS = false;
+var deviceWidth = 0;
+var deviceDPR = 0;
 function checkDeviceWidth() {
-  const {
-    platform,
-    pixelRatio,
-    windowWidth
-  } = wx.getSystemInfoSync(); // uni=>wx runtime 编译目标是 uni 对象，内部不允许直接使用 uni
+  var _wx$getSystemInfoSync = wx.getSystemInfoSync(),
+    platform = _wx$getSystemInfoSync.platform,
+    pixelRatio = _wx$getSystemInfoSync.pixelRatio,
+    windowWidth = _wx$getSystemInfoSync.windowWidth; // uni=>wx runtime 编译目标是 uni 对象，内部不允许直接使用 uni
 
   deviceWidth = windowWidth;
   deviceDPR = pixelRatio;
@@ -385,7 +418,7 @@ function upx2px(number, newDeviceWidth) {
   if (number === 0) {
     return 0;
   }
-  let result = number / BASE_DEVICE_WIDTH * (newDeviceWidth || deviceWidth);
+  var result = number / BASE_DEVICE_WIDTH * (newDeviceWidth || deviceWidth);
   if (result < 0) {
     result = -result;
   }
@@ -399,13 +432,13 @@ function upx2px(number, newDeviceWidth) {
   }
   return number < 0 ? -result : result;
 }
-const LOCALE_ZH_HANS = 'zh-Hans';
-const LOCALE_ZH_HANT = 'zh-Hant';
-const LOCALE_EN = 'en';
-const LOCALE_FR = 'fr';
-const LOCALE_ES = 'es';
-const messages = {};
-let locale;
+var LOCALE_ZH_HANS = 'zh-Hans';
+var LOCALE_ZH_HANT = 'zh-Hant';
+var LOCALE_EN = 'en';
+var LOCALE_FR = 'fr';
+var LOCALE_ES = 'es';
+var messages = {};
+var locale;
 {
   locale = normalizeLocale(wx.getSystemInfoSync().language) || LOCALE_EN;
 }
@@ -413,11 +446,11 @@ function initI18nMessages() {
   if (!isEnableLocale()) {
     return;
   }
-  const localeKeys = Object.keys(__uniConfig.locales);
+  var localeKeys = Object.keys(__uniConfig.locales);
   if (localeKeys.length) {
-    localeKeys.forEach(locale => {
-      const curMessages = messages[locale];
-      const userMessages = __uniConfig.locales[locale];
+    localeKeys.forEach(function (locale) {
+      var curMessages = messages[locale];
+      var userMessages = __uniConfig.locales[locale];
       if (curMessages) {
         Object.assign(curMessages, userMessages);
       } else {
@@ -427,40 +460,43 @@ function initI18nMessages() {
   }
 }
 initI18nMessages();
-const i18n = (0, _uniI18n.initVueI18n)(locale, {});
-const t = i18n.t;
-const i18nMixin = i18n.mixin = {
-  beforeCreate() {
-    const unwatch = i18n.i18n.watchLocale(() => {
-      this.$forceUpdate();
+var i18n = (0, _uniI18n.initVueI18n)(locale, {});
+var t = i18n.t;
+var i18nMixin = i18n.mixin = {
+  beforeCreate: function beforeCreate() {
+    var _this = this;
+    var unwatch = i18n.i18n.watchLocale(function () {
+      _this.$forceUpdate();
     });
     this.$once('hook:beforeDestroy', function () {
       unwatch();
     });
   },
   methods: {
-    $$t(key, values) {
+    $$t: function $$t(key, values) {
       return t(key, values);
     }
   }
 };
-const setLocale = i18n.setLocale;
-const getLocale = i18n.getLocale;
+var setLocale = i18n.setLocale;
+var getLocale = i18n.getLocale;
 function initAppLocale(Vue, appVm, locale) {
-  const state = Vue.observable({
+  var state = Vue.observable({
     locale: locale || i18n.getLocale()
   });
-  const localeWatchers = [];
-  appVm.$watchLocale = fn => {
+  var localeWatchers = [];
+  appVm.$watchLocale = function (fn) {
     localeWatchers.push(fn);
   };
   Object.defineProperty(appVm, '$locale', {
-    get() {
+    get: function get() {
       return state.locale;
     },
-    set(v) {
+    set: function set(v) {
       state.locale = v;
-      localeWatchers.forEach(watch => watch(v));
+      localeWatchers.forEach(function (watch) {
+        return watch(v);
+      });
     }
   });
 }
@@ -468,10 +504,14 @@ function isEnableLocale() {
   return typeof __uniConfig !== 'undefined' && __uniConfig.locales && !!Object.keys(__uniConfig.locales).length;
 }
 function include(str, parts) {
-  return !!parts.find(part => str.indexOf(part) !== -1);
+  return !!parts.find(function (part) {
+    return str.indexOf(part) !== -1;
+  });
 }
 function startsWith(str, parts) {
-  return parts.find(part => str.indexOf(part) === 0);
+  return parts.find(function (part) {
+    return str.indexOf(part) === 0;
+  });
 }
 function normalizeLocale(locale, messages) {
   if (!locale) {
@@ -498,7 +538,7 @@ function normalizeLocale(locale, messages) {
     }
     return LOCALE_ZH_HANS;
   }
-  const lang = startsWith(locale, [LOCALE_EN, LOCALE_FR, LOCALE_ES]);
+  var lang = startsWith(locale, [LOCALE_EN, LOCALE_FR, LOCALE_ES]);
   if (lang) {
     return lang;
   }
@@ -514,7 +554,7 @@ function normalizeLocale(locale, messages) {
 
 function getLocale$1() {
   // 优先使用 $locale
-  const app = getApp({
+  var app = getApp({
     allowDefault: true
   });
   if (app && app.$vm) {
@@ -523,21 +563,23 @@ function getLocale$1() {
   return normalizeLocale(wx.getSystemInfoSync().language) || LOCALE_EN;
 }
 function setLocale$1(locale) {
-  const app = getApp();
+  var app = getApp();
   if (!app) {
     return false;
   }
-  const oldLocale = app.$vm.$locale;
+  var oldLocale = app.$vm.$locale;
   if (oldLocale !== locale) {
     app.$vm.$locale = locale;
-    onLocaleChangeCallbacks.forEach(fn => fn({
-      locale
-    }));
+    onLocaleChangeCallbacks.forEach(function (fn) {
+      return fn({
+        locale: locale
+      });
+    });
     return true;
   }
   return false;
 }
-const onLocaleChangeCallbacks = [];
+var onLocaleChangeCallbacks = [];
 function onLocaleChange(fn) {
   if (onLocaleChangeCallbacks.indexOf(fn) === -1) {
     onLocaleChangeCallbacks.push(fn);
@@ -546,8 +588,8 @@ function onLocaleChange(fn) {
 if (typeof global !== 'undefined') {
   global.getLocale = getLocale$1;
 }
-const interceptors = {
-  promiseInterceptor
+var interceptors = {
+  promiseInterceptor: promiseInterceptor
 };
 var baseApi = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -560,10 +602,10 @@ var baseApi = /*#__PURE__*/Object.freeze({
   interceptors: interceptors
 });
 function findExistsPageIndex(url) {
-  const pages = getCurrentPages();
-  let len = pages.length;
+  var pages = getCurrentPages();
+  var len = pages.length;
   while (len--) {
-    const page = pages[len];
+    var page = pages[len];
     if (page.$page && page.$page.fullPath === url) {
       return len;
     }
@@ -571,17 +613,17 @@ function findExistsPageIndex(url) {
   return -1;
 }
 var redirectTo = {
-  name(fromArgs) {
+  name: function name(fromArgs) {
     if (fromArgs.exists === 'back' && fromArgs.delta) {
       return 'navigateBack';
     }
     return 'redirectTo';
   },
-  args(fromArgs) {
+  args: function args(fromArgs) {
     if (fromArgs.exists === 'back' && fromArgs.url) {
-      const existsPageIndex = findExistsPageIndex(fromArgs.url);
+      var existsPageIndex = findExistsPageIndex(fromArgs.url);
       if (existsPageIndex !== -1) {
-        const delta = getCurrentPages().length - 1 - existsPageIndex;
+        var delta = getCurrentPages().length - 1 - existsPageIndex;
         if (delta > 0) {
           fromArgs.delta = delta;
         }
@@ -590,16 +632,16 @@ var redirectTo = {
   }
 };
 var previewImage = {
-  args(fromArgs) {
-    let currentIndex = parseInt(fromArgs.current);
+  args: function args(fromArgs) {
+    var currentIndex = parseInt(fromArgs.current);
     if (isNaN(currentIndex)) {
       return;
     }
-    const urls = fromArgs.urls;
+    var urls = fromArgs.urls;
     if (!Array.isArray(urls)) {
       return;
     }
-    const len = urls.length;
+    var len = urls.length;
     if (!len) {
       return;
     }
@@ -610,7 +652,9 @@ var previewImage = {
     }
     if (currentIndex > 0) {
       fromArgs.current = urls[currentIndex];
-      fromArgs.urls = urls.filter((item, index) => index < currentIndex ? item !== urls[currentIndex] : true);
+      fromArgs.urls = urls.filter(function (item, index) {
+        return index < currentIndex ? item !== urls[currentIndex] : true;
+      });
     } else {
       fromArgs.current = urls[0];
     }
@@ -620,8 +664,8 @@ var previewImage = {
     };
   }
 };
-const UUID_KEY = '__DC_STAT_UUID';
-let deviceId;
+var UUID_KEY = '__DC_STAT_UUID';
+var deviceId;
 function useDeviceId(result) {
   deviceId = deviceId || wx.getStorageSync(UUID_KEY);
   if (!deviceId) {
@@ -635,7 +679,7 @@ function useDeviceId(result) {
 }
 function addSafeAreaInsets(result) {
   if (result.safeArea) {
-    const safeArea = result.safeArea;
+    var safeArea = result.safeArea;
     result.safeAreaInsets = {
       top: safeArea.top,
       left: safeArea.left,
@@ -645,54 +689,56 @@ function addSafeAreaInsets(result) {
   }
 }
 function populateParameters(result) {
-  const {
-    brand = '',
-    model = '',
-    system = '',
-    language = '',
-    theme,
-    version,
-    platform,
-    fontSizeSetting,
-    SDKVersion,
-    pixelRatio,
-    deviceOrientation
-  } = result;
+  var _result$brand = result.brand,
+    brand = _result$brand === void 0 ? '' : _result$brand,
+    _result$model = result.model,
+    model = _result$model === void 0 ? '' : _result$model,
+    _result$system = result.system,
+    system = _result$system === void 0 ? '' : _result$system,
+    _result$language = result.language,
+    language = _result$language === void 0 ? '' : _result$language,
+    theme = result.theme,
+    version = result.version,
+    platform = result.platform,
+    fontSizeSetting = result.fontSizeSetting,
+    SDKVersion = result.SDKVersion,
+    pixelRatio = result.pixelRatio,
+    deviceOrientation = result.deviceOrientation;
   // const isQuickApp = "mp-weixin".indexOf('quickapp-webview') !== -1
 
   // osName osVersion
-  let osName = '';
-  let osVersion = '';
+  var osName = '';
+  var osVersion = '';
   {
     osName = system.split(' ')[0] || '';
     osVersion = system.split(' ')[1] || '';
   }
-  let hostVersion = version;
+  var hostVersion = version;
 
   // deviceType
-  const deviceType = getGetDeviceType(result, model);
+  var deviceType = getGetDeviceType(result, model);
 
   // deviceModel
-  const deviceBrand = getDeviceBrand(brand);
+  var deviceBrand = getDeviceBrand(brand);
 
   // hostName
-  const _hostName = getHostName(result);
+  var _hostName = getHostName(result);
 
   // deviceOrientation
-  let _deviceOrientation = deviceOrientation; // 仅 微信 百度 支持
+  var _deviceOrientation = deviceOrientation; // 仅 微信 百度 支持
 
   // devicePixelRatio
-  let _devicePixelRatio = pixelRatio;
+  var _devicePixelRatio = pixelRatio;
 
   // SDKVersion
-  let _SDKVersion = SDKVersion;
+  var _SDKVersion = SDKVersion;
 
   // hostLanguage
-  const hostLanguage = language.replace(/_/g, '-');
+  var hostLanguage = language.replace(/_/g, '-');
 
   // wx.getAccountInfoSync
 
-  const parameters = {
+  var parameters = {
     appId: "__UNI__54D91B4",
     appName: "qxcollege",
     appVersion: "1.0.0",
@@ -701,16 +747,16 @@ function populateParameters(result) {
     uniCompileVersion: "3.6.10",
     uniRuntimeVersion: "3.6.10",
     uniPlatform: undefined || "mp-weixin",
-    deviceBrand,
+    deviceBrand: deviceBrand,
     deviceModel: model,
-    deviceType,
+    deviceType: deviceType,
     devicePixelRatio: _devicePixelRatio,
     deviceOrientation: _deviceOrientation,
     osName: osName.toLocaleLowerCase(),
-    osVersion,
+    osVersion: osVersion,
     hostTheme: theme,
-    hostVersion,
-    hostLanguage,
+    hostVersion: hostVersion,
+    hostLanguage: hostLanguage,
     hostName: _hostName,
     hostSDKVersion: _SDKVersion,
     hostFontSizeSetting: fontSizeSetting,
@@ -727,17 +773,17 @@ function populateParameters(result) {
   Object.assign(result, parameters);
 }
 function getGetDeviceType(result, model) {
-  let deviceType = result.deviceType || 'phone';
+  var deviceType = result.deviceType || 'phone';
   {
-    const deviceTypeMaps = {
+    var deviceTypeMaps = {
       ipad: 'pad',
       windows: 'pc',
       mac: 'pc'
     };
-    const deviceTypeMapsKeys = Object.keys(deviceTypeMaps);
-    const _model = model.toLocaleLowerCase();
-    for (let index = 0; index < deviceTypeMapsKeys.length; index++) {
-      const _m = deviceTypeMapsKeys[index];
+    var deviceTypeMapsKeys = Object.keys(deviceTypeMaps);
+    var _model = model.toLocaleLowerCase();
+    for (var index = 0; index < deviceTypeMapsKeys.length; index++) {
+      var _m = deviceTypeMapsKeys[index];
       if (_model.indexOf(_m) !== -1) {
         deviceType = deviceTypeMaps[_m];
         break;
@@ -747,7 +793,7 @@ function getGetDeviceType(result, model) {
   return deviceType;
 }
 function getDeviceBrand(brand) {
-  let deviceBrand = brand;
+  var deviceBrand = brand;
   if (deviceBrand) {
     deviceBrand = brand.toLocaleLowerCase();
   }
@@ -757,8 +803,8 @@ function getAppLanguage(defaultLanguage) {
   return getLocale$1 ? getLocale$1() : defaultLanguage;
 }
 function getHostName(result) {
-  const _platform = 'WeChat';
-  let _hostName = result.hostName || _platform; // mp-jd
+  var _platform = 'WeChat';
+  var _hostName = result.hostName || _platform; // mp-jd
   {
     if (result.environment) {
       _hostName = result.environment;
@@ -769,29 +815,28 @@ function getHostName(result) {
   return _hostName;
 }
 var getSystemInfo = {
-  returnValue: function (result) {
+  returnValue: function returnValue(result) {
     useDeviceId(result);
     addSafeAreaInsets(result);
     populateParameters(result);
   }
 };
 var showActionSheet = {
-  args(fromArgs) {
-    if (typeof fromArgs === 'object') {
+  args: function args(fromArgs) {
+    if (_typeof(fromArgs) === 'object') {
       fromArgs.alertText = fromArgs.title;
     }
   }
 };
 var getAppBaseInfo = {
-  returnValue: function (result) {
-    const {
-      version,
-      language,
-      SDKVersion,
-      theme
-    } = result;
-    const _hostName = getHostName(result);
-    const hostLanguage = language.replace('_', '-');
+  returnValue: function returnValue(result) {
+    var _result = result,
+      version = _result.version,
+      language = _result.language,
+      SDKVersion = _result.SDKVersion,
+      theme = _result.theme;
+    var _hostName = getHostName(result);
+    var hostLanguage = language.replace('_', '-');
     result = sortObject(Object.assign(result, {
       appId: "__UNI__54D91B4",
       appName: "qxcollege",
@@ -799,7 +844,7 @@ var getAppBaseInfo = {
       appVersionCode: "100",
       appLanguage: getAppLanguage(hostLanguage),
       hostVersion: version,
-      hostLanguage,
+      hostLanguage: hostLanguage,
       hostName: _hostName,
       hostSDKVersion: SDKVersion,
       hostTheme: theme
@@ -807,23 +852,22 @@ var getAppBaseInfo = {
   }
 };
 var getDeviceInfo = {
-  returnValue: function (result) {
-    const {
-      brand,
-      model
-    } = result;
-    const deviceType = getGetDeviceType(result, model);
-    const deviceBrand = getDeviceBrand(brand);
+  returnValue: function returnValue(result) {
+    var _result2 = result,
+      brand = _result2.brand,
+      model = _result2.model;
+    var deviceType = getGetDeviceType(result, model);
+    var deviceBrand = getDeviceBrand(brand);
     useDeviceId(result);
     result = sortObject(Object.assign(result, {
-      deviceType,
-      deviceBrand,
+      deviceType: deviceType,
+      deviceBrand: deviceBrand,
       deviceModel: model
     }));
   }
 };
 var getWindowInfo = {
-  returnValue: function (result) {
+  returnValue: function returnValue(result) {
     addSafeAreaInsets(result);
     result = sortObject(Object.assign(result, {
       windowTop: 0,
@@ -832,10 +876,8 @@ var getWindowInfo = {
   }
 };
 var getAppAuthorizeSetting = {
-  returnValue: function (result) {
-    const {
-      locationReducedAccuracy
-    } = result;
+  returnValue: function returnValue(result) {
+    var locationReducedAccuracy = result.locationReducedAccuracy;
     result.locationAccuracy = 'unsupported';
     if (locationReducedAccuracy === true) {
       result.locationAccuracy = 'reduced';
@@ -847,42 +889,45 @@ var getAppAuthorizeSetting = {
 
 // import navigateTo from 'uni-helpers/navigate-to'
 
-const protocols = {
-  redirectTo,
+var protocols = {
+  redirectTo: redirectTo,
   // navigateTo,  // 由于在微信开发者工具的页面参数，会显示__id__参数，因此暂时关闭mp-weixin对于navigateTo的AOP
-  previewImage,
-  getSystemInfo,
+  previewImage: previewImage,
+  getSystemInfo: getSystemInfo,
   getSystemInfoSync: getSystemInfo,
-  showActionSheet,
-  getAppBaseInfo,
-  getDeviceInfo,
-  getWindowInfo,
-  getAppAuthorizeSetting
+  showActionSheet: showActionSheet,
+  getAppBaseInfo: getAppBaseInfo,
+  getDeviceInfo: getDeviceInfo,
+  getWindowInfo: getWindowInfo,
+  getAppAuthorizeSetting: getAppAuthorizeSetting
 };
-const todos = ['vibrate', 'preloadPage', 'unPreloadPage', 'loadSubPackage'];
-const canIUses = [];
-const CALLBACKS = ['success', 'fail', 'cancel', 'complete'];
+var todos = ['vibrate', 'preloadPage', 'unPreloadPage', 'loadSubPackage'];
+var canIUses = [];
+var CALLBACKS = ['success', 'fail', 'cancel', 'complete'];
 function processCallback(methodName, method, returnValue) {
   return function (res) {
     return method(processReturnValue(methodName, res, returnValue));
   };
 }
-function processArgs(methodName, fromArgs, argsOption = {}, returnValue = {}, keepFromArgs = false) {
+function processArgs(methodName, fromArgs) {
+  var argsOption = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var returnValue = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+  var keepFromArgs = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
   if (isPlainObject(fromArgs)) {
     // 一般 api 的参数解析
-    const toArgs = keepFromArgs === true ? fromArgs : {}; // returnValue 为 false 时，说明是格式化返回值，直接在返回值对象上修改赋值
+    var toArgs = keepFromArgs === true ? fromArgs : {}; // returnValue 为 false 时，说明是格式化返回值，直接在返回值对象上修改赋值
     if (isFn(argsOption)) {
       argsOption = argsOption(fromArgs, toArgs) || {};
     }
-    for (const key in fromArgs) {
+    for (var key in fromArgs) {
       if (hasOwn(argsOption, key)) {
-        let keyOption = argsOption[key];
+        var keyOption = argsOption[key];
         if (isFn(keyOption)) {
           keyOption = keyOption(fromArgs[key], fromArgs, toArgs);
         }
         if (!keyOption) {
           // 不支持的参数
-          console.warn(`The '${methodName}' method of platform '微信小程序' does not support option '${key}'`);
+          console.warn("The '".concat(methodName, "' method of platform '\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F' does not support option '").concat(key, "'"));
         } else if (isStr(keyOption)) {
           // 重写参数 key
           toArgs[keyOption] = fromArgs[key];
@@ -906,7 +951,8 @@ function processArgs(methodName, fromArgs, argsOption = {}, returnValue = {}, ke
   }
   return fromArgs;
 }
-function processReturnValue(methodName, res, returnValue, keepReturnValue = false) {
+function processReturnValue(methodName, res, returnValue) {
+  var keepReturnValue = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
   if (isFn(protocols.returnValue)) {
     // 处理通用 returnValue
     res = protocols.returnValue(methodName, res);
@@ -915,21 +961,21 @@ function processReturnValue(methodName, res, returnValue, keepReturnValue = fals
 }
 function wrapper(methodName, method) {
   if (hasOwn(protocols, methodName)) {
-    const protocol = protocols[methodName];
+    var protocol = protocols[methodName];
     if (!protocol) {
       // 暂不支持的 api
       return function () {
-        console.error(`Platform '微信小程序' does not support '${methodName}'.`);
+        console.error("Platform '\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F' does not support '".concat(methodName, "'."));
       };
     }
     return function (arg1, arg2) {
       // 目前 api 最多两个参数
-      let options = protocol;
+      var options = protocol;
       if (isFn(protocol)) {
         options = protocol(arg1);
       }
       arg1 = processArgs(methodName, arg1, options.args, options.returnValue);
-      const args = [arg1];
+      var args = [arg1];
       if (typeof arg2 !== 'undefined') {
         args.push(arg2);
       }
@@ -938,7 +984,7 @@ function wrapper(methodName, method) {
       } else if (isStr(options.name)) {
         methodName = options.name;
       }
-      const returnValue = wx[methodName].apply(wx, args);
+      var returnValue = wx[methodName].apply(wx, args);
       if (isSyncApi(methodName)) {
         // 同步 api
         return processReturnValue(methodName, returnValue, options.returnValue, isContextApi(methodName));
@@ -948,15 +994,14 @@ function wrapper(methodName, method) {
   }
   return method;
 }
-const todoApis = Object.create(null);
-const TODOS = ['onTabBarMidButtonTap', 'subscribePush', 'unsubscribePush', 'onPush', 'offPush', 'share'];
+var todoApis = Object.create(null);
+var TODOS = ['onTabBarMidButtonTap', 'subscribePush', 'unsubscribePush', 'onPush', 'offPush', 'share'];
 function createTodoApi(name) {
-  return function todoApi({
-    fail,
-    complete
-  }) {
-    const res = {
-      errMsg: `${name}:fail method '${name}' not supported`
+  return function todoApi(_ref) {
+    var fail = _ref.fail,
+      complete = _ref.complete;
+    var res = {
+      errMsg: "".concat(name, ":fail method '").concat(name, "' not supported")
     };
     isFn(fail) && fail(res);
     isFn(complete) && complete(res);
@@ -971,17 +1016,16 @@ var providers = {
   payment: ['wxpay'],
   push: ['weixin']
 };
-function getProvider({
-  service,
-  success,
-  fail,
-  complete
-}) {
-  let res = false;
+function getProvider(_ref2) {
+  var service = _ref2.service,
+    success = _ref2.success,
+    fail = _ref2.fail,
+    complete = _ref2.complete;
+  var res = false;
   if (providers[service]) {
     res = {
       errMsg: 'getProvider:ok',
-      service,
+      service: service,
       provider: providers[service]
     };
     isFn(success) && success(res);
@@ -997,8 +1041,8 @@ var extraApi = /*#__PURE__*/Object.freeze({
   __proto__: null,
   getProvider: getProvider
 });
-const getEmitter = function () {
-  let Emitter;
+var getEmitter = function () {
+  var Emitter;
   return function getUniEmitter() {
     if (!Emitter) {
       Emitter = new _vue.default();
@@ -1010,16 +1054,16 @@ function apply(ctx, method, args) {
   return ctx[method].apply(ctx, args);
 }
 function $on() {
-  return apply(getEmitter(), '$on', [...arguments]);
+  return apply(getEmitter(), '$on', Array.prototype.slice.call(arguments));
 }
 function $off() {
-  return apply(getEmitter(), '$off', [...arguments]);
+  return apply(getEmitter(), '$off', Array.prototype.slice.call(arguments));
 }
 function $once() {
-  return apply(getEmitter(), '$once', [...arguments]);
+  return apply(getEmitter(), '$once', Array.prototype.slice.call(arguments));
 }
 function $emit() {
-  return apply(getEmitter(), '$emit', [...arguments]);
+  return apply(getEmitter(), '$emit', Array.prototype.slice.call(arguments));
 }
 var eventApi = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -1046,9 +1090,9 @@ function tryCatch(fn) {
   };
 }
 function getApiCallbacks(params) {
-  const apiCallbacks = {};
-  for (const name in params) {
-    const param = params[name];
+  var apiCallbacks = {};
+  for (var name in params) {
+    var param = params[name];
     if (isFn(param)) {
       apiCallbacks[name] = tryCatch(param);
       delete params[name];
@@ -1056,9 +1100,9 @@ function getApiCallbacks(params) {
   }
   return apiCallbacks;
 }
-let cid;
-let cidErrMsg;
-let enabled;
+var cid;
+var cidErrMsg;
+var enabled;
 function normalizePushMessage(message) {
   try {
     return JSON.parse(message);
@@ -1073,12 +1117,12 @@ function invokePushCallback(args) {
     cidErrMsg = args.errMsg;
     invokeGetPushCidCallbacks(cid, args.errMsg);
   } else if (args.type === 'pushMsg') {
-    const message = {
+    var message = {
       type: 'receive',
       data: normalizePushMessage(args.message)
     };
-    for (let i = 0; i < onPushMessageCallbacks.length; i++) {
-      const callback = onPushMessageCallbacks[i];
+    for (var i = 0; i < onPushMessageCallbacks.length; i++) {
+      var callback = onPushMessageCallbacks[i];
       callback(message);
       // 该消息已被阻止
       if (message.stopped) {
@@ -1086,7 +1130,7 @@ function invokePushCallback(args) {
       }
     }
   } else if (args.type === 'click') {
-    onPushMessageCallbacks.forEach(callback => {
+    onPushMessageCallbacks.forEach(function (callback) {
       callback({
         type: 'click',
         data: normalizePushMessage(args.message)
@@ -1094,9 +1138,9 @@ function invokePushCallback(args) {
     });
   }
 }
-const getPushCidCallbacks = [];
+var getPushCidCallbacks = [];
 function invokeGetPushCidCallbacks(cid, errMsg) {
-  getPushCidCallbacks.forEach(callback => {
+  getPushCidCallbacks.forEach(function (callback) {
     callback(cid, errMsg);
   });
   getPushCidCallbacks.length = 0;
@@ -1105,26 +1149,25 @@ function getPushClientId(args) {
   if (!isPlainObject(args)) {
     args = {};
   }
-  const {
-    success,
-    fail,
-    complete
-  } = getApiCallbacks(args);
-  const hasSuccess = isFn(success);
-  const hasFail = isFn(fail);
-  const hasComplete = isFn(complete);
-  Promise.resolve().then(() => {
+  var _getApiCallbacks = getApiCallbacks(args),
+    success = _getApiCallbacks.success,
+    fail = _getApiCallbacks.fail,
+    complete = _getApiCallbacks.complete;
+  var hasSuccess = isFn(success);
+  var hasFail = isFn(fail);
+  var hasComplete = isFn(complete);
+  Promise.resolve().then(function () {
     if (typeof enabled === 'undefined') {
       enabled = false;
       cid = '';
       cidErrMsg = 'uniPush is not enabled';
     }
-    getPushCidCallbacks.push((cid, errMsg) => {
-      let res;
+    getPushCidCallbacks.push(function (cid, errMsg) {
+      var res;
       if (cid) {
         res = {
           errMsg: 'getPushClientId:ok',
-          cid
+          cid: cid
         };
         hasSuccess && success(res);
       } else {
@@ -1140,18 +1183,18 @@ function getPushClientId(args) {
     }
   });
 }
-const onPushMessageCallbacks = [];
+var onPushMessageCallbacks = [];
 // 不使用 defineOnApi 实现，是因为 defineOnApi 依赖 UniServiceJSBridge ，该对象目前在小程序上未提供，故简单实现
-const onPushMessage = fn => {
+var onPushMessage = function onPushMessage(fn) {
   if (onPushMessageCallbacks.indexOf(fn) === -1) {
     onPushMessageCallbacks.push(fn);
   }
 };
-const offPushMessage = fn => {
+var offPushMessage = function offPushMessage(fn) {
   if (!fn) {
     onPushMessageCallbacks.length = 0;
   } else {
-    const index = onPushMessageCallbacks.indexOf(fn);
+    var index = onPushMessageCallbacks.indexOf(fn);
     if (index > -1) {
       onPushMessageCallbacks.splice(index, 1);
     }
@@ -1164,20 +1207,20 @@ var api = /*#__PURE__*/Object.freeze({
   offPushMessage: offPushMessage,
   invokePushCallback: invokePushCallback
 });
-const mocks = ['__route__', '__wxExparserNodeId__', '__wxWebviewId__'];
+var mocks = ['__route__', '__wxExparserNodeId__', '__wxWebviewId__'];
 function findVmByVueId(vm, vuePid) {
-  const $children = vm.$children;
+  var $children = vm.$children;
   // 优先查找直属(反向查找:https://github.com/dcloudio/uni-app/issues/1200)
-  for (let i = $children.length - 1; i >= 0; i--) {
-    const childVm = $children[i];
+  for (var i = $children.length - 1; i >= 0; i--) {
+    var childVm = $children[i];
     if (childVm.$scope._$vueId === vuePid) {
       return childVm;
     }
   }
   // 反向递归查找
-  let parentVm;
-  for (let i = $children.length - 1; i >= 0; i--) {
-    parentVm = findVmByVueId($children[i], vuePid);
+  var parentVm;
+  for (var _i = $children.length - 1; _i >= 0; _i--) {
+    parentVm = findVmByVueId($children[_i], vuePid);
     if (parentVm) {
       return parentVm;
     }
@@ -1193,13 +1236,13 @@ function initRelation(detail) {
   this.triggerEvent('__l', detail);
 }
 function selectAllComponents(mpInstance, selector, $refs) {
-  const components = mpInstance.selectAllComponents(selector) || [];
-  components.forEach(component => {
-    const ref = component.dataset.ref;
+  var components = mpInstance.selectAllComponents(selector) || [];
+  components.forEach(function (component) {
+    var ref = component.dataset.ref;
     $refs[ref] = component.$vm || toSkip(component);
     {
       if (component.dataset.vueGeneric === 'scoped') {
-        component.selectAllComponents('.scoped-ref').forEach(scopedComponent => {
+        component.selectAllComponents('.scoped-ref').forEach(function (scopedComponent) {
           selectAllComponents(scopedComponent, selector, $refs);
         });
       }
@@ -1207,33 +1250,35 @@ function selectAllComponents(mpInstance, selector, $refs) {
   });
 }
 function syncRefs(refs, newRefs) {
-  const oldKeys = new Set(...Object.keys(refs));
-  const newKeys = Object.keys(newRefs);
-  newKeys.forEach(key => {
-    const oldValue = refs[key];
-    const newValue = newRefs[key];
-    if (Array.isArray(oldValue) && Array.isArray(newValue) && oldValue.length === newValue.length && newValue.every(value => oldValue.includes(value))) {
+  var oldKeys = _construct(Set, _toConsumableArray(Object.keys(refs)));
+  var newKeys = Object.keys(newRefs);
+  newKeys.forEach(function (key) {
+    var oldValue = refs[key];
+    var newValue = newRefs[key];
+    if (Array.isArray(oldValue) && Array.isArray(newValue) && oldValue.length === newValue.length && newValue.every(function (value) {
+      return oldValue.includes(value);
+    })) {
       return;
     }
     refs[key] = newValue;
     oldKeys.delete(key);
   });
-  oldKeys.forEach(key => {
+  oldKeys.forEach(function (key) {
     delete refs[key];
   });
   return refs;
 }
 function initRefs(vm) {
-  const mpInstance = vm.$scope;
-  const refs = {};
+  var mpInstance = vm.$scope;
+  var refs = {};
   Object.defineProperty(vm, '$refs', {
-    get() {
-      const $refs = {};
+    get: function get() {
+      var $refs = {};
       selectAllComponents(mpInstance, '.vue-ref', $refs);
       // TODO 暂不考虑 for 中的 scoped
-      const forComponents = mpInstance.selectAllComponents('.vue-ref-in-for') || [];
-      forComponents.forEach(component => {
-        const ref = component.dataset.ref;
+      var forComponents = mpInstance.selectAllComponents('.vue-ref-in-for') || [];
+      forComponents.forEach(function (component) {
+        var ref = component.dataset.ref;
         if (!$refs[ref]) {
           $refs[ref] = [];
         }
@@ -1244,12 +1289,11 @@ function initRefs(vm) {
   });
 }
 function handleLink(event) {
-  const {
-    vuePid,
-    vueOptions
-  } = event.detail || event.value; // detail 是微信,value 是百度(dipatch)
+  var _ref3 = event.detail || event.value,
+    vuePid = _ref3.vuePid,
+    vueOptions = _ref3.vueOptions; // detail 是微信,value 是百度(dipatch)
 
-  let parentVm;
+  var parentVm;
   if (vuePid) {
     parentVm = findVmByVueId(this.$vm, vuePid);
   }
@@ -1260,7 +1304,7 @@ function handleLink(event) {
 }
 function markMPComponent(component) {
   // 在 Vue 中标记为小程序组件
-  const IS_MP = '__v_isMPComponent';
+  var IS_MP = '__v_isMPComponent';
   Object.defineProperty(component, IS_MP, {
     configurable: true,
     enumerable: false,
@@ -1269,40 +1313,41 @@ function markMPComponent(component) {
   return component;
 }
 function toSkip(obj) {
-  const OB = '__ob__';
-  const SKIP = '__v_skip';
+  var OB = '__ob__';
+  var SKIP = '__v_skip';
   if (isObject(obj) && Object.isExtensible(obj)) {
     // 避免被 @vue/composition-api 观测
     Object.defineProperty(obj, OB, {
       configurable: true,
       enumerable: false,
-      value: {
-        [SKIP]: true
-      }
+      value: _defineProperty({}, SKIP, true)
     });
   }
   return obj;
 }
-const MPPage = Page;
-const MPComponent = Component;
-const customizeRE = /:/g;
-const customize = cached(str => {
+var MPPage = Page;
+var MPComponent = Component;
+var customizeRE = /:/g;
+var customize = cached(function (str) {
   return camelize(str.replace(customizeRE, '-'));
 });
 function initTriggerEvent(mpInstance) {
-  const oldTriggerEvent = mpInstance.triggerEvent;
-  const newTriggerEvent = function (event, ...args) {
+  var oldTriggerEvent = mpInstance.triggerEvent;
+  var newTriggerEvent = function newTriggerEvent(event) {
+    for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+      args[_key3 - 1] = arguments[_key3];
+    }
     // 事件名统一转驼峰格式，仅处理：当前组件为 vue 组件、当前组件为 vue 组件子组件
     if (this.$vm || this.dataset && this.dataset.comType) {
       event = customize(event);
     } else {
       // 针对微信/QQ小程序单独补充驼峰格式事件，以兼容历史项目
-      const newEvent = customize(event);
+      var newEvent = customize(event);
       if (newEvent !== event) {
-        oldTriggerEvent.apply(this, [newEvent, ...args]);
+        oldTriggerEvent.apply(this, [newEvent].concat(args));
       }
     }
-    return oldTriggerEvent.apply(this, [event, ...args]);
+    return oldTriggerEvent.apply(this, [event].concat(args));
   };
   try {
     // 京东小程序 triggerEvent 为只读
@@ -1312,31 +1357,36 @@ function initTriggerEvent(mpInstance) {
   }
 }
 function initHook(name, options, isComponent) {
-  const oldHook = options[name];
-  options[name] = function (...args) {
+  var oldHook = options[name];
+  options[name] = function () {
     markMPComponent(this);
     initTriggerEvent(this);
     if (oldHook) {
+      for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
+      }
       return oldHook.apply(this, args);
     }
   };
 }
 if (!MPPage.__$wrappered) {
   MPPage.__$wrappered = true;
-  Page = function (options = {}) {
+  Page = function Page() {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     initHook('onLoad', options);
     return MPPage(options);
   };
   Page.after = MPPage.after;
-  Component = function (options = {}) {
+  Component = function Component() {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     initHook('created', options);
     return MPComponent(options);
   };
 }
-const PAGE_EVENT_HOOKS = ['onPullDownRefresh', 'onReachBottom', 'onAddToFavorites', 'onShareTimeline', 'onShareAppMessage', 'onPageScroll', 'onResize', 'onTabItemTap'];
+var PAGE_EVENT_HOOKS = ['onPullDownRefresh', 'onReachBottom', 'onAddToFavorites', 'onShareTimeline', 'onShareAppMessage', 'onPageScroll', 'onResize', 'onTabItemTap'];
 function initMocks(vm, mocks) {
-  const mpInstance = vm.$mp[vm.mpType];
-  mocks.forEach(mock => {
+  var mpInstance = vm.$mp[vm.mpType];
+  mocks.forEach(function (mock) {
     if (hasOwn(mpInstance, mock)) {
       vm[mock] = mpInstance[mock];
     }
@@ -1362,13 +1412,15 @@ function hasHook(hook, vueOptions) {
   if (isFn(vueOptions[hook]) || Array.isArray(vueOptions[hook])) {
     return true;
   }
-  const mixins = vueOptions.mixins;
+  var mixins = vueOptions.mixins;
   if (Array.isArray(mixins)) {
-    return !!mixins.find(mixin => hasHook(hook, mixin));
+    return !!mixins.find(function (mixin) {
+      return hasHook(hook, mixin);
+    });
   }
 }
 function initHooks(mpOptions, hooks, vueOptions) {
-  hooks.forEach(hook => {
+  hooks.forEach(function (hook) {
     if (hasHook(hook, vueOptions)) {
       mpOptions[hook] = function (args) {
         return this.$vm && this.$vm.__call_hook(hook, args);
@@ -1376,12 +1428,16 @@ function initHooks(mpOptions, hooks, vueOptions) {
     }
   });
 }
-function initUnknownHooks(mpOptions, vueOptions, excludes = []) {
-  findHooks(vueOptions).forEach(hook => initHook$1(mpOptions, hook, excludes));
+function initUnknownHooks(mpOptions, vueOptions) {
+  var excludes = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+  findHooks(vueOptions).forEach(function (hook) {
+    return initHook$1(mpOptions, hook, excludes);
+  });
 }
-function findHooks(vueOptions, hooks = []) {
+function findHooks(vueOptions) {
+  var hooks = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
   if (vueOptions) {
-    Object.keys(vueOptions).forEach(name => {
+    Object.keys(vueOptions).forEach(function (name) {
       if (name.indexOf('on') === 0 && isFn(vueOptions[name])) {
         hooks.push(name);
       }
@@ -1398,7 +1454,7 @@ function initHook$1(mpOptions, hook, excludes) {
 }
 function initVueComponent(Vue, vueOptions) {
   vueOptions = vueOptions.default || vueOptions;
-  let VueComponent;
+  var VueComponent;
   if (isFn(vueOptions)) {
     VueComponent = vueOptions;
   } else {
@@ -1409,8 +1465,8 @@ function initVueComponent(Vue, vueOptions) {
 }
 function initSlots(vm, vueSlots) {
   if (Array.isArray(vueSlots) && vueSlots.length) {
-    const $slots = Object.create(null);
-    vueSlots.forEach(slotName => {
+    var $slots = Object.create(null);
+    vueSlots.forEach(function (slotName) {
       $slots[slotName] = true;
     });
     vm.$scopedSlots = vm.$slots = $slots;
@@ -1418,7 +1474,7 @@ function initSlots(vm, vueSlots) {
 }
 function initVueIds(vueIds, mpInstance) {
   vueIds = (vueIds || '').split(',');
-  const len = vueIds.length;
+  var len = vueIds.length;
   if (len === 1) {
     mpInstance._$vueId = vueIds[0];
   } else if (len === 2) {
@@ -1427,13 +1483,13 @@ function initVueIds(vueIds, mpInstance) {
   }
 }
 function initData(vueOptions, context) {
-  let data = vueOptions.data || {};
-  const methods = vueOptions.methods || {};
+  var data = vueOptions.data || {};
+  var methods = vueOptions.methods || {};
   if (typeof data === 'function') {
     try {
       data = data.call(context); // 支持 Vue.prototype 上挂的数据
     } catch (e) {
-      if (Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.warn('根据 Vue 的 data 函数初始化小程序 data 失败，请尽量确保 data 函数中不访问 vm 对象，否则可能影响首次数据渲染速度。', data);
       }
     }
@@ -1446,14 +1502,14 @@ function initData(vueOptions, context) {
   if (!isPlainObject(data)) {
     data = {};
   }
-  Object.keys(methods).forEach(methodName => {
+  Object.keys(methods).forEach(function (methodName) {
     if (context.__lifecycle_hooks__.indexOf(methodName) === -1 && !hasOwn(data, methodName)) {
       data[methodName] = methods[methodName];
     }
   });
   return data;
 }
-const PROP_TYPES = [String, Number, Boolean, Object, Array, null];
+var PROP_TYPES = [String, Number, Boolean, Object, Array, null];
 function createObserver(name) {
   return function observer(newVal, oldVal) {
     if (this.$vm) {
@@ -1462,17 +1518,17 @@ function createObserver(name) {
   };
 }
 function initBehaviors(vueOptions, initBehavior) {
-  const vueBehaviors = vueOptions.behaviors;
-  const vueExtends = vueOptions.extends;
-  const vueMixins = vueOptions.mixins;
-  let vueProps = vueOptions.props;
+  var vueBehaviors = vueOptions.behaviors;
+  var vueExtends = vueOptions.extends;
+  var vueMixins = vueOptions.mixins;
+  var vueProps = vueOptions.props;
   if (!vueProps) {
     vueOptions.props = vueProps = [];
   }
-  const behaviors = [];
+  var behaviors = [];
   if (Array.isArray(vueBehaviors)) {
-    vueBehaviors.forEach(behavior => {
-      behaviors.push(behavior.replace('uni://', `${"wx"}://`));
+    vueBehaviors.forEach(function (behavior) {
+      behaviors.push(behavior.replace('uni://', "wx".concat("://")));
       if (behavior === 'uni://form-field') {
         if (Array.isArray(vueProps)) {
           vueProps.push('name');
@@ -1496,7 +1552,7 @@ function initBehaviors(vueOptions, initBehavior) {
     }));
   }
   if (Array.isArray(vueMixins)) {
-    vueMixins.forEach(vueMixin => {
+    vueMixins.forEach(function (vueMixin) {
       if (isPlainObject(vueMixin) && vueMixin.props) {
         behaviors.push(initBehavior({
           properties: initProperties(vueMixin.props, true)
@@ -1513,8 +1569,11 @@ function parsePropType(key, type, defaultValue, file) {
   }
   return type;
 }
-function initProperties(props, isBehavior = false, file = '', options) {
-  const properties = {};
+function initProperties(props) {
+  var isBehavior = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  var file = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+  var options = arguments.length > 3 ? arguments[3] : undefined;
+  var properties = {};
   if (!isBehavior) {
     properties.vueId = {
       type: String,
@@ -1541,20 +1600,20 @@ function initProperties(props, isBehavior = false, file = '', options) {
       // 小程序不能直接定义 $slots 的 props，所以通过 vueSlots 转换到 $slots
       type: null,
       value: [],
-      observer: function (newVal, oldVal) {
-        const $slots = Object.create(null);
-        newVal.forEach(slotName => {
+      observer: function observer(newVal, oldVal) {
+        var $slots = Object.create(null);
+        newVal.forEach(function (slotName) {
           $slots[slotName] = true;
         });
         this.setData({
-          $slots
+          $slots: $slots
         });
       }
     };
   }
   if (Array.isArray(props)) {
     // ['title']
-    props.forEach(key => {
+    props.forEach(function (key) {
       properties[key] = {
         type: null,
         observer: createObserver(key)
@@ -1562,23 +1621,23 @@ function initProperties(props, isBehavior = false, file = '', options) {
     });
   } else if (isPlainObject(props)) {
     // {title:{type:String,default:''},content:String}
-    Object.keys(props).forEach(key => {
-      const opts = props[key];
+    Object.keys(props).forEach(function (key) {
+      var opts = props[key];
       if (isPlainObject(opts)) {
         // title:{type:String,default:''}
-        let value = opts.default;
+        var value = opts.default;
         if (isFn(value)) {
           value = value();
         }
         opts.type = parsePropType(key, opts.type);
         properties[key] = {
           type: PROP_TYPES.indexOf(opts.type) !== -1 ? opts.type : null,
-          value,
+          value: value,
           observer: createObserver(key)
         };
       } else {
         // content:String
-        const type = parsePropType(key, opts);
+        var type = parsePropType(key, opts);
         properties[key] = {
           type: PROP_TYPES.indexOf(type) !== -1 ? type : null,
           observer: createObserver(key)
@@ -1600,7 +1659,7 @@ function wrapper$1(event) {
     event.detail = {};
   }
   if (hasOwn(event, 'markerId')) {
-    event.detail = typeof event.detail === 'object' ? event.detail : {};
+    event.detail = _typeof(event.detail) === 'object' ? event.detail : {};
     event.detail.markerId = event.markerId;
   }
   if (isPlainObject(event.detail)) {
@@ -1609,15 +1668,15 @@ function wrapper$1(event) {
   return event;
 }
 function getExtraValue(vm, dataPathsArray) {
-  let context = vm;
-  dataPathsArray.forEach(dataPathArray => {
-    const dataPath = dataPathArray[0];
-    const value = dataPathArray[2];
+  var context = vm;
+  dataPathsArray.forEach(function (dataPathArray) {
+    var dataPath = dataPathArray[0];
+    var value = dataPathArray[2];
     if (dataPath || typeof value !== 'undefined') {
       // ['','',index,'disable']
-      const propPath = dataPathArray[1];
-      const valuePath = dataPathArray[3];
-      let vFor;
+      var propPath = dataPathArray[1];
+      var valuePath = dataPathArray[3];
+      var vFor;
       if (Number.isInteger(dataPath)) {
         vFor = dataPath;
       } else if (!dataPath) {
@@ -1635,11 +1694,11 @@ function getExtraValue(vm, dataPathsArray) {
         context = vFor[value];
       } else {
         if (Array.isArray(vFor)) {
-          context = vFor.find(vForItem => {
+          context = vFor.find(function (vForItem) {
             return vm.__get_value(propPath, vForItem) === value;
           });
         } else if (isPlainObject(vFor)) {
-          context = Object.keys(vFor).find(vForKey => {
+          context = Object.keys(vFor).find(function (vForKey) {
             return vm.__get_value(propPath, vFor[vForKey]) === value;
           });
         } else {
@@ -1654,7 +1713,7 @@ function getExtraValue(vm, dataPathsArray) {
   return context;
 }
 function processEventExtra(vm, extra, event, __args__) {
-  const extraObj = {};
+  var extraObj = {};
   if (Array.isArray(extra) && extra.length) {
     /**
      *[
@@ -1667,7 +1726,7 @@ function processEventExtra(vm, extra, event, __args__) {
      *],
      *'test'
      */
-    extra.forEach((dataPath, index) => {
+    extra.forEach(function (dataPath, index) {
       if (typeof dataPath === 'string') {
         if (!dataPath) {
           // model,prop.sync
@@ -1693,18 +1752,22 @@ function processEventExtra(vm, extra, event, __args__) {
   return extraObj;
 }
 function getObjByArray(arr) {
-  const obj = {};
-  for (let i = 1; i < arr.length; i++) {
-    const element = arr[i];
+  var obj = {};
+  for (var i = 1; i < arr.length; i++) {
+    var element = arr[i];
     obj[element[0]] = element[1];
   }
   return obj;
 }
-function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName) {
-  let isCustomMPEvent = false; // wxcomponent 组件，传递原始 event 对象
+function processEventArgs(vm, event) {
+  var args = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+  var extra = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  var isCustom = arguments.length > 4 ? arguments[4] : undefined;
+  var methodName = arguments.length > 5 ? arguments[5] : undefined;
+  var isCustomMPEvent = false; // wxcomponent 组件，传递原始 event 对象
 
   // fixed 用户直接触发 mpInstance.triggerEvent
-  const __args__ = isPlainObject(event.detail) ? event.detail.__args__ || [event.detail] : [event.detail];
+  var __args__ = isPlainObject(event.detail) ? event.detail.__args__ || [event.detail] : [event.detail];
   if (isCustom) {
     // 自定义事件
     isCustomMPEvent = event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.comType === 'wx';
@@ -1716,9 +1779,9 @@ function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName
       return __args__;
     }
   }
-  const extraObj = processEventExtra(vm, extra, event, __args__);
-  const ret = [];
-  args.forEach(arg => {
+  var extraObj = processEventExtra(vm, extra, event, __args__);
+  var ret = [];
+  args.forEach(function (arg) {
     if (arg === '$event') {
       if (methodName === '__set_model' && !isCustom) {
         // input v-model value
@@ -1743,13 +1806,13 @@ function processEventArgs(vm, event, args = [], extra = [], isCustom, methodName
   });
   return ret;
 }
-const ONCE = '~';
-const CUSTOM = '^';
+var ONCE = '~';
+var CUSTOM = '^';
 function isMatchEventType(eventType, optType) {
   return eventType === optType || optType === 'regionchange' && (eventType === 'begin' || eventType === 'end');
 }
 function getContextVm(vm) {
-  let $parent = vm.$parent;
+  var $parent = vm.$parent;
   // 父组件是 scoped slots 或者其他自定义组件时继续查找
   while ($parent && $parent.$parent && ($parent.$options.generic || $parent.$parent.$options.generic || $parent.$scope._$vuePid)) {
     $parent = $parent.$parent;
@@ -1757,46 +1820,47 @@ function getContextVm(vm) {
   return $parent && $parent.$parent;
 }
 function handleEvent(event) {
+  var _this2 = this;
   event = wrapper$1(event);
 
   // [['tap',[['handle',[1,2,a]],['handle1',[1,2,a]]]]]
-  const dataset = (event.currentTarget || event.target).dataset;
+  var dataset = (event.currentTarget || event.target).dataset;
   if (!dataset) {
     return console.warn('事件信息不存在');
   }
-  const eventOpts = dataset.eventOpts || dataset['event-opts']; // 支付宝 web-view 组件 dataset 非驼峰
+  var eventOpts = dataset.eventOpts || dataset['event-opts']; // 支付宝 web-view 组件 dataset 非驼峰
   if (!eventOpts) {
     return console.warn('事件信息不存在');
   }
 
   // [['handle',[1,2,a]],['handle1',[1,2,a]]]
-  const eventType = event.type;
-  const ret = [];
-  eventOpts.forEach(eventOpt => {
-    let type = eventOpt[0];
-    const eventsArray = eventOpt[1];
-    const isCustom = type.charAt(0) === CUSTOM;
+  var eventType = event.type;
+  var ret = [];
+  eventOpts.forEach(function (eventOpt) {
+    var type = eventOpt[0];
+    var eventsArray = eventOpt[1];
+    var isCustom = type.charAt(0) === CUSTOM;
     type = isCustom ? type.slice(1) : type;
-    const isOnce = type.charAt(0) === ONCE;
+    var isOnce = type.charAt(0) === ONCE;
     type = isOnce ? type.slice(1) : type;
     if (eventsArray && isMatchEventType(eventType, type)) {
-      eventsArray.forEach(eventArray => {
-        const methodName = eventArray[0];
+      eventsArray.forEach(function (eventArray) {
+        var methodName = eventArray[0];
         if (methodName) {
-          let handlerCtx = this.$vm;
+          var handlerCtx = _this2.$vm;
           if (handlerCtx.$options.generic) {
             // mp-weixin,mp-toutiao 抽象节点模拟 scoped slots
             handlerCtx = getContextVm(handlerCtx) || handlerCtx;
           }
           if (methodName === '$emit') {
-            handlerCtx.$emit.apply(handlerCtx, processEventArgs(this.$vm, event, eventArray[1], eventArray[2], isCustom, methodName));
+            handlerCtx.$emit.apply(handlerCtx, processEventArgs(_this2.$vm, event, eventArray[1], eventArray[2], isCustom, methodName));
             return;
           }
-          const handler = handlerCtx[methodName];
+          var handler = handlerCtx[methodName];
           if (!isFn(handler)) {
-            const type = this.$vm.mpType === 'page' ? 'Page' : 'Component';
-            const path = this.route || this.is;
-            throw new Error(`${type} "${path}" does not have a method "${methodName}"`);
+            var _type = _this2.$vm.mpType === 'page' ? 'Page' : 'Component';
+            var path = _this2.route || _this2.is;
+            throw new Error("".concat(_type, " \"").concat(path, "\" does not have a method \"").concat(methodName, "\""));
           }
           if (isOnce) {
             if (handler.once) {
@@ -1804,7 +1868,7 @@ function handleEvent(event) {
             }
             handler.once = true;
           }
-          let params = processEventArgs(this.$vm, event, eventArray[1], eventArray[2], isCustom, methodName);
+          var params = processEventArgs(_this2.$vm, event, eventArray[1], eventArray[2], isCustom, methodName);
           params = Array.isArray(params) ? params : [];
           // 参数尾部增加原始事件对象用于复杂表达式内获取额外数据
           if (/=\s*\S+\.eventParams\s*\|\|\s*\S+\[['"]event-params['"]\]/.test(handler.toString())) {
@@ -1820,17 +1884,17 @@ function handleEvent(event) {
     return ret[0];
   }
 }
-const eventChannels = {};
-const eventChannelStack = [];
+var eventChannels = {};
+var eventChannelStack = [];
 function getEventChannel(id) {
   if (id) {
-    const eventChannel = eventChannels[id];
+    var eventChannel = eventChannels[id];
     delete eventChannels[id];
     return eventChannel;
   }
   return eventChannelStack.shift();
 }
-const hooks = ['onShow', 'onHide', 'onError', 'onPageNotFound', 'onThemeChange', 'onUnhandledRejection'];
+var hooks = ['onShow', 'onHide', 'onError', 'onPageNotFound', 'onThemeChange', 'onUnhandledRejection'];
 function initEventChannel() {
   _vue.default.prototype.getOpenerEventChannel = function () {
     // 微信小程序使用自身getOpenerEventChannel
@@ -1838,7 +1902,7 @@ function initEventChannel() {
       return this.$scope.getOpenerEventChannel();
     }
   };
-  const callHook = _vue.default.prototype.__call_hook;
+  var callHook = _vue.default.prototype.__call_hook;
   _vue.default.prototype.__call_hook = function (hook, args) {
     if (hook === 'onLoad' && args && args.__id__) {
       this.__eventChannel__ = getEventChannel(args.__id__);
@@ -1848,35 +1912,35 @@ function initEventChannel() {
   };
 }
 function initScopedSlotsParams() {
-  const center = {};
-  const parents = {};
+  var center = {};
+  var parents = {};
   _vue.default.prototype.$hasScopedSlotsParams = function (vueId) {
-    const has = center[vueId];
+    var has = center[vueId];
     if (!has) {
       parents[vueId] = this;
-      this.$on('hook:destroyed', () => {
+      this.$on('hook:destroyed', function () {
         delete parents[vueId];
       });
     }
     return has;
   };
   _vue.default.prototype.$getScopedSlotsParams = function (vueId, name, key) {
-    const data = center[vueId];
+    var data = center[vueId];
     if (data) {
-      const object = data[name] || {};
+      var object = data[name] || {};
       return key ? object[key] : object;
     } else {
       parents[vueId] = this;
-      this.$on('hook:destroyed', () => {
+      this.$on('hook:destroyed', function () {
         delete parents[vueId];
       });
     }
   };
   _vue.default.prototype.$setScopedSlotsParams = function (name, value) {
-    const vueIds = this.$options.propsData.vueId;
+    var vueIds = this.$options.propsData.vueId;
     if (vueIds) {
-      const vueId = vueIds.split(',')[0];
-      const object = center[vueId] = center[vueId] || {};
+      var vueId = vueIds.split(',')[0];
+      var object = center[vueId] = center[vueId] || {};
       object[name] = value;
       if (parents[vueId]) {
         parents[vueId].$forceUpdate();
@@ -1884,9 +1948,9 @@ function initScopedSlotsParams() {
     }
   };
   _vue.default.mixin({
-    destroyed() {
-      const propsData = this.$options.propsData;
-      const vueId = propsData && propsData.vueId;
+    destroyed: function destroyed() {
+      var propsData = this.$options.propsData;
+      var vueId = propsData && propsData.vueId;
       if (vueId) {
         delete center[vueId];
         delete parents[vueId];
@@ -1894,10 +1958,9 @@ function initScopedSlotsParams() {
     }
   });
 }
-function parseBaseApp(vm, {
-  mocks,
-  initRefs
-}) {
+function parseBaseApp(vm, _ref4) {
+  var mocks = _ref4.mocks,
+    initRefs = _ref4.initRefs;
   initEventChannel();
   {
     initScopedSlotsParams();
@@ -1908,21 +1971,20 @@ function parseBaseApp(vm, {
   uniIdMixin(_vue.default);
   _vue.default.prototype.mpHost = "mp-weixin";
   _vue.default.mixin({
-    beforeCreate() {
+    beforeCreate: function beforeCreate() {
       if (!this.$options.mpType) {
         return;
       }
       this.mpType = this.$options.mpType;
-      this.$mp = {
-        data: {},
-        [this.mpType]: this.$options.mpInstance
-      };
+      this.$mp = _defineProperty({
+        data: {}
+      }, this.mpType, this.$options.mpInstance);
       this.$scope = this.$options.mpInstance;
       delete this.$options.mpType;
       delete this.$options.mpInstance;
       if (this.mpType === 'page' && typeof getApp === 'function') {
         // hack vue-i18n
-        const app = getApp();
+        var app = getApp();
         if (app.$vm && app.$vm.$i18n) {
           this._i18n = app.$vm.$i18n;
         }
@@ -1933,8 +1995,8 @@ function parseBaseApp(vm, {
       }
     }
   });
-  const appOptions = {
-    onLaunch(args) {
+  var appOptions = {
+    onLaunch: function onLaunch(args) {
       if (this.$vm) {
         // 已经初始化过了，主要是为了百度，百度 onShow 在 onLaunch 之前
         return;
@@ -1961,9 +2023,9 @@ function parseBaseApp(vm, {
   // 兼容旧版本 globalData
   appOptions.globalData = vm.$options.globalData || {};
   // 将 methods 中的方法挂在 getApp() 中
-  const methods = vm.$options.methods;
+  var methods = vm.$options.methods;
   if (methods) {
-    Object.keys(methods).forEach(name => {
+    Object.keys(methods).forEach(function (name) {
       appOptions[name] = methods[name];
     });
   }
@@ -1974,25 +2036,30 @@ function parseBaseApp(vm, {
 }
 function parseApp(vm) {
   return parseBaseApp(vm, {
-    mocks,
-    initRefs
+    mocks: mocks,
+    initRefs: initRefs
   });
 }
 function createApp(vm) {
   App(parseApp(vm));
   return vm;
 }
-const encodeReserveRE = /[!'()*]/g;
-const encodeReserveReplacer = c => '%' + c.charCodeAt(0).toString(16);
-const commaRE = /%2C/g;
+var encodeReserveRE = /[!'()*]/g;
+var encodeReserveReplacer = function encodeReserveReplacer(c) {
+  return '%' + c.charCodeAt(0).toString(16);
+};
+var commaRE = /%2C/g;
 
 // fixed encodeURIComponent which is more conformant to RFC3986:
 // - escapes [!'()*]
 // - preserve commas
-const encode = str => encodeURIComponent(str).replace(encodeReserveRE, encodeReserveReplacer).replace(commaRE, ',');
-function stringifyQuery(obj, encodeStr = encode) {
-  const res = obj ? Object.keys(obj).map(key => {
-    const val = obj[key];
+var encode = function encode(str) {
+  return encodeURIComponent(str).replace(encodeReserveRE, encodeReserveReplacer).replace(commaRE, ',');
+};
+function stringifyQuery(obj) {
+  var encodeStr = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : encode;
+  var res = obj ? Object.keys(obj).map(function (key) {
+    var val = obj[key];
     if (val === undefined) {
       return '';
     }
@@ -2000,8 +2067,8 @@ function stringifyQuery(obj, encodeStr = encode) {
       return encodeStr(key);
     }
     if (Array.isArray(val)) {
-      const result = [];
-      val.forEach(val2 => {
+      var result = [];
+      val.forEach(function (val2) {
         if (val2 === undefined) {
           return;
         }
@@ -2014,34 +2081,39 @@ function stringifyQuery(obj, encodeStr = encode) {
       return result.join('&');
     }
     return encodeStr(key) + '=' + encodeStr(val);
-  }).filter(x => x.length > 0).join('&') : null;
-  return res ? `?${res}` : '';
+  }).filter(function (x) {
+    return x.length > 0;
+  }).join('&') : null;
+  return res ? "?".concat(res) : '';
 }
-function parseBaseComponent(vueComponentOptions, {
-  isPage,
-  initRelation
-} = {}, needVueOptions) {
-  const [VueComponent, vueOptions] = initVueComponent(_vue.default, vueComponentOptions);
-  const options = {
+function parseBaseComponent(vueComponentOptions) {
+  var _ref5 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+    isPage = _ref5.isPage,
+    initRelation = _ref5.initRelation;
+  var needVueOptions = arguments.length > 2 ? arguments[2] : undefined;
+  var _initVueComponent = initVueComponent(_vue.default, vueComponentOptions),
+    _initVueComponent2 = _slicedToArray(_initVueComponent, 2),
+    VueComponent = _initVueComponent2[0],
+    vueOptions = _initVueComponent2[1];
+  var options = _objectSpread({
     multipleSlots: true,
-    addGlobalClass: true,
-    ...(vueOptions.options || {})
-  };
+    addGlobalClass: true
+  }, vueOptions.options || {});
   {
     // 微信 multipleSlots 部分情况有 bug，导致内容顺序错乱 如 u-list，提供覆盖选项
     if (vueOptions['mp-weixin'] && vueOptions['mp-weixin'].options) {
       Object.assign(options, vueOptions['mp-weixin'].options);
     }
   }
-  const componentOptions = {
-    options,
+  var componentOptions = {
+    options: options,
     data: initData(vueOptions, _vue.default.prototype),
     behaviors: initBehaviors(vueOptions, initBehavior),
     properties: initProperties(vueOptions.props, false, vueOptions.__file, options),
     lifetimes: {
-      attached() {
-        const properties = this.properties;
-        const options = {
+      attached: function attached() {
+        var properties = this.properties;
+        var options = {
           mpType: isPage.call(this) ? 'page' : 'component',
           mpInstance: this,
           propsData: properties
@@ -2063,7 +2135,7 @@ function parseBaseComponent(vueComponentOptions, {
         // 触发首次 setData
         this.$vm.$mount();
       },
-      ready() {
+      ready: function ready() {
         // 当组件 props 默认值为 true，初始化时传入 false 会导致 created,ready 触发, 但 attached 不触发
         // https://developers.weixin.qq.com/community/develop/doc/00066ae2844cc0f8eb883e2a557800
         if (this.$vm) {
@@ -2072,18 +2144,18 @@ function parseBaseComponent(vueComponentOptions, {
           this.$vm.__call_hook('onReady');
         }
       },
-      detached() {
+      detached: function detached() {
         this.$vm && this.$vm.$destroy();
       }
     },
     pageLifetimes: {
-      show(args) {
+      show: function show(args) {
         this.$vm && this.$vm.__call_hook('onPageShow', args);
       },
-      hide() {
+      hide: function hide() {
         this.$vm && this.$vm.__call_hook('onPageHide');
       },
-      resize(size) {
+      resize: function resize(size) {
         this.$vm && this.$vm.__call_hook('onPageResize', size);
       }
     },
@@ -2097,7 +2169,7 @@ function parseBaseComponent(vueComponentOptions, {
     componentOptions.externalClasses = vueOptions.externalClasses;
   }
   if (Array.isArray(vueOptions.wxsCallMethods)) {
-    vueOptions.wxsCallMethods.forEach(callMethod => {
+    vueOptions.wxsCallMethods.forEach(function (callMethod) {
       componentOptions.methods[callMethod] = function (args) {
         return this.$vm[callMethod](args);
       };
@@ -2113,18 +2185,21 @@ function parseBaseComponent(vueComponentOptions, {
 }
 function parseComponent(vueComponentOptions, needVueOptions) {
   return parseBaseComponent(vueComponentOptions, {
-    isPage,
-    initRelation
+    isPage: isPage,
+    initRelation: initRelation
   }, needVueOptions);
 }
-const hooks$1 = ['onShow', 'onHide', 'onUnload'];
-hooks$1.push(...PAGE_EVENT_HOOKS);
+var hooks$1 = ['onShow', 'onHide', 'onUnload'];
+hooks$1.push.apply(hooks$1, PAGE_EVENT_HOOKS);
 function parseBasePage(vuePageOptions) {
-  const [pageOptions, vueOptions] = parseComponent(vuePageOptions, true);
+  var _parseComponent = parseComponent(vuePageOptions, true),
+    _parseComponent2 = _slicedToArray(_parseComponent, 2),
+    pageOptions = _parseComponent2[0],
+    vueOptions = _parseComponent2[1];
   initHooks(pageOptions.methods, hooks$1, vueOptions);
   pageOptions.methods.onLoad = function (query) {
     this.options = query;
-    const copyQuery = Object.assign({}, query);
+    var copyQuery = Object.assign({}, query);
     delete copyQuery.__id__;
     this.$page = {
       fullPath: '/' + (this.route || this.is) + stringifyQuery(copyQuery)
@@ -2151,71 +2226,83 @@ function createComponent(vueOptions) {
   }
 }
 function createSubpackageApp(vm) {
-  const appOptions = parseApp(vm);
-  const app = getApp({
+  var appOptions = parseApp(vm);
+  var app = getApp({
     allowDefault: true
   });
   vm.$scope = app;
-  const globalData = app.globalData;
+  var globalData = app.globalData;
   if (globalData) {
-    Object.keys(appOptions.globalData).forEach(name => {
+    Object.keys(appOptions.globalData).forEach(function (name) {
       if (!hasOwn(globalData, name)) {
         globalData[name] = appOptions.globalData[name];
       }
     });
   }
-  Object.keys(appOptions).forEach(name => {
+  Object.keys(appOptions).forEach(function (name) {
     if (!hasOwn(app, name)) {
       app[name] = appOptions[name];
     }
   });
   if (isFn(appOptions.onShow) && wx.onAppShow) {
-    wx.onAppShow((...args) => {
+    wx.onAppShow(function () {
+      for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+        args[_key5] = arguments[_key5];
+      }
       vm.__call_hook('onShow', args);
     });
   }
   if (isFn(appOptions.onHide) && wx.onAppHide) {
-    wx.onAppHide((...args) => {
+    wx.onAppHide(function () {
+      for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+        args[_key6] = arguments[_key6];
+      }
       vm.__call_hook('onHide', args);
     });
   }
   if (isFn(appOptions.onLaunch)) {
-    const args = wx.getLaunchOptionsSync && wx.getLaunchOptionsSync();
+    var args = wx.getLaunchOptionsSync && wx.getLaunchOptionsSync();
     vm.__call_hook('onLaunch', args);
   }
   return vm;
 }
 function createPlugin(vm) {
-  const appOptions = parseApp(vm);
+  var appOptions = parseApp(vm);
   if (isFn(appOptions.onShow) && wx.onAppShow) {
-    wx.onAppShow((...args) => {
+    wx.onAppShow(function () {
+      for (var _len7 = arguments.length, args = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
+        args[_key7] = arguments[_key7];
+      }
       vm.__call_hook('onShow', args);
     });
   }
   if (isFn(appOptions.onHide) && wx.onAppHide) {
-    wx.onAppHide((...args) => {
+    wx.onAppHide(function () {
+      for (var _len8 = arguments.length, args = new Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
+        args[_key8] = arguments[_key8];
+      }
       vm.__call_hook('onHide', args);
     });
   }
   if (isFn(appOptions.onLaunch)) {
-    const args = wx.getLaunchOptionsSync && wx.getLaunchOptionsSync();
+    var args = wx.getLaunchOptionsSync && wx.getLaunchOptionsSync();
     vm.__call_hook('onLaunch', args);
   }
   return vm;
 }
-todos.forEach(todoApi => {
+todos.forEach(function (todoApi) {
   protocols[todoApi] = false;
 });
-canIUses.forEach(canIUseApi => {
-  const apiName = protocols[canIUseApi] && protocols[canIUseApi].name ? protocols[canIUseApi].name : canIUseApi;
+canIUses.forEach(function (canIUseApi) {
+  var apiName = protocols[canIUseApi] && protocols[canIUseApi].name ? protocols[canIUseApi].name : canIUseApi;
   if (!wx.canIUse(apiName)) {
     protocols[canIUseApi] = false;
   }
 });
-let uni = {};
+var uni = {};
 if (typeof Proxy !== 'undefined' && "mp-weixin" !== 'app-plus') {
   uni = new Proxy({}, {
-    get(target, name) {
+    get: function get(target, name) {
       if (hasOwn(target, name)) {
         return target[name];
       }
@@ -2241,30 +2328,30 @@ if (typeof Proxy !== 'undefined' && "mp-weixin" !== 'app-plus') {
       }
       return promisify(name, wrapper(name, wx[name]));
     },
-    set(target, name, value) {
+    set: function set(target, name, value) {
       target[name] = value;
       return true;
     }
   });
 } else {
-  Object.keys(baseApi).forEach(name => {
+  Object.keys(baseApi).forEach(function (name) {
     uni[name] = baseApi[name];
   });
   {
-    Object.keys(todoApis).forEach(name => {
+    Object.keys(todoApis).forEach(function (name) {
       uni[name] = promisify(name, todoApis[name]);
     });
-    Object.keys(extraApi).forEach(name => {
+    Object.keys(extraApi).forEach(function (name) {
       uni[name] = promisify(name, todoApis[name]);
     });
   }
-  Object.keys(eventApi).forEach(name => {
+  Object.keys(eventApi).forEach(function (name) {
     uni[name] = eventApi[name];
   });
-  Object.keys(api).forEach(name => {
+  Object.keys(api).forEach(function (name) {
     uni[name] = promisify(name, api[name]);
   });
-  Object.keys(wx).forEach(name => {
+  Object.keys(wx).forEach(function (name) {
     if (hasOwn(wx, name) || hasOwn(protocols, name)) {
       uni[name] = promisify(name, wrapper(name, wx[name]));
     }
@@ -2332,34 +2419,55 @@ exports.isString = void 0;
 exports.normalizeLocale = normalizeLocale;
 exports.parseI18nJson = parseI18nJson;
 exports.resolveLocale = resolveLocale;
-const isArray = Array.isArray;
-const isObject = val => val !== null && typeof val === 'object';
-const defaultDelimiters = ['{', '}'];
-class BaseFormatter {
-  constructor() {
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+var isArray = Array.isArray;
+var isObject = function isObject(val) {
+  return val !== null && _typeof(val) === 'object';
+};
+var defaultDelimiters = ['{', '}'];
+var BaseFormatter = exports.Formatter = /*#__PURE__*/function () {
+  function BaseFormatter() {
+    _classCallCheck(this, BaseFormatter);
     this._caches = Object.create(null);
   }
-  interpolate(message, values, delimiters = defaultDelimiters) {
-    if (!values) {
-      return [message];
+  return _createClass(BaseFormatter, [{
+    key: "interpolate",
+    value: function interpolate(message, values) {
+      var delimiters = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : defaultDelimiters;
+      if (!values) {
+        return [message];
+      }
+      var tokens = this._caches[message];
+      if (!tokens) {
+        tokens = parse(message, delimiters);
+        this._caches[message] = tokens;
+      }
+      return compile(tokens, values);
     }
-    let tokens = this._caches[message];
-    if (!tokens) {
-      tokens = parse(message, delimiters);
-      this._caches[message] = tokens;
-    }
-    return compile(tokens, values);
-  }
-}
-exports.Formatter = BaseFormatter;
-const RE_TOKEN_LIST_VALUE = /^(?:\d)+/;
-const RE_TOKEN_NAMED_VALUE = /^(?:\w)+/;
-function parse(format, [startDelimiter, endDelimiter]) {
-  const tokens = [];
-  let position = 0;
-  let text = '';
+  }]);
+}();
+var RE_TOKEN_LIST_VALUE = /^(?:\d)+/;
+var RE_TOKEN_NAMED_VALUE = /^(?:\w)+/;
+function parse(format, _ref) {
+  var _ref2 = _slicedToArray(_ref, 2),
+    startDelimiter = _ref2[0],
+    endDelimiter = _ref2[1];
+  var tokens = [];
+  var position = 0;
+  var text = '';
   while (position < format.length) {
-    let char = format[position++];
+    var char = format[position++];
     if (char === startDelimiter) {
       if (text) {
         tokens.push({
@@ -2368,17 +2476,17 @@ function parse(format, [startDelimiter, endDelimiter]) {
         });
       }
       text = '';
-      let sub = '';
+      var sub = '';
       char = format[position++];
       while (char !== undefined && char !== endDelimiter) {
         sub += char;
         char = format[position++];
       }
-      const isClosed = char === endDelimiter;
-      const type = RE_TOKEN_LIST_VALUE.test(sub) ? 'list' : isClosed && RE_TOKEN_NAMED_VALUE.test(sub) ? 'named' : 'unknown';
+      var isClosed = char === endDelimiter;
+      var type = RE_TOKEN_LIST_VALUE.test(sub) ? 'list' : isClosed && RE_TOKEN_NAMED_VALUE.test(sub) ? 'named' : 'unknown';
       tokens.push({
         value: sub,
-        type
+        type: type
       });
     }
     //  else if (char === '%') {
@@ -2398,14 +2506,14 @@ function parse(format, [startDelimiter, endDelimiter]) {
   return tokens;
 }
 function compile(tokens, values) {
-  const compiled = [];
-  let index = 0;
-  const mode = isArray(values) ? 'list' : isObject(values) ? 'named' : 'unknown';
+  var compiled = [];
+  var index = 0;
+  var mode = isArray(values) ? 'list' : isObject(values) ? 'named' : 'unknown';
   if (mode === 'unknown') {
     return compiled;
   }
   while (index < tokens.length) {
-    const token = tokens[index];
+    var token = tokens[index];
     switch (token.type) {
       case 'text':
         compiled.push(token.value);
@@ -2418,13 +2526,13 @@ function compile(tokens, values) {
           compiled.push(values[token.value]);
         } else {
           if (true) {
-            console.warn(`Type of token '${token.type}' and format of value '${mode}' don't match!`);
+            console.warn("Type of token '".concat(token.type, "' and format of value '").concat(mode, "' don't match!"));
           }
         }
         break;
       case 'unknown':
         if (true) {
-          console.warn(`Detect 'unknown' type of token!`);
+          console.warn("Detect 'unknown' type of token!");
         }
         break;
     }
@@ -2432,19 +2540,25 @@ function compile(tokens, values) {
   }
   return compiled;
 }
-const LOCALE_ZH_HANS = exports.LOCALE_ZH_HANS = 'zh-Hans';
-const LOCALE_ZH_HANT = exports.LOCALE_ZH_HANT = 'zh-Hant';
-const LOCALE_EN = exports.LOCALE_EN = 'en';
-const LOCALE_FR = exports.LOCALE_FR = 'fr';
-const LOCALE_ES = exports.LOCALE_ES = 'es';
-const hasOwnProperty = Object.prototype.hasOwnProperty;
-const hasOwn = (val, key) => hasOwnProperty.call(val, key);
-const defaultFormatter = new BaseFormatter();
+var LOCALE_ZH_HANS = exports.LOCALE_ZH_HANS = 'zh-Hans';
+var LOCALE_ZH_HANT = exports.LOCALE_ZH_HANT = 'zh-Hant';
+var LOCALE_EN = exports.LOCALE_EN = 'en';
+var LOCALE_FR = exports.LOCALE_FR = 'fr';
+var LOCALE_ES = exports.LOCALE_ES = 'es';
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var hasOwn = function hasOwn(val, key) {
+  return hasOwnProperty.call(val, key);
+};
+var defaultFormatter = new BaseFormatter();
 function include(str, parts) {
-  return !!parts.find(part => str.indexOf(part) !== -1);
+  return !!parts.find(function (part) {
+    return str.indexOf(part) !== -1;
+  });
 }
 function startsWith(str, parts) {
-  return parts.find(part => str.indexOf(part) === 0);
+  return parts.find(function (part) {
+    return str.indexOf(part) === 0;
+  });
 }
 function normalizeLocale(locale, messages) {
   if (!locale) {
@@ -2467,19 +2581,19 @@ function normalizeLocale(locale, messages) {
     }
     return LOCALE_ZH_HANS;
   }
-  const lang = startsWith(locale, [LOCALE_EN, LOCALE_FR, LOCALE_ES]);
+  var lang = startsWith(locale, [LOCALE_EN, LOCALE_FR, LOCALE_ES]);
   if (lang) {
     return lang;
   }
 }
-class I18n {
-  constructor({
-    locale,
-    fallbackLocale,
-    messages,
-    watcher,
-    formater
-  }) {
+var I18n = exports.I18n = /*#__PURE__*/function () {
+  function I18n(_ref3) {
+    var locale = _ref3.locale,
+      fallbackLocale = _ref3.fallbackLocale,
+      messages = _ref3.messages,
+      watcher = _ref3.watcher,
+      formater = _ref3.formater;
+    _classCallCheck(this, I18n);
     this.locale = LOCALE_EN;
     this.fallbackLocale = LOCALE_EN;
     this.message = {};
@@ -2495,74 +2609,91 @@ class I18n {
       this.watchLocale(watcher);
     }
   }
-  setLocale(locale) {
-    const oldLocale = this.locale;
-    this.locale = normalizeLocale(locale, this.messages) || this.fallbackLocale;
-    if (!this.messages[this.locale]) {
-      // 可能初始化时不存在
-      this.messages[this.locale] = {};
-    }
-    this.message = this.messages[this.locale];
-    // 仅发生变化时，通知
-    if (oldLocale !== this.locale) {
-      this.watchers.forEach(watcher => {
-        watcher(this.locale, oldLocale);
-      });
-    }
-  }
-  getLocale() {
-    return this.locale;
-  }
-  watchLocale(fn) {
-    const index = this.watchers.push(fn) - 1;
-    return () => {
-      this.watchers.splice(index, 1);
-    };
-  }
-  add(locale, message, override = true) {
-    const curMessages = this.messages[locale];
-    if (curMessages) {
-      if (override) {
-        Object.assign(curMessages, message);
-      } else {
-        Object.keys(message).forEach(key => {
-          if (!hasOwn(curMessages, key)) {
-            curMessages[key] = message[key];
-          }
+  return _createClass(I18n, [{
+    key: "setLocale",
+    value: function setLocale(locale) {
+      var _this = this;
+      var oldLocale = this.locale;
+      this.locale = normalizeLocale(locale, this.messages) || this.fallbackLocale;
+      if (!this.messages[this.locale]) {
+        // 可能初始化时不存在
+        this.messages[this.locale] = {};
+      }
+      this.message = this.messages[this.locale];
+      // 仅发生变化时，通知
+      if (oldLocale !== this.locale) {
+        this.watchers.forEach(function (watcher) {
+          watcher(_this.locale, oldLocale);
         });
       }
-    } else {
-      this.messages[locale] = message;
     }
-  }
-  f(message, values, delimiters) {
-    return this.formater.interpolate(message, values, delimiters).join('');
-  }
-  t(key, locale, values) {
-    let message = this.message;
-    if (typeof locale === 'string') {
-      locale = normalizeLocale(locale, this.messages);
-      locale && (message = this.messages[locale]);
-    } else {
-      values = locale;
+  }, {
+    key: "getLocale",
+    value: function getLocale() {
+      return this.locale;
     }
-    if (!hasOwn(message, key)) {
-      console.warn(`Cannot translate the value of keypath ${key}. Use the value of keypath as default.`);
-      return key;
+  }, {
+    key: "watchLocale",
+    value: function watchLocale(fn) {
+      var _this2 = this;
+      var index = this.watchers.push(fn) - 1;
+      return function () {
+        _this2.watchers.splice(index, 1);
+      };
     }
-    return this.formater.interpolate(message[key], values).join('');
-  }
-}
-exports.I18n = I18n;
+  }, {
+    key: "add",
+    value: function add(locale, message) {
+      var override = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+      var curMessages = this.messages[locale];
+      if (curMessages) {
+        if (override) {
+          Object.assign(curMessages, message);
+        } else {
+          Object.keys(message).forEach(function (key) {
+            if (!hasOwn(curMessages, key)) {
+              curMessages[key] = message[key];
+            }
+          });
+        }
+      } else {
+        this.messages[locale] = message;
+      }
+    }
+  }, {
+    key: "f",
+    value: function f(message, values, delimiters) {
+      return this.formater.interpolate(message, values, delimiters).join('');
+    }
+  }, {
+    key: "t",
+    value: function t(key, locale, values) {
+      var message = this.message;
+      if (typeof locale === 'string') {
+        locale = normalizeLocale(locale, this.messages);
+        locale && (message = this.messages[locale]);
+      } else {
+        values = locale;
+      }
+      if (!hasOwn(message, key)) {
+        console.warn("Cannot translate the value of keypath ".concat(key, ". Use the value of keypath as default."));
+        return key;
+      }
+      return this.formater.interpolate(message[key], values).join('');
+    }
+  }]);
+}();
 function watchAppLocale(appVm, i18n) {
   // 需要保证 watch 的触发在组件渲染之前
   if (appVm.$watchLocale) {
     // vue2
-    appVm.$watchLocale(newLocale => {
+    appVm.$watchLocale(function (newLocale) {
       i18n.setLocale(newLocale);
     });
   } else {
-    appVm.$watch(() => appVm.$locale, newLocale => {
+    appVm.$watch(function () {
+      return appVm.$locale;
+    }, function (newLocale) {
       i18n.setLocale(newLocale);
     });
   }
@@ -2577,10 +2708,15 @@ function getDefaultLocale() {
   }
   return LOCALE_EN;
 }
-function initVueI18n(locale, messages = {}, fallbackLocale, watcher) {
+function initVueI18n(locale) {
+  var messages = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var fallbackLocale = arguments.length > 2 ? arguments[2] : undefined;
+  var watcher = arguments.length > 3 ? arguments[3] : undefined;
   // 兼容旧版本入参
   if (typeof locale !== 'string') {
-    [locale, messages] = [messages, locale];
+    var _ref4 = [messages, locale];
+    locale = _ref4[0];
+    messages = _ref4[1];
   }
   if (typeof locale !== 'string') {
     // 因为小程序平台，uni-i18n 和 uni 互相引用，导致此时访问 uni 时，为 undefined
@@ -2589,23 +2725,23 @@ function initVueI18n(locale, messages = {}, fallbackLocale, watcher) {
   if (typeof fallbackLocale !== 'string') {
     fallbackLocale = typeof __uniConfig !== 'undefined' && __uniConfig.fallbackLocale || LOCALE_EN;
   }
-  const i18n = new I18n({
-    locale,
-    fallbackLocale,
-    messages,
-    watcher
+  var i18n = new I18n({
+    locale: locale,
+    fallbackLocale: fallbackLocale,
+    messages: messages,
+    watcher: watcher
   });
-  let t = (key, values) => {
+  var _t = function t(key, values) {
     if (typeof getApp !== 'function') {
       // app view
       /* eslint-disable no-func-assign */
-      t = function (key, values) {
+      _t = function t(key, values) {
         return i18n.t(key, values);
       };
     } else {
-      let isWatchedAppLocale = false;
-      t = function (key, values) {
-        const appVm = getApp().$vm;
+      var isWatchedAppLocale = false;
+      _t = function t(key, values) {
+        var appVm = getApp().$vm;
         // 可能$vm还不存在，比如在支付宝小程序中，组件定义较早，在props的default里使用了t()函数（如uni-goods-nav），此时app还未初始化
         // options: {
         // 	type: Array,
@@ -2630,39 +2766,41 @@ function initVueI18n(locale, messages = {}, fallbackLocale, watcher) {
         return i18n.t(key, values);
       };
     }
-    return t(key, values);
+    return _t(key, values);
   };
   return {
-    i18n,
-    f(message, values, delimiters) {
+    i18n: i18n,
+    f: function f(message, values, delimiters) {
       return i18n.f(message, values, delimiters);
     },
-    t(key, values) {
-      return t(key, values);
+    t: function t(key, values) {
+      return _t(key, values);
     },
-    add(locale, message, override = true) {
+    add: function add(locale, message) {
+      var override = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
       return i18n.add(locale, message, override);
     },
-    watch(fn) {
+    watch: function watch(fn) {
       return i18n.watchLocale(fn);
     },
-    getLocale() {
+    getLocale: function getLocale() {
       return i18n.getLocale();
     },
-    setLocale(newLocale) {
+    setLocale: function setLocale(newLocale) {
       return i18n.setLocale(newLocale);
     }
   };
 }
-const isString = val => typeof val === 'string';
-exports.isString = isString;
-let formater;
+var isString = exports.isString = function isString(val) {
+  return typeof val === 'string';
+};
+var formater;
 function hasI18nJson(jsonObj, delimiters) {
   if (!formater) {
     formater = new BaseFormatter();
   }
-  return walkJsonObj(jsonObj, (jsonObj, key) => {
-    const value = jsonObj[key];
+  return walkJsonObj(jsonObj, function (jsonObj, key) {
+    var value = jsonObj[key];
     if (isString(value)) {
       if (isI18nStr(value, delimiters)) {
         return true;
@@ -2676,8 +2814,8 @@ function parseI18nJson(jsonObj, values, delimiters) {
   if (!formater) {
     formater = new BaseFormatter();
   }
-  walkJsonObj(jsonObj, (jsonObj, key) => {
-    const value = jsonObj[key];
+  walkJsonObj(jsonObj, function (jsonObj, key) {
+    var value = jsonObj[key];
     if (isString(value)) {
       if (isI18nStr(value, delimiters)) {
         jsonObj[key] = compileStr(value, values, delimiters);
@@ -2688,19 +2826,18 @@ function parseI18nJson(jsonObj, values, delimiters) {
   });
   return jsonObj;
 }
-function compileI18nJsonStr(jsonStr, {
-  locale,
-  locales,
-  delimiters
-}) {
+function compileI18nJsonStr(jsonStr, _ref5) {
+  var locale = _ref5.locale,
+    locales = _ref5.locales,
+    delimiters = _ref5.delimiters;
   if (!isI18nStr(jsonStr, delimiters)) {
     return jsonStr;
   }
   if (!formater) {
     formater = new BaseFormatter();
   }
-  const localeValues = [];
-  Object.keys(locales).forEach(name => {
+  var localeValues = [];
+  Object.keys(locales).forEach(function (name) {
     if (name !== locale) {
       localeValues.push({
         locale: name,
@@ -2709,7 +2846,7 @@ function compileI18nJsonStr(jsonStr, {
     }
   });
   localeValues.unshift({
-    locale,
+    locale: locale,
     values: locales[locale]
   });
   try {
@@ -2724,15 +2861,15 @@ function compileStr(value, values, delimiters) {
   return formater.interpolate(value, values, delimiters).join('');
 }
 function compileValue(jsonObj, key, localeValues, delimiters) {
-  const value = jsonObj[key];
+  var value = jsonObj[key];
   if (isString(value)) {
     // 存在国际化
     if (isI18nStr(value, delimiters)) {
       jsonObj[key] = compileStr(value, localeValues[0].values, delimiters);
       if (localeValues.length > 1) {
         // 格式化国际化语言
-        const valueLocales = jsonObj[key + 'Locales'] = {};
-        localeValues.forEach(localValue => {
+        var valueLocales = jsonObj[key + 'Locales'] = {};
+        localeValues.forEach(function (localValue) {
           valueLocales[localValue.locale] = compileStr(value, localValue.values, delimiters);
         });
       }
@@ -2742,20 +2879,20 @@ function compileValue(jsonObj, key, localeValues, delimiters) {
   }
 }
 function compileJsonObj(jsonObj, localeValues, delimiters) {
-  walkJsonObj(jsonObj, (jsonObj, key) => {
+  walkJsonObj(jsonObj, function (jsonObj, key) {
     compileValue(jsonObj, key, localeValues, delimiters);
   });
   return jsonObj;
 }
 function walkJsonObj(jsonObj, walk) {
   if (isArray(jsonObj)) {
-    for (let i = 0; i < jsonObj.length; i++) {
+    for (var i = 0; i < jsonObj.length; i++) {
       if (walk(jsonObj, i)) {
         return true;
       }
     }
   } else if (isObject(jsonObj)) {
-    for (const key in jsonObj) {
+    for (var key in jsonObj) {
       if (walk(jsonObj, key)) {
         return true;
       }
@@ -2764,17 +2901,19 @@ function walkJsonObj(jsonObj, walk) {
   return false;
 }
 function resolveLocale(locales) {
-  return locale => {
+  return function (locale) {
     if (!locale) {
       return locale;
     }
     locale = normalizeLocale(locale) || locale;
-    return resolveLocaleChain(locale).find(locale => locales.indexOf(locale) > -1);
+    return resolveLocaleChain(locale).find(function (locale) {
+      return locales.indexOf(locale) > -1;
+    });
   };
 }
 function resolveLocaleChain(locale) {
-  const chain = [];
-  const tokens = locale.split('-');
+  var chain = [];
+  var tokens = locale.split('-');
   while (tokens.length) {
     chain.push(tokens.join('-'));
     tokens.pop();
@@ -3173,12 +3312,12 @@ var config = ({
   /**
    * Show production mode tip message on boot?
    */
-  productionTip: "test" !== 'production',
+  productionTip: "development" !== 'production',
 
   /**
    * Whether to enable devtools
    */
-  devtools: "test" !== 'production',
+  devtools: "development" !== 'production',
 
   /**
    * Whether to record perf
@@ -4171,7 +4310,7 @@ strats.computed = function (
   vm,
   key
 ) {
-  if (childVal && "test" !== 'production') {
+  if (childVal && "development" !== 'production') {
     assertObjectType(key, childVal, vm);
   }
   if (!parentVal) { return childVal }
@@ -8323,7 +8462,7 @@ function type(obj) {
 
 function flushCallbacks$1(vm) {
     if (vm.__next_tick_callbacks && vm.__next_tick_callbacks.length) {
-        if (Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
+        if (Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:flushCallbacks[' + vm.__next_tick_callbacks.length + ']');
@@ -8344,14 +8483,14 @@ function nextTick$1(vm, cb) {
     //1.nextTick 之前 已 setData 且 setData 还未回调完成
     //2.nextTick 之前存在 render watcher
     if (!vm.__next_tick_pending && !hasRenderWatcher(vm)) {
-        if(Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + vm._uid +
                 ']:nextVueTick');
         }
         return nextTick(cb, vm)
     }else{
-        if(Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
+        if(Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG){
             var mpInstance$1 = vm.$scope;
             console.log('[' + (+new Date) + '][' + (mpInstance$1.is || mpInstance$1.route) + '][' + vm._uid +
                 ']:nextMPTick');
@@ -8447,7 +8586,7 @@ var patch = function(oldVnode, vnode) {
     });
     var diffData = this.$shouldDiffData === false ? data : diff(data, mpData);
     if (Object.keys(diffData).length) {
-      if (Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
+      if (Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_DEBUG) {
         console.log('[' + (+new Date) + '][' + (mpInstance.is || mpInstance.route) + '][' + this._uid +
           ']差量更新',
           JSON.stringify(diffData));
@@ -9026,8 +9165,12 @@ var _vuex = _interopRequireDefault(__webpack_require__(/*! vuex */ 13));
 var _wx = __webpack_require__(/*! @/http/wx.js */ 14);
 var _util = __webpack_require__(/*! @/utils/util */ 16);
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i.return) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { if (r) i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n;else { var o = function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); }; o("next", 0), o("throw", 1), o("return", 2); } }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 _vue.default.use(_vuex.default);
-const store = new _vuex.default.Store({
+var store = new _vuex.default.Store({
   state: {
     commonConfig: {},
     isLogin: !!(0, _util.lsGet)('iclubUserToken3'),
@@ -9065,59 +9208,67 @@ const store = new _vuex.default.Store({
     cityTree: []
   },
   getters: {
-    isLogin(state) {
+    isLogin: function isLogin(state) {
       return state.isLogin;
     },
-    sms4(state) {
+    sms4: function sms4(state) {
       var _find, _find2;
       return {
-        key: ((_find = (state.iclubDictoryTree.options || []).find(item => item.name === 'sms_key')) === null || _find === void 0 ? void 0 : _find.sign) || '',
-        iv: ((_find2 = (state.iclubDictoryTree.options || []).find(item => item.name === 'sms_iv')) === null || _find2 === void 0 ? void 0 : _find2.sign) || ''
+        key: ((_find = (state.iclubDictoryTree.options || []).find(function (item) {
+          return item.name === 'sms_key';
+        })) === null || _find === void 0 ? void 0 : _find.sign) || '',
+        iv: ((_find2 = (state.iclubDictoryTree.options || []).find(function (item) {
+          return item.name === 'sms_iv';
+        })) === null || _find2 === void 0 ? void 0 : _find2.sign) || ''
       };
     },
-    eventInfo(state) {
+    eventInfo: function eventInfo(state) {
       var _find3, _find4;
       return {
-        startTime: ((_find3 = (state.iclubDictoryTree.options || []).find(item => item.name === 'activityStartTime')) === null || _find3 === void 0 ? void 0 : _find3.sign) || '',
-        endTime: ((_find4 = (state.iclubDictoryTree.options || []).find(item => item.name === 'activityEndTime')) === null || _find4 === void 0 ? void 0 : _find4.sign) || ''
+        startTime: ((_find3 = (state.iclubDictoryTree.options || []).find(function (item) {
+          return item.name === 'activityStartTime';
+        })) === null || _find3 === void 0 ? void 0 : _find3.sign) || '',
+        endTime: ((_find4 = (state.iclubDictoryTree.options || []).find(function (item) {
+          return item.name === 'activityEndTime';
+        })) === null || _find4 === void 0 ? void 0 : _find4.sign) || ''
       };
     }
   },
   mutations: {
-    setDictionaryTree(state, payload) {
+    setDictionaryTree: function setDictionaryTree(state, payload) {
       console.log('setDictionaryTree', payload);
       //   state.dictionaryTree = payload
       state.iclubDictoryTree = payload;
     },
-    setFuliFlag(state, payload) {
+    setFuliFlag: function setFuliFlag(state, payload) {
       state.fuliFlag = payload;
     },
-    setIsLogin(state, payload) {
+    setIsLogin: function setIsLogin(state, payload) {
       console.warn('setIsLogin::::', payload);
       state.isLogin = payload;
     },
-    setCommentList(state, payload) {
+    setCommentList: function setCommentList(state, payload) {
       state.commentList = payload;
     },
-    setUserInfo(state, payload) {
+    setUserInfo: function setUserInfo(state, payload) {
       state.userInfo = payload;
     },
-    setBalance(state, payload) {
+    setBalance: function setBalance(state, payload) {
       state.balance = payload.integralBalance;
       state.willExpiredBalance = payload.willExpiredIntegral;
     },
-    setTodayCheckIn(state, payload) {
+    setTodayCheckIn: function setTodayCheckIn(state, payload) {
       state.isTodayCheckIn = payload;
     },
-    setSignTask(state, payload) {
+    setSignTask: function setSignTask(state, payload) {
       state.signTask = payload;
     },
-    setDefaultAvatar(state) {
-      const defaultAvatars = ['https://udstatic.imeik.com/pcUploads/1705285352902/1.png', 'https://udstatic.imeik.com/pcUploads/1705285380205/2.png', 'https://udstatic.imeik.com/pcUploads/1705285409154/3.png'];
-      const randomNumber = Math.floor(Math.random() * defaultAvatars.length);
+    setDefaultAvatar: function setDefaultAvatar(state) {
+      var defaultAvatars = ['https://udstatic.imeik.com/pcUploads/1705285352902/1.png', 'https://udstatic.imeik.com/pcUploads/1705285380205/2.png', 'https://udstatic.imeik.com/pcUploads/1705285409154/3.png'];
+      var randomNumber = Math.floor(Math.random() * defaultAvatars.length);
       state.defaultAvatar = defaultAvatars[randomNumber];
     },
-    setConfig(state, payload) {
+    setConfig: function setConfig(state, payload) {
       console.warn('load-config::::::::', payload);
       state.commonConfig = payload;
       if (payload.systemUpdate) {
@@ -9125,56 +9276,61 @@ const store = new _vuex.default.Store({
         state.systemUpdate = payload.systemUpdate;
       }
     },
-    setIsSpecialEventRunning(state, payload) {
+    setIsSpecialEventRunning: function setIsSpecialEventRunning(state, payload) {
       state.isSpecialEventRunning = payload;
     },
-    setCaptchaFlag(state, value) {
+    setCaptchaFlag: function setCaptchaFlag(state, value) {
       state.captchaFlag = value;
     },
-    setSystemUpdate(state, value) {
+    setSystemUpdate: function setSystemUpdate(state, value) {
       state.systemUpdate = value;
     },
     // 设置分享码
-    storeShareCode(state, params) {
+    storeShareCode: function storeShareCode(state, params) {
       state.shareCode = params;
     },
     // 设置分享码
-    storeShareCode1(state, params) {
+    storeShareCode1: function storeShareCode1(state, params) {
       state.shareCode1 = params;
     },
-    setAddressId(state, addressId) {
+    setAddressId: function setAddressId(state, addressId) {
       state.addressId = addressId;
     },
-    setOpenIdSetted(state, value) {
+    setOpenIdSetted: function setOpenIdSetted(state, value) {
       state.openIdHasSetted = value;
     },
-    setHihiPageStart(state, hihiPageStart) {
+    setHihiPageStart: function setHihiPageStart(state, hihiPageStart) {
       state.hihiPageStart = hihiPageStart;
     },
-    setHihiInvitedEntry(state, hihiInvitedEntry) {
+    setHihiInvitedEntry: function setHihiInvitedEntry(state, hihiInvitedEntry) {
       state.hihiInvitedEntry = hihiInvitedEntry;
     },
-    setCityTree(state, payload) {
+    setCityTree: function setCityTree(state, payload) {
       state.cityTree = payload;
     }
   },
   actions: {
-    async getUserInfo({
-      commit,
-      dispatch,
-      state
-    }) {
-      return new Promise(resolve => {
-        (0, _wx.userInfo)().then(res => {
-          commit('setUserInfo', res);
-          (0, _util.ls)('userInfo', res);
-          resolve(res);
-        }).catch(() => {
-          commit('setIsLogin', false);
-          commit('setUserInfo', {});
-          resolve('');
-        });
-      });
+    getUserInfo: function getUserInfo(_ref) {
+      return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+        var commit, dispatch, state;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.n) {
+            case 0:
+              commit = _ref.commit, dispatch = _ref.dispatch, state = _ref.state;
+              return _context.a(2, new Promise(function (resolve) {
+                (0, _wx.userInfo)().then(function (res) {
+                  commit('setUserInfo', res);
+                  (0, _util.ls)('userInfo', res);
+                  resolve(res);
+                }).catch(function () {
+                  commit('setIsLogin', false);
+                  commit('setUserInfo', {});
+                  resolve('');
+                });
+              }));
+          }
+        }, _callee);
+      }))();
     }
   }
 });
@@ -9902,7 +10058,7 @@ function installModule (store, rootState, path, module, hot) {
 
   // register in namespace map
   if (module.namespaced) {
-    if (store._modulesNamespaceMap[namespace] && ("test" !== 'production')) {
+    if (store._modulesNamespaceMap[namespace] && ("development" !== 'production')) {
       console.error(("[vuex] duplicate namespace " + namespace + " for the namespaced module " + (path.join('/'))));
     }
     store._modulesNamespaceMap[namespace] = module;
@@ -10444,23 +10600,38 @@ module.exports = index_cjs;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-const {
-  request
-} = __webpack_require__(/*! ./request */ 15);
+var _require = __webpack_require__(/*! ./request */ 15),
+  request = _require.request;
 module.exports = {
   // 获取用户信息
-  userInfo: data => request('/iclub/api/user/queryUserInfo', 'post', data, true, true),
+  userInfo: function userInfo(data) {
+    return request('/iclub/api/user/queryUserInfo', 'post', data, true, true);
+  },
   // 刷新token
-  refreshToken: data => request('/biz-passport/passport/auth/refreshToken', 'post', data, true, true),
+  refreshToken: function refreshToken(data) {
+    return request('/biz-passport/passport/auth/refreshToken', 'post', data, true, true);
+  },
   // 更新iclub的头像和昵称
-  iclubApiUserEditUserInfo: params => request('/iclub/api/user/editUserInfo', 'POST', params, true, true),
-  getCodeByPhone: params => request('/passport/api/sso/sendSmsVerCode', 'POST', params, true, true),
+  iclubApiUserEditUserInfo: function iclubApiUserEditUserInfo(params) {
+    return request('/iclub/api/user/editUserInfo', 'POST', params, true, true);
+  },
+  getCodeByPhone: function getCodeByPhone(params) {
+    return request('/passport/api/sso/sendSmsVerCode', 'POST', params, true, true);
+  },
   // 新用户登录
-  loginForMiniProgramForNewUser: params => request('/passport/api/sso/loginForMiniProgramForNewUser', 'POST', params, true, true),
+  loginForMiniProgramForNewUser: function loginForMiniProgramForNewUser(params) {
+    return request('/passport/api/sso/loginForMiniProgramForNewUser', 'POST', params, true, true);
+  },
   // 统一登录后用户注册接口
-  userRegister: data => request('/iclub/api/user/register', 'POST', data, true, true),
-  xlogin: data => request('/biz-passport/passport/login/loginByMiniApp', 'POST', data, true, true),
-  setEncryptKey: data => request('/biz-passport/passport/auth/refreshUserEncryptKey', 'POST', data, true, true)
+  userRegister: function userRegister(data) {
+    return request('/iclub/api/user/register', 'POST', data, true, true);
+  },
+  xlogin: function xlogin(data) {
+    return request('/biz-passport/passport/login/loginByMiniApp', 'POST', data, true, true);
+  },
+  setEncryptKey: function setEncryptKey(data) {
+    return request('/biz-passport/passport/auth/refreshUserEncryptKey', 'POST', data, true, true);
+  }
 };
 
 /***/ }),
@@ -10480,12 +10651,19 @@ var _tools = __webpack_require__(/*! @/utils/tools */ 20);
 var _store = _interopRequireDefault(__webpack_require__(/*! @/store/store */ 12));
 var _sm = __webpack_require__(/*! @/utils/sm4 */ 21);
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-// 配置专属域名
-
-const {
-  baseNewUrl,
-  baseIclubUrl
-} = __webpack_require__(/*! ./env */ 18);
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i.return) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { if (r) i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n;else { var o = function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); }; o("next", 0), o("throw", 1), o("return", 2); } }, _regeneratorDefine2(e, r, n, t); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; } // 配置专属域名
+var _require = __webpack_require__(/*! ./env */ 18),
+  baseNewUrl = _require.baseNewUrl,
+  baseIclubUrl = _require.baseIclubUrl;
 module.exports = {
   /**
    *
@@ -10498,117 +10676,139 @@ module.exports = {
    * @param {*} hideLoading
    * @returns
    */
-  request: function (url, method = "GET", data = {}, isMessage = true, isJson = false, noToast = false, hideLoading = true, headers = {}) {
-    const json = isJson ? "application/json" : "application/x-www-form-urlencoded";
+  request: function request(url) {
+    var method = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "GET";
+    var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var isMessage = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+    var isJson = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+    var noToast = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+    var hideLoading = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : true;
+    var headers = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : {};
+    var json = isJson ? "application/json" : "application/x-www-form-urlencoded";
     // iclub的请求走另外的接口域名
-    const base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
-    const fullUrl = url.includes("http") ? url : `${base}${url}`;
-    let token = (0, _util.lsGet)("iclubUserToken3");
+    var base = url.includes("/iclub/") ? baseIclubUrl : baseNewUrl;
+    var fullUrl = url.includes("http") ? url : "".concat(base).concat(url);
+    var token = (0, _util.lsGet)("iclubUserToken3");
 
     // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject) => {
-      // 不需要登录就可以调用的接口白名单
-      const whiteList = ["http", "/biz-passport/passport/login/getOpenId", "iclub/api/operate/queryOperate", "iclub/api/authenticity/queryAuthenticity", "qxcollege/api/dictionary/tree", "qxcollege/api/buryPoint/click", "iclub/api/content/info", "iclub/api/operate/queryOperate", "iclub/api/home/listhomeContent", "iclub/api/product/list", "iclub/api/product/info", "qxcollege/api/fileUpload/findAliToken", "iclub/api/user/loginForMiniProgram", "passport/api/sso/openid", "passport/api/user/uploadUserInfo", "/iclub/api/content/listProductContent", "/iclub/api/goods/list", "/iclub/api/content/info2", "/iclub/api/goddess/queryActivityInfo", "/passport/api/sso/sendSmsVerCode", "/passport/api/sso/loginForMiniProgramForNewUser", "loginByMiniApp", "/iclub/api/activity/ehi/getEhiGameInfo", "/qxcollege/admin/city/tree"];
-      if (!token && !whiteList.find(i => url.includes(i)) && url.indexOf("openApi") === -1) {
-        resolve({
-          data: {}
-        });
-        return;
-      }
+    return new Promise(/*#__PURE__*/function () {
+      var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(resolve, reject) {
+        var whiteList, _version, channel, encryptKey, encryptIV, SecurityVersion, uniqueFlag;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.n) {
+            case 0:
+              // 不需要登录就可以调用的接口白名单
+              whiteList = ["http", "/biz-passport/passport/login/getOpenId", "iclub/api/operate/queryOperate", "iclub/api/authenticity/queryAuthenticity", "qxcollege/api/dictionary/tree", "qxcollege/api/buryPoint/click", "iclub/api/content/info", "iclub/api/operate/queryOperate", "iclub/api/home/listhomeContent", "iclub/api/product/list", "iclub/api/product/info", "qxcollege/api/fileUpload/findAliToken", "iclub/api/user/loginForMiniProgram", "passport/api/sso/openid", "passport/api/user/uploadUserInfo", "/iclub/api/content/listProductContent", "/iclub/api/goods/list", "/iclub/api/content/info2", "/iclub/api/goddess/queryActivityInfo", "/passport/api/sso/sendSmsVerCode", "/passport/api/sso/loginForMiniProgramForNewUser", "loginByMiniApp", "/iclub/api/activity/ehi/getEhiGameInfo", "/qxcollege/admin/city/tree"];
+              if (!(!token && !whiteList.find(function (i) {
+                return url.includes(i);
+              }) && url.indexOf("openApi") === -1)) {
+                _context.n = 1;
+                break;
+              }
+              resolve({
+                data: {}
+              });
+              return _context.a(2);
+            case 1:
+              // 把小程序版本号拼接到query里传给接口
+              _version = (0, _index.getCurrentAppVersion)(); // 请求头带上渠道code
+              channel = getApp() && getApp().globalData && getApp().globalData.userSource || "";
+              encryptKey = (0, _util.lsGet)("encryptKey");
+              encryptIV = (0, _util.lsGet)("encryptIV");
+              SecurityVersion = (0, _util.lsGet)("encryptVersion");
+              uniqueFlag = (0, _tools.getUniqID)();
+              console.log("🚀 ~ returnnewPromise ~ uniqueFlag:", uniqueFlag);
+              uni.request({
+                url: fullUrl + (fullUrl.includes("?") ? "&" : "?") + "_version=" + _version,
+                timeout: 30000,
+                method: method,
+                data: (0, _tools.sortObjectKeys)(data),
+                header: _objectSpread(_objectSpread({}, headers), {}, {
+                  "Content-type": json,
+                  Authorization: token,
+                  channel: channel,
+                  "business-sys": "iclub",
+                  "business-app": "iclub",
+                  Ticket: (0, _util.lsGet)("ticket"),
+                  app: "IClub",
+                  SecurityVerify: encryptKey && new _sm.SM4Util().encryptCustom_CBC(JSON.stringify({
+                    uniqueFlag: uniqueFlag,
+                    callTime: Date.now(),
+                    paramter: (0, _tools.sortObjectKeys)(data)
+                  }), encryptIV, encryptKey),
+                  encryptIV: encryptIV,
+                  SecurityVersion: SecurityVersion
+                }),
+                success: function success(res) {
+                  console.log("%c%s", "color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;", " 出参明细：", res);
 
-      // 把小程序版本号拼接到query里传给接口
-      const _version = (0, _index.getCurrentAppVersion)();
-      // 请求头带上渠道code
-      const channel = getApp() && getApp().globalData && getApp().globalData.userSource || "";
-      const encryptKey = (0, _util.lsGet)("encryptKey");
-      const encryptIV = (0, _util.lsGet)("encryptIV");
-      const SecurityVersion = (0, _util.lsGet)("encryptVersion");
-      const uniqueFlag = (0, _tools.getUniqID)();
-      console.log("🚀 ~ returnnewPromise ~ uniqueFlag:", uniqueFlag);
-      uni.request({
-        url: fullUrl + (fullUrl.includes("?") ? "&" : "?") + "_version=" + _version,
-        timeout: 30000,
-        method,
-        data: (0, _tools.sortObjectKeys)(data),
-        header: {
-          ...headers,
-          "Content-type": json,
-          Authorization: token,
-          channel: channel,
-          "business-sys": "iclub",
-          "business-app": "iclub",
-          Ticket: (0, _util.lsGet)("ticket"),
-          app: "IClub",
-          SecurityVerify: encryptKey && new _sm.SM4Util().encryptCustom_CBC(JSON.stringify({
-            uniqueFlag,
-            callTime: Date.now(),
-            paramter: (0, _tools.sortObjectKeys)(data)
-          }), encryptIV, encryptKey),
-          encryptIV,
-          SecurityVersion
-        },
-        success(res) {
-          console.log("%c%s", "color: green; background: yellow; font-family: Micirosft Yahei; font-size: 24px;", " 出参明细：", res);
+                  // 新的token
+                  if (res.header && res.header["x-imeik-refreshToken"]) {
+                    (0, _util.ls)("iclubUserToken3", res.header["x-imeik-refreshToken"]);
+                  }
+                  function isObject(value) {
+                    return _typeof(value) === "object" && value !== null;
+                  }
+                  if (res.data && isObject(res.data)) {
+                    // 解密
+                    resolve(res.data);
+                    return;
+                  }
+                  // 请求成功，清除ticket
+                  (0, _util.lsDel)("ticket");
+                  if (res.data.code === 10000) {
+                    var pages = getCurrentPages().reverse();
+                    var pageUrl = pages[0] && pages[0].route;
+                    uni.$emit("captcha-".concat(pageUrl), data.methodName);
+                    reject(res.data);
+                  } else if (res.data.code === 200) {
+                    if (isMessage) {
+                      resolve(res.data.data);
+                    } else {
+                      resolve(res.data);
+                    }
+                    if (hideLoading) {
+                      uni.hideLoading();
+                    }
+                  } else if (res.data.code === 300) {
+                    // token 错误、过期
+                    uni.$emit("toast", "登录状态失效\r\n请重新登录");
+                    uni.clearLogin(); // 清除token
+                    _store.default.commit("setIsLogin", false);
+                    _store.default.commit("setTodayCheckIn", false);
 
-          // 新的token
-          if (res.header && res.header["x-imeik-refreshToken"]) {
-            (0, _util.ls)("iclubUserToken3", res.header["x-imeik-refreshToken"]);
+                    // 刷新当前页面，重新登录
+                    setTimeout(function () {
+                      (0, _util.refreshCurrentPage)();
+                      reject();
+                    }, 2000);
+                  } else {
+                    var msg = res.data && res.data.message || "接口问题，请检查";
+                    // 有些业务自己处理错误信息，不需要这里toast
+                    if (!noToast) {
+                      setTimeout(function () {
+                        uni.$emit("toast", msg);
+                      }, 300);
+                    }
+                    reject(res.data);
+                  }
+                },
+                fail: function fail(err) {
+                  console.log("请求失败，请检查网络", err);
+                  uni.$emit("toast", "请求失败，请检查网络");
+                  // eslint-disable-next-line prefer-promise-reject-errors
+                  reject("请求失败，请检查网络");
+                }
+              });
+            case 2:
+              return _context.a(2);
           }
-          function isObject(value) {
-            return typeof value === "object" && value !== null;
-          }
-          if (res.data && isObject(res.data)) {
-            // 解密
-            resolve(res.data);
-            return;
-          }
-          // 请求成功，清除ticket
-          (0, _util.lsDel)("ticket");
-          if (res.data.code === 10000) {
-            const pages = getCurrentPages().reverse();
-            const pageUrl = pages[0] && pages[0].route;
-            uni.$emit(`captcha-${pageUrl}`, data.methodName);
-            reject(res.data);
-          } else if (res.data.code === 200) {
-            if (isMessage) {
-              resolve(res.data.data);
-            } else {
-              resolve(res.data);
-            }
-            if (hideLoading) {
-              uni.hideLoading();
-            }
-          } else if (res.data.code === 300) {
-            // token 错误、过期
-            uni.$emit("toast", "登录状态失效\r\n请重新登录");
-            uni.clearLogin(); // 清除token
-            _store.default.commit("setIsLogin", false);
-            _store.default.commit("setTodayCheckIn", false);
-
-            // 刷新当前页面，重新登录
-            setTimeout(() => {
-              (0, _util.refreshCurrentPage)();
-              reject();
-            }, 2000);
-          } else {
-            const msg = res.data && res.data.message || "接口问题，请检查";
-            // 有些业务自己处理错误信息，不需要这里toast
-            if (!noToast) {
-              setTimeout(() => {
-                uni.$emit("toast", msg);
-              }, 300);
-            }
-            reject(res.data);
-          }
-        },
-        fail(err) {
-          console.log("请求失败，请检查网络", err);
-          uni.$emit("toast", "请求失败，请检查网络");
-          // eslint-disable-next-line prefer-promise-reject-errors
-          reject("请求失败，请检查网络");
-        }
-      });
-    });
+        }, _callee);
+      }));
+      return function (_x, _x2) {
+        return _ref.apply(this, arguments);
+      };
+    }());
   }
 };
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
@@ -10625,37 +10825,37 @@ module.exports = {
 /* WEBPACK VAR INJECTION */(function(uni) {
 
 var _validate = __webpack_require__(/*! ./validate */ 17);
-const {
-  env
-} = __webpack_require__(/*! @/http/env */ 18);
-const formatTime = date => {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-  return `${[year, month, day].map(formatNumber).join('/')} ${[hour, minute, second].map(formatNumber).join(':')}`;
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+var _require = __webpack_require__(/*! @/http/env */ 18),
+  env = _require.env;
+var formatTime = function formatTime(date) {
+  var year = date.getFullYear();
+  var month = date.getMonth() + 1;
+  var day = date.getDate();
+  var hour = date.getHours();
+  var minute = date.getMinutes();
+  var second = date.getSeconds();
+  return "".concat([year, month, day].map(formatNumber).join('/'), " ").concat([hour, minute, second].map(formatNumber).join(':'));
 };
-const getQueryParam = key => {
-  const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i');
-  const r = window.location.search.substr(1).match(reg);
+var getQueryParam = function getQueryParam(key) {
+  var reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i');
+  var r = window.location.search.substr(1).match(reg);
   if (r != null) {
     return decodeURI(r[2]);
   }
   return null;
 };
-const formatNumber = n => {
+var formatNumber = function formatNumber(n) {
   n = n.toString();
-  return n[1] ? n : `0${n}`;
+  return n[1] ? n : "0".concat(n);
 };
 
 // 格式化数字
-const numberFormat = value => {
-  const param = {};
-  const k = 10000;
-  const sizes = ['', '万', '亿', '万亿'];
-  let i;
+var numberFormat = function numberFormat(value) {
+  var param = {};
+  var k = 10000;
+  var sizes = ['', '万', '亿', '万亿'];
+  var i;
   if (value < k) {
     param.value = value;
     param.unit = '';
@@ -10669,11 +10869,11 @@ const numberFormat = value => {
 
 // 格式化时间
 // 这都n年了iOS依然不认识2020-12-12，需要转换为2020/12/12
-const getDate = time => {
+var getDate = function getDate(time) {
   if (time instanceof Date) {
     return time;
   }
-  switch (typeof time) {
+  switch (_typeof(time)) {
     case 'string':
       {
         // 2020-12-12T12:12:12.000Z、2020-12-12T12:12:12.000
@@ -10686,63 +10886,65 @@ const getDate = time => {
       return new Date(time);
   }
 };
-const pad = (str, length = 2) => {
+var pad = function pad(str) {
+  var length = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
   str += '';
   while (str.length < length) {
     str = '0' + str;
   }
   return str.slice(-length);
 };
-const parser = {
-  yyyy: dateObj => {
+var parser = {
+  yyyy: function yyyy(dateObj) {
     return pad(dateObj.year, 4);
   },
-  yy: dateObj => {
+  yy: function yy(dateObj) {
     return pad(dateObj.year);
   },
-  MM: dateObj => {
+  MM: function MM(dateObj) {
     return pad(dateObj.month);
   },
-  M: dateObj => {
+  M: function M(dateObj) {
     return dateObj.month;
   },
-  dd: dateObj => {
+  dd: function dd(dateObj) {
     return pad(dateObj.day);
   },
-  d: dateObj => {
+  d: function d(dateObj) {
     return dateObj.day;
   },
-  hh: dateObj => {
+  hh: function hh(dateObj) {
     return pad(dateObj.hour);
   },
-  h: dateObj => {
+  h: function h(dateObj) {
     return dateObj.hour;
   },
-  mm: dateObj => {
+  mm: function mm(dateObj) {
     return pad(dateObj.minute);
   },
-  m: dateObj => {
+  m: function m(dateObj) {
     return dateObj.minute;
   },
-  ss: dateObj => {
+  ss: function ss(dateObj) {
     return pad(dateObj.second);
   },
-  s: dateObj => {
+  s: function s(dateObj) {
     return dateObj.second;
   },
-  SSS: dateObj => {
+  SSS: function SSS(dateObj) {
     return pad(dateObj.millisecond, 3);
   },
-  S: dateObj => {
+  S: function S(dateObj) {
     return dateObj.millisecond;
   }
 };
-const formatDate = (date, format = 'yyyy-MM-dd') => {
+var formatDate = function formatDate(date) {
+  var format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'yyyy-MM-dd';
   if (!date && date !== 0) {
     return '';
   }
   date = getDate(date);
-  const dateObj = {
+  var dateObj = {
     year: date.getFullYear(),
     month: date.getMonth() + 1,
     day: date.getDate(),
@@ -10751,9 +10953,9 @@ const formatDate = (date, format = 'yyyy-MM-dd') => {
     second: date.getSeconds(),
     millisecond: date.getMilliseconds()
   };
-  const tokenRegExp = /yyyy|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/;
-  let flag = true;
-  let result = format;
+  var tokenRegExp = /yyyy|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/;
+  var flag = true;
+  var result = format;
   while (flag) {
     flag = false;
     result = result.replace(tokenRegExp, function (matched) {
@@ -10764,27 +10966,28 @@ const formatDate = (date, format = 'yyyy-MM-dd') => {
   return result;
 };
 function getAppIdFromUrl(url) {
-  const appidMatch = url.match(/appid=([^&]*)/);
+  var appidMatch = url.match(/appid=([^&]*)/);
   return appidMatch ? appidMatch[1] : null;
 }
-const pageJump = (url, callback = null) => {
+var pageJump = function pageJump(url) {
+  var callback = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   console.log('url', url);
   if (url.includes('appid')) {
-    const pathMatch = url.match(/(.*)&appid=/);
-    const path = pathMatch ? pathMatch[1].replace(/^\//, '') : null; // 去掉前面的斜杠
-    const appId = getAppIdFromUrl(url);
+    var pathMatch = url.match(/(.*)&appid=/);
+    var path = pathMatch ? pathMatch[1].replace(/^\//, '') : null; // 去掉前面的斜杠
+    var appId = getAppIdFromUrl(url);
     if (path && appId) {
       console.log({
-        path,
-        appId
+        path: path,
+        appId: appId
       });
       uni.navigateToMiniProgram({
-        appId,
-        path,
-        success: res => {
+        appId: appId,
+        path: path,
+        success: function success(res) {
           console.log('跳转结果', res);
         },
-        complete() {
+        complete: function complete() {
           callback === null || callback === void 0 || callback();
         }
       });
@@ -10797,31 +11000,33 @@ const pageJump = (url, callback = null) => {
     url = '/pages/webview/webView?url=' + encodeURIComponent(url);
   }
   uni.navigateTo({
-    url,
-    success(res) {
+    url: url,
+    success: function success(res) {
       callback === null || callback === void 0 || callback();
     }
   });
 };
 
 // 回退到指定页面，如果没有，则回退到上一页
-const backToPage = url => {
-  const routers = getCurrentPages().map(i => i.route).reverse();
-  const index = routers.indexOf(url);
+var backToPage = function backToPage(url) {
+  var routers = getCurrentPages().map(function (i) {
+    return i.route;
+  }).reverse();
+  var index = routers.indexOf(url);
   uni.navigateBack({
     delta: Math.max(index, 1)
   });
 };
 
 // 刷新当前页面
-const refreshCurrentPage = () => {
-  const pages = getCurrentPages().reverse();
-  const url = pages[0] && pages[0].$page.fullPath;
+var refreshCurrentPage = function refreshCurrentPage() {
+  var pages = getCurrentPages().reverse();
+  var url = pages[0] && pages[0].$page.fullPath;
   console.log(url, 'urlurl刷新当前页面');
   function reloadPage() {
     console.log('页面列表', getCurrentPages());
-    const pages = getCurrentPages().slice(0, -1);
-    const currentPage = pages[pages.length - 1];
+    var pages = getCurrentPages().slice(0, -1);
+    var currentPage = pages[pages.length - 1];
     console.log('刷新当前页面', currentPage);
     if (currentPage) {
       currentPage.onLoad(currentPage.options);
@@ -10830,7 +11035,7 @@ const refreshCurrentPage = () => {
   if (!url) return;
   if (url.includes('login')) {
     wx.navigateBack({
-      success: function () {
+      success: function success() {
         reloadPage();
       }
     });
@@ -10841,19 +11046,21 @@ const refreshCurrentPage = () => {
 };
 
 // 判断是否登录
-const isLogin = () => {
+var isLogin = function isLogin() {
   return !!lsGet('iclubUserToken3');
 };
 
 // 获取微信二维码进来的参数
-const getScene = scene => {
+var getScene = function getScene(scene) {
   // 当重新获取用户信息第一次进的时候,得到的%3D会变成%253D, 这里兼容一下
-  const newScene = scene.replace('%253D', '%3D');
-  const str = decodeURIComponent(newScene).replace('?', '');
-  const strArr = str.split('&').filter(item => item);
-  const result = {};
-  strArr.map(item => {
-    const key = item.split('=');
+  var newScene = scene.replace('%253D', '%3D');
+  var str = decodeURIComponent(newScene).replace('?', '');
+  var strArr = str.split('&').filter(function (item) {
+    return item;
+  });
+  var result = {};
+  strArr.map(function (item) {
+    var key = item.split('=');
     result[key[0]] = key[1];
     return item;
   });
@@ -10863,42 +11070,45 @@ const getScene = scene => {
 /**
  * storage存储 - 可以区分环境
  */
-const ls = (key, value, opt = {}) => {
+var ls = function ls(key, value) {
+  var opt = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  uni.setStorageSync(diffEnv ? `${env}_${key}` : key, value);
+  var diffEnv = !opt.common;
+  uni.setStorageSync(diffEnv ? "".concat(env, "_").concat(key) : key, value);
 };
 
 /**
  * storage获取 - 可以区分环境
  */
-const lsGet = (key, opt = {}) => {
+var lsGet = function lsGet(key) {
+  var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  return uni.getStorageSync(diffEnv ? `${env}_${key}` : key);
+  var diffEnv = !opt.common;
+  return uni.getStorageSync(diffEnv ? "".concat(env, "_").concat(key) : key);
 };
 
 /**
  * storage清除 - 可以区分环境
  */
-const lsDel = (key, opt = {}) => {
+var lsDel = function lsDel(key) {
+  var opt = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   // common 是否区分不同环境，默认false
-  const diffEnv = !opt.common;
-  return uni.removeStorageSync(diffEnv ? `${env}_${key}` : key);
+  var diffEnv = !opt.common;
+  return uni.removeStorageSync(diffEnv ? "".concat(env, "_").concat(key) : key);
 };
 module.exports = {
-  ls,
-  lsGet,
-  lsDel,
-  isLogin,
-  getScene,
-  pageJump,
-  backToPage,
-  refreshCurrentPage,
-  formatTime,
-  formatDate,
-  numberFormat,
-  getQueryParam
+  ls: ls,
+  lsGet: lsGet,
+  lsDel: lsDel,
+  isLogin: isLogin,
+  getScene: getScene,
+  pageJump: pageJump,
+  backToPage: backToPage,
+  refreshCurrentPage: refreshCurrentPage,
+  formatTime: formatTime,
+  formatDate: formatDate,
+  numberFormat: numberFormat,
+  getQueryParam: getQueryParam
 };
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
@@ -10915,23 +11125,23 @@ module.exports = {
  */
 
 // 手机号校验
-const isMobile = str => {
+var isMobile = function isMobile(str) {
   return /^1\d{10}$/.test(str);
 };
 
 // 邮箱校验
-const isEmail = str => {
+var isEmail = function isEmail(str) {
   return /^\S+?@\S+?\.\S+?$/.test(str);
 };
 
 // http链接校验
-const isHttpLink = str => {
+var isHttpLink = function isHttpLink(str) {
   return /^https?/.test(str);
 };
 module.exports = {
-  isEmail,
-  isMobile,
-  isHttpLink
+  isEmail: isEmail,
+  isMobile: isMobile,
+  isHttpLink: isHttpLink
 };
 
 /***/ }),
@@ -10942,15 +11152,15 @@ module.exports = {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-const conf = {
+var conf = {
   // 环境
-  env: "test",
+  env: "dev",
   // 测试环境跳 体验版
-  envVersion: Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION,
+  envVersion: Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION_TEST : Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_ENV_VERSION,
   // 接口调用API地址
-  baseNewUrl: Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API,
+  baseNewUrl: Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST : Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API,
   // iclub接口地址
-  baseIclubUrl: Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : Object({"NODE_ENV":"test","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"test","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_ICLUB
+  baseIclubUrl: Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BUILD_ENV === 'test' ? Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_TEST_ICLUB : Object({"NODE_ENV":"development","VUE_APP_DARK_MODE":"false","VUE_APP_ENV":"dev","VUE_APP_NAME":"qxcollege","VUE_APP_PLATFORM":"mp-weixin","BASE_URL":"/"}).VUE_APP_BASE_API_ICLUB
 };
 module.exports = conf;
 
@@ -10977,16 +11187,20 @@ exports.mergeObject = mergeObject;
 exports.navigateBack = navigateBack;
 exports.pageOptionsToQuery = pageOptionsToQuery;
 var _util = __webpack_require__(/*! @/utils/util */ 16);
-// 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
-
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); } // 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
 function getCurrentAppVersion() {
-  const accountInfo = uni.getAccountInfoSync();
+  var accountInfo = uni.getAccountInfoSync();
   return accountInfo.miniProgram.version || '';
 }
 
 // 获取当前小程序appId
 function getCurrentAppId() {
-  const accountInfo = uni.getAccountInfoSync();
+  var accountInfo = uni.getAccountInfoSync();
   return accountInfo.miniProgram.appId;
 }
 
@@ -11000,48 +11214,44 @@ function cropShareImage(url) {
   }
 
   // 加上阿里云oss图片裁剪参数(先resize缩放成高200，然后crop裁剪成宽250高200 - 5:4的图片)
-  return `${url}${url.includes('?') ? '&' : '?'}x-oss-process=image/resize,m_fixed,h_200,image/crop,g_center,w_250,h_200`;
+  return "".concat(url).concat(url.includes('?') ? '&' : '?', "x-oss-process=image/resize,m_fixed,h_200,image/crop,g_center,w_250,h_200");
 }
 
 // 分享出去的链接，默认带上用户的objectCode
 function addUserIdWhenShare(link) {
-  const user = (0, _util.lsGet)('userInfo');
-  const openid = (0, _util.lsGet)('openId');
+  var user = (0, _util.lsGet)('userInfo');
+  var openid = (0, _util.lsGet)('openId');
   if (!link.includes('shareLink=')) {
-    link += `${link.includes('?') ? '&' : '?'}shareLink=${encodeURIComponent(link)}`;
+    link += "".concat(link.includes('?') ? '&' : '?', "shareLink=").concat(encodeURIComponent(link));
   }
   if (openid && !link.includes('openid=')) {
-    link += `${link.includes('?') ? '&' : '?'}openid=${openid}`;
+    link += "".concat(link.includes('?') ? '&' : '?', "openid=").concat(openid);
   }
   if (!link.includes('shareLinkTime=')) {
-    link += `${link.includes('?') ? '&' : '?'}shareLinkTime=${new Date().getTime()}`;
+    link += "".concat(link.includes('?') ? '&' : '?', "shareLinkTime=").concat(new Date().getTime());
   }
   if (user && !link.includes('inviteCode=')) {
-    link += `${link.includes('?') ? '&' : '?'}inviteCode=${user.objectCode}`;
+    link += "".concat(link.includes('?') ? '&' : '?', "inviteCode=").concat(user.objectCode);
   }
   return link;
 }
 
 // 页面参数对象转成字符串
-function pageOptionsToQuery(options = {}) {
-  const arr = [];
-  for (const key in options) {
-    arr.push(`${key}=${options[key]}`);
+function pageOptionsToQuery() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var arr = [];
+  for (var key in options) {
+    arr.push("".concat(key, "=").concat(options[key]));
   }
   return arr.join('&');
 }
 
 // 合并object
 function mergeObject(a, b) {
-  const c = {
-    ...a
-  };
-  for (const key in b) {
-    if (typeof b[key] === 'object') {
-      c[key] = {
-        ...c[key],
-        ...b[key]
-      };
+  var c = _objectSpread({}, a);
+  for (var key in b) {
+    if (_typeof(b[key]) === 'object') {
+      c[key] = _objectSpread(_objectSpread({}, c[key]), b[key]);
     } else {
       c[key] = b[key];
     }
@@ -11051,7 +11261,9 @@ function mergeObject(a, b) {
 
 // 返回上一页方法,如果有上一页放回上一页,没有上一页返回首页
 function navigateBack() {
-  const routers = getCurrentPages().map(i => i.route);
+  var routers = getCurrentPages().map(function (i) {
+    return i.route;
+  });
   if (routers.length > 1) {
     uni.navigateBack();
   } else {
@@ -11064,17 +11276,17 @@ function navigateBack() {
 // base64的图片转成本地临时文件
 function base6ImageToTempPath(data, opt) {
   /* code是指图片base64格式数据 */
-  const fs = wx.getFileSystemManager();
+  var fs = wx.getFileSystemManager();
   // 随机定义路径名称
-  const times = new Date().getTime();
-  const codeImg = wx.env.USER_DATA_PATH + '/' + times + '.png';
+  var times = new Date().getTime();
+  var codeImg = wx.env.USER_DATA_PATH + '/' + times + '.png';
 
   // 将base64图片写入
   fs.writeFile({
     filePath: codeImg,
     data: data,
     encoding: 'base64',
-    success: res => {
+    success: function success(res) {
       // 写入成功了的话，新的图片路径就能用了
       console.log(codeImg);
       opt.succ && opt.succ(codeImg, res);
@@ -11115,36 +11327,48 @@ exports.redirectLogin = redirectLogin;
 exports.sleep = sleep;
 exports.sortObjectKeys = sortObjectKeys;
 exports.throttle = throttle;
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i.return) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { if (r) i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n;else { var o = function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); }; o("next", 0), o("throw", 1), o("return", 2); } }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function getOssSrc(src, width) {
   if (!src) return src;
-  let format = 'png';
-  const parts = src.split('.');
-  const fileExtension = parts[parts.length - 1].toLowerCase();
+  var format = 'png';
+  var parts = src.split('.');
+  var fileExtension = parts[parts.length - 1].toLowerCase();
   if (['jpg', 'jpeg'].includes(fileExtension)) {
     format = 'jpg';
   }
   if (uni.$detectWebp) {
     format = 'webp';
   }
-  return src + `?x-oss-process=image/resize,m_mfit,w_${width}/format,${format}`;
+  return src + "?x-oss-process=image/resize,m_mfit,w_".concat(width, "/format,").concat(format);
 }
-function addParametersToImageSrc(htmlContent, width = 1500) {
+function addParametersToImageSrc(htmlContent) {
+  var width = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1500;
   if (!htmlContent) return '';
-  const regex = /<img [^>]*src="([^"]+)"[^>]*>/g;
-  return htmlContent.replace(regex, (match, src) => {
-    const newSrc = getOssSrc(src, width);
+  var regex = /<img [^>]*src="([^"]+)"[^>]*>/g;
+  return htmlContent.replace(regex, function (match, src) {
+    var newSrc = getOssSrc(src, width);
     return match.replace(src, newSrc);
   });
 }
 function detectWebp() {
-  let support = false;
+  var support = false;
   try {
-    const _wx$getSystemInfoSync = wx.getSystemInfoSync();
-    const platform = _wx$getSystemInfoSync.platform;
-    const system = _wx$getSystemInfoSync.system;
-    const versionResult = /[0-9.]*$/.exec(system);
-    const systemVersion = versionResult ? versionResult[0] : '';
-    const iosSystemSupport = platform === 'ios' && !!systemVersion && compareVersion(systemVersion, '14.0') >= 0;
+    var _wx$getSystemInfoSync = wx.getSystemInfoSync();
+    var platform = _wx$getSystemInfoSync.platform;
+    var system = _wx$getSystemInfoSync.system;
+    var versionResult = /[0-9.]*$/.exec(system);
+    var systemVersion = versionResult ? versionResult[0] : '';
+    var iosSystemSupport = platform === 'ios' && !!systemVersion && compareVersion(systemVersion, '14.0') >= 0;
     support = platform === 'devtools' || platform === 'android' || iosSystemSupport;
   } catch (e) {
     console.log(e);
@@ -11153,16 +11377,19 @@ function detectWebp() {
 }
 function extractText(htmlString) {
   if (!htmlString) return '';
-  const regex = /<[^>]*>|<\/[^>]*>/gm;
-  const texts = htmlString.replace(regex, '').trim().split('\n').filter(text => text.trim());
+  var regex = /<[^>]*>|<\/[^>]*>/gm;
+  var texts = htmlString.replace(regex, '').trim().split('\n').filter(function (text) {
+    return text.trim();
+  });
   return texts;
 }
-function throttle(func, delay = 200) {
-  let prev = Date.now();
+function throttle(func) {
+  var delay = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 200;
+  var prev = Date.now();
   return function () {
-    const context = this;
-    const args = arguments;
-    const now = Date.now();
+    var context = this;
+    var args = arguments;
+    var now = Date.now();
     if (now - prev >= delay) {
       func.apply(context, args);
       prev = Date.now();
@@ -11177,7 +11404,9 @@ function formatNumber(num) {
   return num.toString();
 }
 function sleep(delay) {
-  return new Promise(resolve => setTimeout(resolve, delay));
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, delay);
+  });
 }
 function isEmpty(value) {
   if (value == null || value === false || typeof value === 'number' && isNaN(value)) {
@@ -11192,26 +11421,31 @@ function isEmpty(value) {
   if (Array.isArray(value) && value.length === 0) return true;
 
   // 空对象
-  if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
+  if (_typeof(value) === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
     return true;
   }
   return false;
 }
 function getUniqID() {
-  const idLength = 20;
-  const possibleCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let id = '';
-  const timestamp = +new Date();
-  const timestampString = timestamp.toString(36).slice(-5);
+  var idLength = 20;
+  var possibleCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var id = '';
+  var timestamp = +new Date();
+  var timestampString = timestamp.toString(36).slice(-5);
   id += timestampString;
-  for (let i = 0; i < idLength - timestampString.length; i++) {
-    const randomIndex = Math.floor(Math.random() * possibleCharacters.length);
+  for (var i = 0; i < idLength - timestampString.length; i++) {
+    var randomIndex = Math.floor(Math.random() * possibleCharacters.length);
     id += possibleCharacters.charAt(randomIndex);
   }
   return id;
 }
 function objectToKeyValueString(obj) {
-  return Object.entries(obj).map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+  return Object.entries(obj).map(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+      key = _ref2[0],
+      value = _ref2[1];
+    return "".concat(encodeURIComponent(key), "=").concat(encodeURIComponent(value));
+  }).join('&');
 }
 function redirectLogin() {
   console.log('-------redirect login------');
@@ -11223,8 +11457,8 @@ function redirectLogin() {
 }
 function copyText(data) {
   uni.setClipboardData({
-    data,
-    success: function (res) {
+    data: data,
+    success: function success(res) {
       uni.hideLoading();
       uni.showToast({
         title: '复制成功',
@@ -11236,57 +11470,78 @@ function copyText(data) {
 // 获取备用密钥的函数，带缓存和接口请求
 
 function getEncryptData() {
-  const maxRetries = 3; // 最大重试次数
-  let retryCount = 0; // 当前重试次数
+  var maxRetries = 3; // 最大重试次数
+  var retryCount = 0; // 当前重试次数
 
   // 定义内部函数用于尝试获取密钥
-  const tryGetUserKey = () => new Promise((resolve, reject) => {
-    const userCryptoManager = wx.getUserCryptoManager();
-    userCryptoManager.getLatestUserKey({
-      success: data => {
-        var _data$encryptKey;
-        console.error('🚀 ~ getUserCryptoManager ~ data:', data);
-        // 截取前16位作为加密密钥
-        data.encryptKey = (_data$encryptKey = data.encryptKey) === null || _data$encryptKey === void 0 ? void 0 : _data$encryptKey.slice(0, 16);
-        // 检查数据是否有效
-        if (data.encryptKey && data.iv && data.version) {
-          resolve(data); // 成功且数据有效，直接返回
-        } else {
-          reject(new Error('Tencent API returned invalid data')); // 数据无效，触发重试
+  var tryGetUserKey = function tryGetUserKey() {
+    return new Promise(function (resolve, reject) {
+      var userCryptoManager = wx.getUserCryptoManager();
+      userCryptoManager.getLatestUserKey({
+        success: function success(data) {
+          var _data$encryptKey;
+          console.error('🚀 ~ getUserCryptoManager ~ data:', data);
+          // 截取前16位作为加密密钥
+          data.encryptKey = (_data$encryptKey = data.encryptKey) === null || _data$encryptKey === void 0 ? void 0 : _data$encryptKey.slice(0, 16);
+          // 检查数据是否有效
+          if (data.encryptKey && data.iv && data.version) {
+            resolve(data); // 成功且数据有效，直接返回
+          } else {
+            reject(new Error('Tencent API returned invalid data')); // 数据无效，触发重试
+          }
+        },
+        fail: function fail(err) {
+          reject(new Error("Tencent API failed: ".concat(err.errMsg || err))); // 失败，触发重试
         }
-      },
-      fail: err => {
-        reject(new Error(`Tencent API failed: ${err.errMsg || err}`)); // 失败，触发重试
-      }
+      });
     });
-  });
+  };
 
   // 主逻辑，包含重试机制
-  return new Promise(resolve => {
-    const attempt = async () => {
-      try {
-        const data = await tryGetUserKey();
-        resolve(data); // 成功获取有效数据，结束
-      } catch (err) {
-        retryCount++;
-        console.error(`重试 ${retryCount}/${maxRetries} 失败: ${err.message}`);
-        if (retryCount < maxRetries) {
-          // 延迟后重试
-          setTimeout(attempt, 500 * retryCount); // 延迟递增：500ms, 1000ms, 1500ms
-        } else {
-          // 重试 3 次后仍失败，返回空值
-          console.error('Max retries reached, returning empty result');
-          resolve({}); // 返回空对象
-        }
-      }
-    };
-    attempt(); // 启动第一次尝试
+  return new Promise(function (resolve) {
+    var _attempt = /*#__PURE__*/function () {
+      var _ref3 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+        var data, _t;
+        return _regenerator().w(function (_context) {
+          while (1) switch (_context.n) {
+            case 0:
+              _context.p = 0;
+              _context.n = 1;
+              return tryGetUserKey();
+            case 1:
+              data = _context.v;
+              resolve(data); // 成功获取有效数据，结束
+              _context.n = 3;
+              break;
+            case 2:
+              _context.p = 2;
+              _t = _context.v;
+              retryCount++;
+              console.error("\u91CD\u8BD5 ".concat(retryCount, "/").concat(maxRetries, " \u5931\u8D25: ").concat(_t.message));
+              if (retryCount < maxRetries) {
+                // 延迟后重试
+                setTimeout(_attempt, 500 * retryCount); // 延迟递增：500ms, 1000ms, 1500ms
+              } else {
+                // 重试 3 次后仍失败，返回空值
+                console.error('Max retries reached, returning empty result');
+                resolve({}); // 返回空对象
+              }
+            case 3:
+              return _context.a(2);
+          }
+        }, _callee, null, [[0, 2]]);
+      }));
+      return function attempt() {
+        return _ref3.apply(this, arguments);
+      };
+    }();
+    _attempt(); // 启动第一次尝试
   });
 }
 function sortObjectKeys(obj) {
-  const sortedObj = Array.isArray(obj) ? [] : {};
+  var sortedObj = Array.isArray(obj) ? [] : {};
   Object.keys(obj).sort().forEach(function (key) {
-    if (obj[key] !== null && typeof obj[key] === 'object') {
+    if (obj[key] !== null && _typeof(obj[key]) === 'object') {
       sortedObj[key] = sortObjectKeys(obj[key]);
     } else {
       sortedObj[key] = obj[key];
@@ -11297,19 +11552,18 @@ function sortObjectKeys(obj) {
 function isNumber(value) {
   return /^-?\d+(\.\d+)?$/.test(value);
 }
-const deepClone = obj => {
-  if (typeof obj !== 'object') return;
-  const newObj = obj instanceof Array ? [] : {};
-  for (const key in obj) {
-    if (typeof obj[key] === 'object') {
-      newObj[key] = deepClone(obj[key]);
+var _deepClone = exports.deepClone = function deepClone(obj) {
+  if (_typeof(obj) !== 'object') return;
+  var newObj = obj instanceof Array ? [] : {};
+  for (var key in obj) {
+    if (_typeof(obj[key]) === 'object') {
+      newObj[key] = _deepClone(obj[key]);
     } else {
       newObj[key] = obj[key];
     }
   }
   return newObj;
 };
-exports.deepClone = deepClone;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
 /***/ }),
@@ -11356,17 +11610,17 @@ function SM4_Context() {
 function SM4() {
   this.SM4_ENCRYPT = 1;
   this.SM4_DECRYPT = 0;
-  const SboxTable = [0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7, 0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05, 0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3, 0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99, 0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a, 0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62, 0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95, 0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6, 0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba, 0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8, 0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b, 0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35, 0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2, 0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87, 0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52, 0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e, 0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5, 0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1, 0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55, 0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3, 0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60, 0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f, 0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f, 0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51, 0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f, 0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8, 0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd, 0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0, 0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e, 0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84, 0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20, 0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48];
-  const FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc];
-  const CK = [0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9, 0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9, 0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299, 0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279];
+  var SboxTable = [0xd6, 0x90, 0xe9, 0xfe, 0xcc, 0xe1, 0x3d, 0xb7, 0x16, 0xb6, 0x14, 0xc2, 0x28, 0xfb, 0x2c, 0x05, 0x2b, 0x67, 0x9a, 0x76, 0x2a, 0xbe, 0x04, 0xc3, 0xaa, 0x44, 0x13, 0x26, 0x49, 0x86, 0x06, 0x99, 0x9c, 0x42, 0x50, 0xf4, 0x91, 0xef, 0x98, 0x7a, 0x33, 0x54, 0x0b, 0x43, 0xed, 0xcf, 0xac, 0x62, 0xe4, 0xb3, 0x1c, 0xa9, 0xc9, 0x08, 0xe8, 0x95, 0x80, 0xdf, 0x94, 0xfa, 0x75, 0x8f, 0x3f, 0xa6, 0x47, 0x07, 0xa7, 0xfc, 0xf3, 0x73, 0x17, 0xba, 0x83, 0x59, 0x3c, 0x19, 0xe6, 0x85, 0x4f, 0xa8, 0x68, 0x6b, 0x81, 0xb2, 0x71, 0x64, 0xda, 0x8b, 0xf8, 0xeb, 0x0f, 0x4b, 0x70, 0x56, 0x9d, 0x35, 0x1e, 0x24, 0x0e, 0x5e, 0x63, 0x58, 0xd1, 0xa2, 0x25, 0x22, 0x7c, 0x3b, 0x01, 0x21, 0x78, 0x87, 0xd4, 0x00, 0x46, 0x57, 0x9f, 0xd3, 0x27, 0x52, 0x4c, 0x36, 0x02, 0xe7, 0xa0, 0xc4, 0xc8, 0x9e, 0xea, 0xbf, 0x8a, 0xd2, 0x40, 0xc7, 0x38, 0xb5, 0xa3, 0xf7, 0xf2, 0xce, 0xf9, 0x61, 0x15, 0xa1, 0xe0, 0xae, 0x5d, 0xa4, 0x9b, 0x34, 0x1a, 0x55, 0xad, 0x93, 0x32, 0x30, 0xf5, 0x8c, 0xb1, 0xe3, 0x1d, 0xf6, 0xe2, 0x2e, 0x82, 0x66, 0xca, 0x60, 0xc0, 0x29, 0x23, 0xab, 0x0d, 0x53, 0x4e, 0x6f, 0xd5, 0xdb, 0x37, 0x45, 0xde, 0xfd, 0x8e, 0x2f, 0x03, 0xff, 0x6a, 0x72, 0x6d, 0x6c, 0x5b, 0x51, 0x8d, 0x1b, 0xaf, 0x92, 0xbb, 0xdd, 0xbc, 0x7f, 0x11, 0xd9, 0x5c, 0x41, 0x1f, 0x10, 0x5a, 0xd8, 0x0a, 0xc1, 0x31, 0x88, 0xa5, 0xcd, 0x7b, 0xbd, 0x2d, 0x74, 0xd0, 0x12, 0xb8, 0xe5, 0xb4, 0xb0, 0x89, 0x69, 0x97, 0x4a, 0x0c, 0x96, 0x77, 0x7e, 0x65, 0xb9, 0xf1, 0x09, 0xc5, 0x6e, 0xc6, 0x84, 0x18, 0xf0, 0x7d, 0xec, 0x3a, 0xdc, 0x4d, 0x20, 0x79, 0xee, 0x5f, 0x3e, 0xd7, 0xcb, 0x39, 0x48];
+  var FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc];
+  var CK = [0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9, 0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9, 0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299, 0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279];
   this.GET_ULONG_BE = function (b, i) {
     return (b[i] & 0xff) << 24 | (b[i + 1] & 0xff) << 16 | (b[i + 2] & 0xff) << 8 | b[i + 3] & 0xff & 0xffffffff;
   };
   this.PUT_ULONG_BE = function (n, b, i) {
-    const t1 = 0xff & n >> 24;
-    const t2 = 0xff & n >> 16;
-    const t3 = 0xff & n >> 8;
-    const t4 = 0xff & n;
+    var t1 = 0xff & n >> 24;
+    var t2 = 0xff & n >> 16;
+    var t3 = 0xff & n >> 8;
+    var t4 = 0xff & n;
     b[i] = t1 > 128 ? t1 - 256 : t1;
     b[i + 1] = t2 > 128 ? t2 - 256 : t2;
     b[i + 2] = t3 > 128 ? t3 - 256 : t3;
@@ -11381,35 +11635,35 @@ function SM4() {
     return this.SHL(x, n) | x >> 32 - n;
   };
   this.sm4Lt = function (ka) {
-    const a = new Array(4);
-    const b = new Array(4);
+    var a = new Array(4);
+    var b = new Array(4);
     this.PUT_ULONG_BE(ka, a, 0);
     b[0] = this.sm4Sbox(a[0]);
     b[1] = this.sm4Sbox(a[1]);
     b[2] = this.sm4Sbox(a[2]);
     b[3] = this.sm4Sbox(a[3]);
-    const bb = this.GET_ULONG_BE(b, 0);
-    const c = bb ^ this.ROTL(bb, 2) ^ this.ROTL(bb, 10) ^ this.ROTL(bb, 18) ^ this.ROTL(bb, 24);
+    var bb = this.GET_ULONG_BE(b, 0);
+    var c = bb ^ this.ROTL(bb, 2) ^ this.ROTL(bb, 10) ^ this.ROTL(bb, 18) ^ this.ROTL(bb, 24);
     return c;
   };
   this.sm4F = function (x0, x1, x2, x3, rk) {
     return x0 ^ this.sm4Lt(x1 ^ x2 ^ x3 ^ rk);
   };
   this.sm4CalciRK = function (ka) {
-    const a = new Array(4);
-    const b = new Array(4);
+    var a = new Array(4);
+    var b = new Array(4);
     this.PUT_ULONG_BE(ka, a, 0);
     b[0] = this.sm4Sbox(a[0]);
     b[1] = this.sm4Sbox(a[1]);
     b[2] = this.sm4Sbox(a[2]);
     b[3] = this.sm4Sbox(a[3]);
-    const bb = this.GET_ULONG_BE(b, 0);
-    const rk = bb ^ this.ROTL(bb, 13) ^ this.ROTL(bb, 23);
+    var bb = this.GET_ULONG_BE(b, 0);
+    var rk = bb ^ this.ROTL(bb, 13) ^ this.ROTL(bb, 23);
     return rk;
   };
   this.sm4Sbox = function (inch) {
-    const i = inch & 0xff;
-    const retVal = SboxTable[i];
+    var i = inch & 0xff;
+    var retVal = SboxTable[i];
     return retVal > 128 ? retVal - 256 : retVal;
   };
   this.sm4_setkey_enc = function (ctx, key) {
@@ -11440,8 +11694,8 @@ function SM4() {
     ctx.sk = ctx.sk.reverse();
   };
   this.sm4_setkey = function (SK, key) {
-    const MK = new Array(4);
-    const k = new Array(36);
+    var MK = new Array(4);
+    var k = new Array(36);
     // var i = 0;
     MK[0] = this.GET_ULONG_BE(key, 0);
     MK[1] = this.GET_ULONG_BE(key, 4);
@@ -11451,21 +11705,21 @@ function SM4() {
     k[1] = MK[1] ^ FK[1];
     k[2] = MK[2] ^ FK[2];
     k[3] = MK[3] ^ FK[3];
-    for (let i = 0; i < 32; i++) {
+    for (var i = 0; i < 32; i++) {
       k[i + 4] = k[i] ^ this.sm4CalciRK(k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]);
       SK[i] = k[i + 4];
     }
   };
   this.padding = function (input, mode) {
-    let p;
+    var p;
     if (input == null) {
       return null;
     }
-    let ret = null;
+    var ret = null;
     if (mode === this.SM4_ENCRYPT) {
       p = parseInt(16 - input.length % 16);
       ret = input.slice(0);
-      for (let i = 0; i < p; i++) {
+      for (var i = 0; i < p; i++) {
         ret[input.length + i] = p;
       }
     } else {
@@ -11475,8 +11729,8 @@ function SM4() {
     return ret;
   };
   this.sm4_one_round = function (sk, input, output) {
-    let i = 0;
-    const ulbuf = new Array(36);
+    var i = 0;
+    var ulbuf = new Array(36);
     ulbuf[0] = this.GET_ULONG_BE(input, 0);
     ulbuf[1] = this.GET_ULONG_BE(input, 4);
     ulbuf[2] = this.GET_ULONG_BE(input, 8);
@@ -11497,17 +11751,17 @@ function SM4() {
     if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
       input = this.padding(input, this.SM4_ENCRYPT);
     }
-    let i = 0;
-    let length = input.length;
-    let bous = [];
+    var i = 0;
+    var length = input.length;
+    var bous = [];
     for (; length > 0; length -= 16) {
-      const out = new Array(16);
-      const ins = input.slice(i * 16, 16 * (i + 1));
+      var out = new Array(16);
+      var ins = input.slice(i * 16, 16 * (i + 1));
       this.sm4_one_round(ctx.sk, ins, out);
       bous = bous.concat(out);
       i++;
     }
-    let output = bous;
+    var output = bous;
     if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
       output = this.padding(output, this.SM4_DECRYPT);
     }
@@ -11519,10 +11773,10 @@ function SM4() {
     return output;
   };
   this.sm4_crypt_cbc = function (ctx, iv, input) {
-    let out;
-    let ins;
-    let out1;
-    let k;
+    var out;
+    var ins;
+    var out1;
+    var k;
     if (iv == null || iv.length !== 16) {
       console.error('iv error!');
     }
@@ -11532,9 +11786,9 @@ function SM4() {
     if (ctx.isPadding && ctx.mode === this.SM4_ENCRYPT) {
       input = this.padding(input, this.SM4_ENCRYPT);
     }
-    let i = 0;
-    let length = input.length;
-    let bous = [];
+    var i = 0;
+    var length = input.length;
+    var bous = [];
     if (ctx.mode === this.SM4_ENCRYPT) {
       k = 0;
       for (; length > 0; length -= 16) {
@@ -11550,7 +11804,7 @@ function SM4() {
         k++;
       }
     } else {
-      let temp = [];
+      var temp = [];
       k = 0;
       for (; length > 0; length -= 16) {
         out = new Array(16);
@@ -11566,7 +11820,7 @@ function SM4() {
         k++;
       }
     }
-    let output = bous;
+    var output = bous;
     if (ctx.isPadding && ctx.mode === this.SM4_DECRYPT) {
       output = this.padding(output, this.SM4_DECRYPT);
     }
@@ -11578,7 +11832,7 @@ function SM4() {
     return output;
   };
 }
-const SM4Util = function (secretKey, iv) {
+var SM4Util = exports.SM4Util = function SM4Util(secretKey, iv) {
   // 和后端secretKey一致才能正确解密，可自定义传入，如果不传，则使用下面的默认secretKey
   this.secretKey = secretKey;
   // 当时用CBC模式的时候，除了secretKey，还需要 iv，可自定义传入，如果不传，则使用下面的默认iv
@@ -11588,14 +11842,14 @@ const SM4Util = function (secretKey, iv) {
   // ECB模式加密，默认secretKey
   this.encryptDefault_ECB = function (plainText) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
+      var keyBytes = this.stringToByte(this.secretKey);
       sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
+      var encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
+      var cipherText = _base.default.fromByteArray(encrypted);
       if (cipherText != null && cipherText.trim().length > 0) {
         cipherText.replace(/(\s*|\t|\r|\n)/g, '');
       }
@@ -11608,14 +11862,14 @@ const SM4Util = function (secretKey, iv) {
   // ECB模式加密，自定义secretKey
   this.encryptCustom_ECB = function (plainText, secretKey) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
+      var keyBytes = this.stringToByte(secretKey);
       sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
+      var encrypted = sm4.sm4_crypt_ecb(ctx, this.stringToByte(plainText));
+      var cipherText = _base.default.fromByteArray(encrypted);
       if (cipherText != null && cipherText.trim().length > 0) {
         cipherText.replace(/(\s*|\t|\r|\n)/g, '');
       }
@@ -11628,13 +11882,13 @@ const SM4Util = function (secretKey, iv) {
   // 解密_ECB，默认secretKey
   this.decryptDefault_ECB = function (cipherText) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
+      var keyBytes = this.stringToByte(this.secretKey);
       sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
+      var decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
       return this.byteToString(decrypted);
     } catch (e) {
       console.error(e);
@@ -11644,13 +11898,13 @@ const SM4Util = function (secretKey, iv) {
   // 解密_ECB，自定义secretKey
   this.decryptCustom_ECB = function (cipherText, secretKey) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
+      var keyBytes = this.stringToByte(secretKey);
       sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
+      var decrypted = sm4.sm4_crypt_ecb(ctx, _base.default.toByteArray(cipherText));
       return this.byteToString(decrypted);
     } catch (e) {
       console.error(e);
@@ -11661,15 +11915,15 @@ const SM4Util = function (secretKey, iv) {
   // CBC模式加密，默认 iv 和 secretKey
   this.encryptDefault_CBC = function (plainText) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(this.secretKey);
-      const ivBytes = this.stringToByte(this.iv);
+      var keyBytes = this.stringToByte(this.secretKey);
+      var ivBytes = this.stringToByte(this.iv);
       sm4.sm4_setkey_enc(ctx, keyBytes);
-      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
+      var encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
+      var cipherText = _base.default.fromByteArray(encrypted);
       if (cipherText != null && cipherText.trim().length > 0) {
         cipherText.replace(/(\s*|\t|\r|\n)/g, '');
       }
@@ -11680,13 +11934,13 @@ const SM4Util = function (secretKey, iv) {
     }
   };
   function removePadding(buffer) {
-    const padding = buffer[buffer.length - 1];
+    var padding = buffer[buffer.length - 1];
     if (padding < 1 || padding > 16) {
       // 不是标准的PKCS#7填充，可能不需要移除填充
       return buffer;
     }
     // 检查填充是否有效
-    for (let i = 0; i < padding; i++) {
+    for (var i = 0; i < padding; i++) {
       if (buffer[buffer.length - 1 - i] !== padding) {
         // 填充无效，可能不是PKCS#7填充
         return buffer;
@@ -11699,16 +11953,16 @@ const SM4Util = function (secretKey, iv) {
   // CBC模式加密，自定义 iv 和 secretKey
   this.encryptCustom_CBC = function (plainText, iv, secretKey) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
+      var keyBytes = this.stringToByte(secretKey);
+      var ivBytes = this.stringToByte(iv);
       sm4.sm4_setkey_enc(ctx, keyBytes);
       console.warn('------请求加密参数------', plainText);
-      const encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
-      const cipherText = _base.default.fromByteArray(encrypted);
+      var encrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, this.stringToByte(plainText));
+      var cipherText = _base.default.fromByteArray(encrypted);
       if (cipherText != null && cipherText.trim().length > 0) {
         cipherText.replace(/(\s*|\t|\r|\n)/g, '');
       }
@@ -11721,14 +11975,14 @@ const SM4Util = function (secretKey, iv) {
   // 解密_CBC，默认 iv 和 secretKey
   this.decryptDefault_CBC = function (cipherText, iv, secretKey) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
+      var keyBytes = this.stringToByte(secretKey);
+      var ivBytes = this.stringToByte(iv);
       sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
+      var decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
       return this.byteToString(decrypted);
     } catch (e) {
       console.error(e);
@@ -11738,15 +11992,15 @@ const SM4Util = function (secretKey, iv) {
   // 解密_CBC，自定义 iv 和 secretKey
   this.decryptCustom_CBC = function (cipherText, iv, secretKey) {
     try {
-      const sm4 = new SM4();
-      const ctx = new SM4_Context();
+      var sm4 = new SM4();
+      var ctx = new SM4_Context();
       ctx.isPadding = true;
       ctx.mode = sm4.SM4_ENCRYPT;
-      const keyBytes = this.stringToByte(secretKey);
-      const ivBytes = this.stringToByte(iv);
+      var keyBytes = this.stringToByte(secretKey);
+      var ivBytes = this.stringToByte(iv);
       sm4.sm4_setkey_dec(ctx, keyBytes);
-      const decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
-      let text = removePadding(decrypted);
+      var decrypted = sm4.sm4_crypt_cbc(ctx, ivBytes, _base.default.toByteArray(cipherText));
+      var text = removePadding(decrypted);
       text = this.byteToString(text);
       text = Buffer.from(text).toString('utf-8');
       return text;
@@ -11756,10 +12010,10 @@ const SM4Util = function (secretKey, iv) {
     }
   };
   this.stringToByte = function (str) {
-    const bytes = [];
-    let c;
-    const len = str.length;
-    for (let i = 0; i < len; i++) {
+    var bytes = [];
+    var c;
+    var len = str.length;
+    for (var i = 0; i < len; i++) {
       c = str.charCodeAt(i);
       if (c >= 0x010000 && c <= 0x10ffff) {
         bytes.push(c >> 18 & 0x07 | 0xf0);
@@ -11783,15 +12037,15 @@ const SM4Util = function (secretKey, iv) {
     if (typeof arr === 'string') {
       return arr;
     }
-    let str = '';
-    const _arr = arr;
-    for (let i = 0; i < _arr.length; i++) {
-      const one = _arr[i].toString(2);
-      const v = one.match(/^1+?(?=0)/);
+    var str = '';
+    var _arr = arr;
+    for (var i = 0; i < _arr.length; i++) {
+      var one = _arr[i].toString(2);
+      var v = one.match(/^1+?(?=0)/);
       if (v && one.length === 8) {
-        const bytesLength = v[0].length;
-        let store = _arr[i].toString(2).slice(7 - bytesLength);
-        for (let st = 1; st < bytesLength; st++) {
+        var bytesLength = v[0].length;
+        var store = _arr[i].toString(2).slice(7 - bytesLength);
+        for (var st = 1; st < bytesLength; st++) {
           store += _arr[st + i].toString(2).slice(2);
         }
         str += String.fromCharCode(parseInt(store, 2));
@@ -11803,7 +12057,6 @@ const SM4Util = function (secretKey, iv) {
     return str;
   };
 };
-exports.SM4Util = SM4Util;
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/buffer/index.js */ 22).Buffer))
 
 /***/ }),
@@ -13886,10 +14139,14 @@ module.exports = Array.isArray || function (arr) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var require;var require;/* eslint-disable */
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var require;var require;function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+/* eslint-disable */
 ;
 (function (a) {
-  if (true) module.exports = a();else { var b; }
+  if ('object' == ( false ? undefined : _typeof(exports)) && 'undefined' != typeof module) module.exports = a();else if (true) !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (a),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));else { var b; }
 })(function () {
   return function () {
     function b(d, e, g) {
@@ -14033,17 +14290,17 @@ exports.default = void 0;
  *      ```
  */
 
-const DictionaryTree = {
+var DictionaryTree = {
   name: 'DictionaryTree',
   watchKey: 'dictionaryTree',
   hit: false,
   deep: true,
-  onUpdate(val) {
+  onUpdate: function onUpdate(val) {
     return !!val;
   }
 };
 var _default = exports.default = {
-  DictionaryTree
+  DictionaryTree: DictionaryTree
 };
 
 /***/ }),
@@ -14084,15 +14341,15 @@ function t(t,e){var o=Object.keys(t);if(Object.getOwnPropertySymbols){var n=Obje
  *
  * Author: 375890534@qq.com
  */
-const base64Binary = __webpack_require__(/*! ./base64Binary */ 30);
+var base64Binary = __webpack_require__(/*! ./base64Binary */ 30);
 
 /**
  * 获取guid
  */
 function guid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : r & 0x3 | 0x8;
+    var r = Math.random() * 16 | 0;
+    var v = c == 'x' ? r : r & 0x3 | 0x8;
     return v.toString(16);
   });
 }
@@ -14168,20 +14425,20 @@ function mapPolyfill() {
       console.warn('api: uni.createMapContext 创建并返回 map 上下文 mapContext 对象 在当前平台不支持，返回空');
       return {
         $getAppMap: null,
-        getCenterLocation: function (options) {
+        getCenterLocation: function getCenterLocation(options) {
           options.fail && options.fail();
         },
-        moveToLocation: function (options) {
+        moveToLocation: function moveToLocation(options) {
           options.fail && options.fail();
         },
-        translateMarker: function (options) {
+        translateMarker: function translateMarker(options) {
           options.fail && options.fail();
         },
-        includePoints: function (options) {},
-        getRegion: function (options) {
+        includePoints: function includePoints(options) {},
+        getRegion: function getRegion(options) {
           options.fail && options.fail();
         },
-        getScale: function (options) {
+        getScale: function getScale(options) {
           options.fail && options.fail();
         }
       };
@@ -14599,14 +14856,14 @@ function adPolyfill() {
     uni.createRewardedVideoAd = function () {
       console.warn('api: uni.createRewardedVideoAd 激励视频广告 在当前平台不支持，执行失败');
       return {
-        show() {},
-        onLoad() {},
-        offLoad() {},
-        load() {},
-        onError() {},
-        offError() {},
-        onClose() {},
-        offClose() {}
+        show: function show() {},
+        onLoad: function onLoad() {},
+        offLoad: function offLoad() {},
+        load: function load() {},
+        onError: function onError() {},
+        offError: function offError() {},
+        onClose: function onClose() {},
+        offClose: function offClose() {}
       };
     };
   }
@@ -14996,14 +15253,14 @@ function iBeaconPolyfill() {
 * uni.navigateTo 和 uni.redirectTo 不能直接跳转tabbar里面的页面，拦截fail，并当它为tabbar页面时，直接调用uni.switchTab()
 */
 function routerPolyfill() {
-  const routerApiFailEventHandle = function (res, options) {
+  var routerApiFailEventHandle = function routerApiFailEventHandle(res, options) {
     if (res.errMsg.indexOf('tabbar page') > -1) {
       console.error('res.errMsg: ' + res.errMsg);
-      const apiName = res.errMsg.match(/not\s(\w+)\sa/)[1];
+      var apiName = res.errMsg.match(/not\s(\w+)\sa/)[1];
       console.log(apiName);
-      const url = options.url;
+      var url = options.url;
       if (url) {
-        const queryString = url.split('?')[1];
+        var queryString = url.split('?')[1];
         if (queryString) {
           console.error(apiName + ' 的参数将被忽略：' + queryString);
         }
@@ -15013,7 +15270,7 @@ function routerPolyfill() {
       }
     }
   };
-  const routerApiHandle = function (oriLogFunc) {
+  var routerApiHandle = function routerApiHandle(oriLogFunc) {
     return function (options) {
       try {
         if (options.fail) {
@@ -15037,7 +15294,7 @@ function routerPolyfill() {
   uni.navigateTo = routerApiHandle(uni.navigateTo);
   uni.redirectTo = routerApiHandle(uni.redirectTo);
 }
-let isInit = false;
+var isInit = false;
 /**
  * polyfill 入口
  */
@@ -15091,8 +15348,8 @@ function init() {
   routerPolyfill();
 }
 module.exports = {
-  init,
-  guid
+  init: init,
+  guid: guid
 };
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 1)["default"]))
 
@@ -15104,6 +15361,12 @@ module.exports = {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 /*
  * @Author: zhang peng
  * @Date: 2021-08-03 10:57:51
@@ -15116,29 +15379,31 @@ module.exports = {
  * 因uniapp没有window，也无法使用Buffer，因此直接使用polyfill
  *
  */
-const b64ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-const b64chs = [...b64ch];
-const b64re = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
-const b64tab = (a => {
-  const tab = {};
+var b64ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+var b64chs = _toConsumableArray(b64ch);
+var b64re = /^(?:[A-Za-z\d+/]{4})*?(?:[A-Za-z\d+/]{2}(?:==)?|[A-Za-z\d+/]{3}=?)?$/;
+var b64tab = function (a) {
+  var tab = {};
   // eslint-disable-next-line no-return-assign
-  a.forEach((c, i) => tab[c] = i);
+  a.forEach(function (c, i) {
+    return tab[c] = i;
+  });
   return tab;
-})(b64chs);
-const _fromCC = String.fromCharCode.bind(String);
+}(b64chs);
+var _fromCC = String.fromCharCode.bind(String);
 
 /**
  * polyfill version of `btoa`
  */
-const btoaPolyfill = bin => {
+var btoaPolyfill = function btoaPolyfill(bin) {
   // console.log('polyfilled');
-  let u32;
-  let c0;
-  let c1;
-  let c2;
-  let asc = '';
-  const pad = bin.length % 3;
-  for (let i = 0; i < bin.length;) {
+  var u32;
+  var c0;
+  var c1;
+  var c2;
+  var asc = '';
+  var pad = bin.length % 3;
+  for (var i = 0; i < bin.length;) {
     if ((c0 = bin.charCodeAt(i++)) > 255 || (c1 = bin.charCodeAt(i++)) > 255 || (c2 = bin.charCodeAt(i++)) > 255) {
       throw new TypeError('invalid character found');
     }
@@ -15151,18 +15416,18 @@ const btoaPolyfill = bin => {
 /**
  * polyfill version of `atob`
  */
-const atobPolyfill = asc => {
+var atobPolyfill = function atobPolyfill(asc) {
   // console.log('polyfilled');
   asc = asc.replace(/\s+/g, '');
   if (!b64re.test(asc)) {
     throw new TypeError('malformed base64.');
   }
   asc += '=='.slice(2 - (asc.length & 3));
-  let u24;
-  let bin = '';
-  let r1;
-  let r2;
-  for (let i = 0; i < asc.length;) {
+  var u24;
+  var bin = '';
+  var r1;
+  var r2;
+  for (var i = 0; i < asc.length;) {
     u24 = b64tab[asc.charAt(i++)] << 18 | b64tab[asc.charAt(i++)] << 12 | (r1 = b64tab[asc.charAt(i++)]) << 6 | (r2 = b64tab[asc.charAt(i++)]);
     bin += r1 === 64 ? _fromCC(u24 >> 16 & 255) : r2 === 64 ? _fromCC(u24 >> 16 & 255, u24 >> 8 & 255) : _fromCC(u24 >> 16 & 255, u24 >> 8 & 255, u24 & 255);
   }
@@ -15173,10 +15438,10 @@ const atobPolyfill = asc => {
  * base64转ArrayBuffer
  */
 function base64ToArrayBuffer(base64) {
-  const binaryStr = atobPolyfill(base64);
-  const byteLength = binaryStr.length;
-  const bytes = new Uint8Array(byteLength);
-  for (let i = 0; i < byteLength; i++) {
+  var binaryStr = atobPolyfill(base64);
+  var byteLength = binaryStr.length;
+  var bytes = new Uint8Array(byteLength);
+  for (var i = 0; i < byteLength; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes.buffer;
@@ -15186,17 +15451,17 @@ function base64ToArrayBuffer(base64) {
  * ArrayBuffer转base64
  */
 function arrayBufferToBase64(buffer) {
-  let binaryStr = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
+  var binaryStr = '';
+  var bytes = new Uint8Array(buffer);
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
     binaryStr += String.fromCharCode(bytes[i]);
   }
   return btoaPolyfill(binaryStr);
 }
 module.exports = {
-  base64ToArrayBuffer,
-  arrayBufferToBase64
+  base64ToArrayBuffer: base64ToArrayBuffer,
+  arrayBufferToBase64: arrayBufferToBase64
 };
 
 /***/ }),
@@ -15228,7 +15493,14 @@ module.exports = {
 /* 56 */,
 /* 57 */,
 /* 58 */,
-/* 59 */
+/* 59 */,
+/* 60 */,
+/* 61 */,
+/* 62 */,
+/* 63 */,
+/* 64 */,
+/* 65 */,
+/* 66 */
 /*!*****************************************************************!*\
   !*** ./src/uni_modules/uni-icons/components/uni-icons/icons.js ***!
   \*****************************************************************/
@@ -16248,13 +16520,6 @@ var _default = exports.default = {
 };
 
 /***/ }),
-/* 60 */,
-/* 61 */,
-/* 62 */,
-/* 63 */,
-/* 64 */,
-/* 65 */,
-/* 66 */,
 /* 67 */,
 /* 68 */,
 /* 69 */,
@@ -16269,12 +16534,7 @@ var _default = exports.default = {
 /* 78 */,
 /* 79 */,
 /* 80 */,
-/* 81 */,
-/* 82 */,
-/* 83 */,
-/* 84 */,
-/* 85 */,
-/* 86 */
+/* 81 */
 /*!*************************************************************************************!*\
   !*** ./src/uni_modules/uni-transition/components/uni-transition/createAnimation.js ***!
   \*************************************************************************************/
@@ -16288,92 +16548,116 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createAnimation = createAnimation;
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 // const defaultOption = {
 // 	duration: 300,
 // 	timingFunction: 'linear',
 // 	delay: 0,
 // 	transformOrigin: '50% 50% 0'
 // }
-
-class MPAnimation {
-  constructor(options, _this) {
+var MPAnimation = /*#__PURE__*/function () {
+  function MPAnimation(options, _this) {
+    _classCallCheck(this, MPAnimation);
     this.options = options;
     this.animation = uni.createAnimation(options);
     this.currentStepAnimates = {};
     this.next = 0;
     this.$ = _this;
   }
-  _nvuePushAnimates(type, args) {
-    let aniObj = this.currentStepAnimates[this.next];
-    let styles = {};
-    if (!aniObj) {
-      styles = {
-        styles: {},
-        config: {}
-      };
-    } else {
-      styles = aniObj;
-    }
-    if (animateTypes1.includes(type)) {
-      if (!styles.styles.transform) {
-        styles.styles.transform = '';
+  return _createClass(MPAnimation, [{
+    key: "_nvuePushAnimates",
+    value: function _nvuePushAnimates(type, args) {
+      var aniObj = this.currentStepAnimates[this.next];
+      var styles = {};
+      if (!aniObj) {
+        styles = {
+          styles: {},
+          config: {}
+        };
+      } else {
+        styles = aniObj;
       }
-      let unit = '';
-      if (type === 'rotate') {
-        unit = 'deg';
+      if (animateTypes1.includes(type)) {
+        if (!styles.styles.transform) {
+          styles.styles.transform = '';
+        }
+        var unit = '';
+        if (type === 'rotate') {
+          unit = 'deg';
+        }
+        styles.styles.transform += "".concat(type, "(").concat(args + unit, ") ");
+      } else {
+        styles.styles[type] = "".concat(args);
       }
-      styles.styles.transform += `${type}(${args + unit}) `;
-    } else {
-      styles.styles[type] = `${args}`;
+      this.currentStepAnimates[this.next] = styles;
     }
-    this.currentStepAnimates[this.next] = styles;
-  }
-  _animateRun(styles = {}, config = {}) {
-    let ref = this.$.$refs['ani'].ref;
-    if (!ref) return;
-    return new Promise((resolve, reject) => {
-      nvueAnimation.transition(ref, {
-        styles,
-        ...config
-      }, res => {
-        resolve();
+  }, {
+    key: "_animateRun",
+    value: function _animateRun() {
+      var styles = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+      var ref = this.$.$refs['ani'].ref;
+      if (!ref) return;
+      return new Promise(function (resolve, reject) {
+        nvueAnimation.transition(ref, _objectSpread({
+          styles: styles
+        }, config), function (res) {
+          resolve();
+        });
       });
-    });
-  }
-  _nvueNextAnimate(animates, step = 0, fn) {
-    let obj = animates[step];
-    if (obj) {
-      let {
-        styles,
-        config
-      } = obj;
-      this._animateRun(styles, config).then(() => {
-        step += 1;
-        this._nvueNextAnimate(animates, step, fn);
-      });
-    } else {
-      this.currentStepAnimates = {};
-      typeof fn === 'function' && fn();
-      this.isEnd = true;
     }
-  }
-  step(config = {}) {
-    this.animation.step(config);
-    return this;
-  }
-  run(fn) {
-    this.$.animationData = this.animation.export();
-    this.$.timer = setTimeout(() => {
-      typeof fn === 'function' && fn();
-    }, this.$.durationTime);
-  }
-}
-const animateTypes1 = ['matrix', 'matrix3d', 'rotate', 'rotate3d', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scale3d', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'translate', 'translate3d', 'translateX', 'translateY', 'translateZ'];
-const animateTypes2 = ['opacity', 'backgroundColor'];
-const animateTypes3 = ['width', 'height', 'left', 'right', 'top', 'bottom'];
-animateTypes1.concat(animateTypes2, animateTypes3).forEach(type => {
-  MPAnimation.prototype[type] = function (...args) {
-    this.animation[type](...args);
+  }, {
+    key: "_nvueNextAnimate",
+    value: function _nvueNextAnimate(animates) {
+      var _this2 = this;
+      var step = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      var fn = arguments.length > 2 ? arguments[2] : undefined;
+      var obj = animates[step];
+      if (obj) {
+        var styles = obj.styles,
+          config = obj.config;
+        this._animateRun(styles, config).then(function () {
+          step += 1;
+          _this2._nvueNextAnimate(animates, step, fn);
+        });
+      } else {
+        this.currentStepAnimates = {};
+        typeof fn === 'function' && fn();
+        this.isEnd = true;
+      }
+    }
+  }, {
+    key: "step",
+    value: function step() {
+      var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      this.animation.step(config);
+      return this;
+    }
+  }, {
+    key: "run",
+    value: function run(fn) {
+      this.$.animationData = this.animation.export();
+      this.$.timer = setTimeout(function () {
+        typeof fn === 'function' && fn();
+      }, this.$.durationTime);
+    }
+  }]);
+}();
+var animateTypes1 = ['matrix', 'matrix3d', 'rotate', 'rotate3d', 'rotateX', 'rotateY', 'rotateZ', 'scale', 'scale3d', 'scaleX', 'scaleY', 'scaleZ', 'skew', 'skewX', 'skewY', 'translate', 'translate3d', 'translateX', 'translateY', 'translateZ'];
+var animateTypes2 = ['opacity', 'backgroundColor'];
+var animateTypes3 = ['width', 'height', 'left', 'right', 'top', 'bottom'];
+animateTypes1.concat(animateTypes2, animateTypes3).forEach(function (type) {
+  MPAnimation.prototype[type] = function () {
+    var _this$animation;
+    (_this$animation = this.animation)[type].apply(_this$animation, arguments);
     return this;
   };
 });
@@ -16386,3 +16670,4 @@ function createAnimation(option, _this) {
 
 /***/ })
 ]]);
+//# sourceMappingURL=../../.sourcemap/mp-weixin/common/vendor.js.map
