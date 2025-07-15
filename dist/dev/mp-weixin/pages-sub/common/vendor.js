@@ -1,6 +1,6 @@
 (global["webpackJsonp"] = global["webpackJsonp"] || []).push([["pages-sub/common/vendor"],{
 
-/***/ 106:
+/***/ 107:
 /*!*********************************************!*\
   !*** ./src/pages-sub/ai-ceyan/api/index.js ***!
   \*********************************************/
@@ -23,7 +23,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 404:
+/***/ 108:
 /*!*************************************************!*\
   !*** ./src/pages-sub/ai-ceyan/upload/upload.js ***!
   \*************************************************/
@@ -37,10 +37,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.upload = upload;
-var _api = __webpack_require__(/*! ../api */ 106);
+var _api = __webpack_require__(/*! ../api */ 107);
 var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
-var _base = __webpack_require__(/*! js-base64/base64.js */ 405);
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _base = __webpack_require__(/*! js-base64/base64.js */ 109);
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function upload(filePath, savePath, callBack) {
   getUploadToken(function (res) {
     const option = {
@@ -49,7 +49,7 @@ function upload(filePath, savePath, callBack) {
       SecurityToken: res.secretToken,
       AccessKeyId: res.accessKeyId,
       bucket: res.bucket,
-      area: "oss-cn-beijing"
+      area: 'oss-cn-beijing'
     };
     aliUpload(filePath, option, callBack);
   });
@@ -62,15 +62,15 @@ function aliUpload(filePath, option = {
   bucket,
   area
 }, callBack = () => {}) {
-  const fileType = filePath.split(".").pop();
+  const fileType = filePath.split('.').pop();
   const tempFileName = createFileName(32);
-  const filename = option.savePath + "/" + tempFileName + "." + fileType;
+  const filename = option.savePath + '/' + tempFileName + '.' + fileType;
   const date = new Date();
   date.setHours(date.getHours() + 1);
   const policyText = {
     expiration: date.toISOString(),
     // 设置policy过期时间
-    conditions: [["content-length-range", 0, 1024 * 1024 * 1024]]
+    conditions: [['content-length-range', 0, 1024 * 1024 * 1024]]
   };
   // policy必须为base64的string
   const policy = _base.Base64.encode(JSON.stringify(policyText));
@@ -79,30 +79,29 @@ function aliUpload(filePath, option = {
     OSSAccessKeyId: option.AccessKeyId,
     signature,
     policy,
-    "x-oss-security-token": option.SecurityToken,
+    'x-oss-security-token': option.SecurityToken,
     key: filename,
     success_action_status: 200
   };
-  const domain = "https://" + option.bucket + "." + option.area + ".aliyuncs.com";
-  const cdnDomain = "https://udstatic.imeik.com";
+  const domain = 'https://' + option.bucket + '.' + option.area + '.aliyuncs.com';
+  const cdnDomain = 'https://udstatic.imeik.com';
   uni.uploadFile({
     url: domain,
     filePath: filePath,
-    name: "file",
+    name: 'file',
     formData: formData,
     success: res => {
-      console.log("....success....", res);
-      let ossFileName = "";
+      console.log('....success....', res);
+      let ossFileName = '';
       if (res.statusCode === 200) {
-        ossFileName = cdnDomain + "/" + filename; // 回显url用cdn域名
+        ossFileName = cdnDomain + '/' + filename; // 回显url用cdn域名
       }
-
-      console.log("uploadUrl", ossFileName);
+      console.log('uploadUrl', ossFileName);
       callBack(ossFileName, option.filename);
     },
     fail: err => {
-      console.log("....err....", err);
-      callBack("");
+      console.log('....err....', err);
+      callBack('');
     }
   });
 }
@@ -127,8 +126,8 @@ function computeSignature(accessKeySecret, canonicalString) {
 
 // 生成随机文件名
 function createFileName(length) {
-  const data = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
-  let nums = "";
+  const data = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+  let nums = '';
   for (let i = 0; i < length; i++) {
     const r = parseInt(Math.random() * (data.length - 1), 10);
     nums += data[r];
@@ -139,7 +138,7 @@ function createFileName(length) {
 
 /***/ }),
 
-/***/ 405:
+/***/ 109:
 /*!******************************************!*\
   !*** ./node_modules/js-base64/base64.js ***!
   \******************************************/
@@ -170,13 +169,11 @@ function createFileName(length) {
      *
      * @author Dan Kogai (https://github.com/dankogai)
      */
-    var version = '3.7.3';
+    var version = '3.7.7';
     /**
      * @deprecated use lowercase `version`.
      */
     var VERSION = version;
-    var _hasatob = typeof atob === 'function';
-    var _hasbtoa = typeof btoa === 'function';
     var _hasBuffer = typeof Buffer === 'function';
     var _TD = typeof TextDecoder === 'function' ? new TextDecoder() : undefined;
     var _TE = typeof TextEncoder === 'function' ? new TextEncoder() : undefined;
@@ -191,10 +188,7 @@ function createFileName(length) {
     var _fromCC = String.fromCharCode.bind(String);
     var _U8Afrom = typeof Uint8Array.from === 'function'
         ? Uint8Array.from.bind(Uint8Array)
-        : function (it, fn) {
-            if (fn === void 0) { fn = function (x) { return x; }; }
-            return new Uint8Array(Array.prototype.slice.call(it, 0).map(fn));
-        };
+        : function (it) { return new Uint8Array(Array.prototype.slice.call(it, 0)); };
     var _mkUriSafe = function (src) { return src
         .replace(/=/g, '').replace(/[+\/]/g, function (m0) { return m0 == '+' ? '-' : '_'; }); };
     var _tidyB64 = function (s) { return s.replace(/[^A-Za-z0-9\+\/]/g, ''); };
@@ -223,7 +217,7 @@ function createFileName(length) {
      * @param {String} bin binary string
      * @returns {string} Base64-encoded string
      */
-    var _btoa = _hasbtoa ? function (bin) { return btoa(bin); }
+    var _btoa = typeof btoa === 'function' ? function (bin) { return btoa(bin); }
         : _hasBuffer ? function (bin) { return Buffer.from(bin, 'binary').toString('base64'); }
             : btoaPolyfill;
     var _fromUint8Array = _hasBuffer
@@ -352,13 +346,13 @@ function createFileName(length) {
      * @param {String} asc Base64-encoded string
      * @returns {string} binary string
      */
-    var _atob = _hasatob ? function (asc) { return atob(_tidyB64(asc)); }
+    var _atob = typeof atob === 'function' ? function (asc) { return atob(_tidyB64(asc)); }
         : _hasBuffer ? function (asc) { return Buffer.from(asc, 'base64').toString('binary'); }
             : atobPolyfill;
     //
     var _toUint8Array = _hasBuffer
         ? function (a) { return _U8Afrom(Buffer.from(a, 'base64')); }
-        : function (a) { return _U8Afrom(_atob(a), function (c) { return c.charCodeAt(0); }); };
+        : function (a) { return _U8Afrom(_atob(a).split('').map(function (c) { return c.charCodeAt(0); })); };
     /**
      * converts a Base64 string to a Uint8Array.
      */
