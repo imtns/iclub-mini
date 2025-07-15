@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "活性卡活动",
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "global-captcha": "/components/global/captcha",
-    "global-privacy-popup": "/components/global/privacy-popup",
-    "x-toast": "/components/x/toast"
-  }
-}

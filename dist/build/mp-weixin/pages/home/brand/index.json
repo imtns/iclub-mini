@@ -1,9 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "x-wrapper": "/components/x/wrapper",
-    "ik-custom-header": "/components/common/custom-header",
-    "x-content": "/components/x/content",
-    "x-img": "/components/x/img"
-  }
-}

@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "评价详情",
-  "usingComponents": {
-    "x-content": "/components/x/content",
-    "global-captcha": "/components/global/captcha",
-    "global-privacy-popup": "/components/global/privacy-popup",
-    "x-toast": "/components/x/toast"
-  }
-}

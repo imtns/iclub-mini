@@ -1,1 +1,0 @@
-<view class="container _div data-v-7c4779cc" style="{{'background:'+(bg)+';'+('padding-bottom:'+(footer?'calc('+pb+'rpx + env(safe-area-inset-bottom))':0)+';')}}"><uni-transition vue-id="306e99d5-1" show="{{show}}" class="data-v-7c4779cc" bind:__l="__l" vue-slots="{{['default']}}"><slot></slot></uni-transition></view>

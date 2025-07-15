@@ -1,7 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "x-toast": "/components/x/toast",
-    "uni-popup": "/uni_modules/uni-popup/components/uni-popup/uni-popup"
-  }
-}

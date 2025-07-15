@@ -1,1 +1,0 @@
-<block wx:if="{{loading}}"><view class="loading-wrap data-v-f41628dc"><image src="https://udstatic.imeik.com/pcUploads/1653555219217/loading.gif" class="data-v-f41628dc"></image></view></block>

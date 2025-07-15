@@ -1,1 +1,0 @@
-<view class="container data-v-00590aa0"><image class="title data-v-00590aa0" src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1704704162589/icon-iplus.png"></image><waterfall vue-id="1a1d7fbe-1" list="{{list}}" data-event-opts="{{[['^click',[['handleItemClick']]]]}}" bind:click="__e" class="data-v-00590aa0" bind:__l="__l"></waterfall></view>

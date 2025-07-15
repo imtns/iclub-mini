@@ -12,7 +12,7 @@
     </uni-drawer>
     <button @click="open">打开弹窗</button>
     <uni-search-bar @confirm="search" :focus="true" v-model="searchValue" @blur="blur" @focus="focus" @input="input"
-      @cancel="cancel" @clear="clear">
+      @cancel="cancel" @clear="clear"> 
     </uni-search-bar>
     <view class="search-result">
       <text class="search-result-text">当前输入为：{{ searchValue }}</text>

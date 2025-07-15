@@ -1,9 +1,0 @@
-{
-  "usingComponents": {
-    "x-section": "/components/x/section",
-    "uni-forms": "/uni_modules/uni-forms/components/uni-forms/uni-forms",
-    "uni-forms-item": "/uni_modules/uni-forms/components/uni-forms-item/uni-forms-item",
-    "x-input": "/components/x/input"
-  },
-  "component": true
-}

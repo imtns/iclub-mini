@@ -1,9 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "x-popup": "/components/x/popup",
-    "uni-transition": "/uni_modules/uni-transition/components/uni-transition/uni-transition",
-    "x-toast": "/components/x/toast",
-    "region-picker": "/components/address/region-picker"
-  }
-}

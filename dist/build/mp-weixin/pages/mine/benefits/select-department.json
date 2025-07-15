@@ -1,9 +1,0 @@
-{
-  "navigationBarTitleText": "选择机构",
-  "usingComponents": {
-    "uni-search-bar": "/uni_modules/uni-search-bar/components/uni-search-bar/uni-search-bar",
-    "global-captcha": "/components/global/captcha",
-    "global-privacy-popup": "/components/global/privacy-popup",
-    "x-toast": "/components/x/toast"
-  }
-}
