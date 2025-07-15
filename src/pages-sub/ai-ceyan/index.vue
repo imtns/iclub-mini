@@ -82,14 +82,6 @@
         </image>
       </view>
     </uni-popup>
-    <x-btn @click="maidian">埋点记录</x-btn>
-    <button type="primary" open-type="share" @click="handleShareClick">按钮分享</button>
-    <span style="color: red">页面所有加载和点击要记录埋点操作</span>
-    <x-btn @click="goAddress">跳转选择地址页面</x-btn>
-    <div v-if="addressInfo">地址信息：{{ JSON.stringify(addressInfo) }}</div>
-
-    <x-btn @click="handleCaptcha">接口滑块示例</x-btn>
-    <x-toast ref="toast" />
   </view>
 </template>
 
