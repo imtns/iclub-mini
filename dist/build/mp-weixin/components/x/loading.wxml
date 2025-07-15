@@ -1,1 +1,0 @@
-<view class="{{['x-loading','_div','data-v-f5d2e212',theme]}}" style="{{'background:'+(background)+';'+('top:'+(top)+';')}}"><view class="la-ball-spin _div data-v-f5d2e212"><x-spin vue-id="1c13becc-1" text="{{text}}" text-color="{{theme==='dark'?'white':'#7d7d7d'}}" class="data-v-f5d2e212" bind:__l="__l"></x-spin></view></view>

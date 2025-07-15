@@ -1,9 +1,0 @@
-{
-  "backgroundTextStyle": "dark",
-  "navigationBarTitleText": "爱+活力值规则",
-  "usingComponents": {
-    "global-captcha": "/components/global/captcha",
-    "global-privacy-popup": "/components/global/privacy-popup",
-    "x-toast": "/components/x/toast"
-  }
-}

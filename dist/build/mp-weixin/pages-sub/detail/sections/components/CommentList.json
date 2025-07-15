@@ -1,7 +1,0 @@
-{
-  "usingComponents": {
-    "x-img": "/components/x/img",
-    "x-loadmore": "/components/x/loadmore"
-  },
-  "component": true
-}

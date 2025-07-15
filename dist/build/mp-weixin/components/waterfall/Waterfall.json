@@ -1,7 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "x-spin": "/components/x/spin",
-    "waterfall-flow-item": "/components/waterfall/WaterfallFlowItem"
-  }
-}

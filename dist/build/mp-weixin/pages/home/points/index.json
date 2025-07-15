@@ -1,8 +1,0 @@
-{
-  "component": true,
-  "usingComponents": {
-    "ik-custom-header": "/components/common/custom-header",
-    "x-loadmore": "/components/x/loadmore",
-    "widget-list": "/pages/home/points/widgets/WidgetList"
-  }
-}
