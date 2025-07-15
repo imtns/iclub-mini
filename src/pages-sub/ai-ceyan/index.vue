@@ -87,6 +87,7 @@
 
 <script>
 import { testAPI, testAPI1 } from './api'
+import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 export default {
   data () {
@@ -99,7 +100,14 @@ export default {
       titleText: '请上传您的颈部照片',
     }
   },
+  computed: {
+    ...mapState(["isLogin", "userInfo"]),
+  },
   onShow () {
+    if (!this.isLogin) {
+      this.goLogin();
+      return;
+    }
     this.intelligentAnimation = false
   },
   methods: {
