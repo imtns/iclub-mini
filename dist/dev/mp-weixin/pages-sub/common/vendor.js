@@ -17,14 +17,16 @@ const {
 module.exports = {
   testAPI: params => request('https://picsum.photos/id/0/info', 'get', params),
   //科技馆 - 用户进入科技馆板块，弹框助力提醒
-  assistRemind: data => request('https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind', 'post', data),
+  assistRemind: data => request('https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind', 'post', data, false),
+  //科技馆 - 提交AI诊断
+  diagnose: data => request('https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/diagnose', 'post', data, false),
   apiDianzan: data => request('/iclub/api/content/upvote', 'post', data, true),
   findAliToken: () => request('/iclub/openApi/fileUpload/findAliToken', 'post', {}, true, false, false, false)
 };
 
 /***/ }),
 
-/***/ 110:
+/***/ 108:
 /*!*********************************************!*\
   !*** ./src/pages-sub/ai-ceyan/tool/tool.js ***!
   \*********************************************/
@@ -44,7 +46,7 @@ var _default = exports.default = {
 
 /***/ }),
 
-/***/ 413:
+/***/ 109:
 /*!*************************************************!*\
   !*** ./src/pages-sub/ai-ceyan/upload/upload.js ***!
   \*************************************************/
@@ -60,7 +62,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.upload = upload;
 var _api = __webpack_require__(/*! ../api */ 107);
 var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
-var _base = __webpack_require__(/*! js-base64/base64.js */ 414);
+var _base = __webpack_require__(/*! js-base64/base64.js */ 110);
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function upload(filePath, savePath, callBack) {
   getUploadToken(function (res) {
@@ -159,7 +161,7 @@ function createFileName(length) {
 
 /***/ }),
 
-/***/ 414:
+/***/ 110:
 /*!******************************************!*\
   !*** ./node_modules/js-base64/base64.js ***!
   \******************************************/

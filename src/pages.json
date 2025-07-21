@@ -30,6 +30,13 @@
           }
         },
         {
+          "path": "ai-ceyan/home",
+          "style": {
+            "navigationBarTitleText": "首页",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "ai-ceyan/uploaded",
           "style": {
             "navigationBarTitleText": "上传成功海报",

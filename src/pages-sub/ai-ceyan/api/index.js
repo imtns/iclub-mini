@@ -12,7 +12,16 @@ module.exports = {
     request(
       'https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind',
       'post',
-      data
+      data,
+      false
+    ),
+  //科技馆 - 提交AI诊断
+  diagnose: (data) =>
+    request(
+      'https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/diagnose',
+      'post',
+      data,
+      false
     ),
   apiDianzan: (data) =>
     request('/iclub/api/content/upvote', 'post', data, true),

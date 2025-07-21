@@ -68,16 +68,51 @@
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
     </view>
+    <view class="btnText" v-if="intelligentAnimation">
+      <image class="" :src="`${ASSETSURL}btnText.png`" style="width: 407rpx; height: 24rpx;"
+        mode="aspectFit|aspectFill|widthFix"></image>
+    </view>
     <!-- 弹窗部分 -->
-    <uni-popup ref="popup" border-radius="10px 10px 0 0">
-      <view class="diagnostics">
+    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0">
+      <!-- 助力成功弹窗 -->
+      <view class="diagnostics" v-if="shareData">
+        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+        <view class="diagnosticstext" style="margin-top: 0;">
+          {{ shareData.assistUserName || '' }}已完成颈纹分析
+        </view>
+        <view class="diagnosticstexts">
+          恭喜您获得{{ shareData.count || 0 }}个嗨嗨宝盒
+        </view>
+        <image @click="getReupload" :src="`${ASSETSURL}lq.png`" style="margin-top: 58rpx; width: 230rpx; height: 97rpx;"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+      <!-- AI成功弹窗 -->
+      <view class="diagnostics" v-if="shareDataAi">
+        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+        <view class="diagnosticstext" style="margin-top: 0;">
+          颈纹诊断已完成
+        </view>
+        <view class="diagnosticstexts">
+          恭喜您获得{{ shareDataAi.diagnoseBoxCount || 0 }}个嗨嗨宝盒
+        </view>
+        <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
+          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+      <!-- AI失败弹窗 -->
+      <view class="diagnostics" v-else>
         <image :src="`${ASSETSURL}diagnostics.png`" style="width: 228rpx; height: 367rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
         <view class="diagnosticstext">
-          诊断失败 请上传清晰的颈部照片
+          颈纹分析失败 请上传清晰的颈部照片
         </view>
-        <image @click="getReupload" :src="`${ASSETSURL}reupload.png`" style="width: 230rpx; height: 97rpx;"
-          mode="aspectFit|aspectFill|widthFix">
+        <image @click="getReupload" :src="`${ASSETSURL}reupload.png`"
+          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
         </image>
       </view>
     </uni-popup>
@@ -90,7 +125,7 @@
 
 <script>
 import xBtn from "@/components/x/btn.vue"
-import { testAPI, assistRemind } from './api'
+import { testAPI, assistRemind, diagnose } from './api'
 import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 import { upload } from "./upload/upload";
@@ -115,15 +150,9 @@ export default {
         path: "/pages-sub/ai-ceyan/index",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
+      shareData: null,
+      shareDataAi: null,
     };
-  },
-  onShow () {
-    // 从地址页面选择完地址返回页面后会读取到地址信息
-    const addressInfo = this.lsGet("address");
-    if (addressInfo) {
-      this.addressInfo = addressInfo;
-      this.lsDel("address");
-    }
   },
   computed: {
     ...mapState(["isLogin", "userInfo"]),
@@ -132,7 +161,6 @@ export default {
     xBtn
   },
   onShow () {
-    console.log(this.userInfo, 'userInfouserInfouserInfo');
 
     if (!this.isLogin) {
       this.goLogin();
@@ -170,17 +198,22 @@ export default {
         });
       });
     },
+    //图片上传
     async handleUpload () {
-      const imageUrl = await this.getUploadImage();
-      console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
-      this.uploadImage = imageUrl;
-      this.intelligentAnimation = false
-      setTimeout(() => {
-        uni.navigateTo({
-          url: '/pages-sub/ai-ceyan/uploaded'
-        })
-        //   this.$refs.popup.open('center')
-      }, 3000);
+      try {
+        const imageUrl = await this.getUploadImage();
+        console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
+        this.uploadImage = imageUrl;
+        this.intelligentAnimation = false
+        const { code, data, message } = await diagnose({ jwImgUrl: imageUrl, inviterCode: '' })
+        if (code == 200) {
+          this.shareDataAi = data
+        }
+        this.$refs.popup.open('center')
+        console.log(data, 'datadata');
+      } catch (error) {
+        console.log(error, 'error');
+      }
     },
     leftClick () {
       uni.navigateBack()
@@ -188,9 +221,12 @@ export default {
     //科技馆 - 用户进入科技馆板块，弹框助力提醒
     async getAssis () {
       try {
-        const res = await assistRemind()
-        this.responseData = JSON.stringify(res)
-        console.log(res, '用户进入科技馆板块，弹框助力提醒')
+        const { code, data, message } = await assistRemind()
+        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
+        if (code == 200 && data) {
+          this.shareData = data
+          this.$refs.popup.open('center')
+        }
       } catch (err) {
         console.log(err)
       }
@@ -211,9 +247,11 @@ export default {
     },
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload () {
+      let thst = this
       // 检查摄像头权限
       uni.getSetting({
         success: (res) => {
+          thst.titleText = '嗨嗨颈纹知识话术'
           const cameraAuth = res.authSetting['scope.camera'];
           if (cameraAuth) {
             // 已授权，拍照
@@ -279,10 +317,15 @@ export default {
     //   });
     // },
     //重新上传
-    getReupload () {
+    getReupload (e) {
       this.$refs.popup.close()
       this.titleText = '请上传您的颈部照片'
       this.intelligentAnimation = false
+      if (e == 1) {
+        uni.navigateTo({
+          url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+        })
+      }
     }
   }
 }
@@ -362,7 +405,16 @@ export default {
     -webkit-text-stroke: 2rpx #000000;
     text-stroke: 2rpx #000000;
     margin-top: 43rpx;
-    margin-bottom: 58rpx;
+  }
+
+  .diagnosticstexts {
+    font-family: OPPOSans;
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #FFFFFF;
+    // text-stroke: 2rpx #000000;
+    // -webkit-text-stroke: 2rpx #000000;
+    margin-top: 12rpx;
   }
 }
 
@@ -386,33 +438,12 @@ export default {
   }
 }
 
-// @keyframes scanMove {
-//   0% {
-//     height: 0;
-//     opacity: 0.8;
-//   }
-
-//   10% {
-//     opacity: 1;
-//   }
-
-//   45% {
-//     height: 687rpx;
-//     opacity: 1;
-//   }
-
-//   55% {
-//     height: 687rpx;
-//     opacity: 1;
-//   }
-
-//   90% {
-//     height: 0;
-//     opacity: 1;
-//   }
-
-//   100% {
-//     height: 0;
-//     opacity: 0.8;
-//   }
-// }</style>
+.btnText {
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: 92rpx;
+}
+</style>

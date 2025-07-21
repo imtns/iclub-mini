@@ -14,58 +14,69 @@
     <view class="unpBg" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
       <!-- 照片 -->
       <view class="unpBg_01" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_01.png)` }">
-
+        <image class="scan-anim" :src="shareDataAi.jwImgUrl" style="width: 100%; height: 100%"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
       </view>
       <view class="unpBg_02">
         <image class="scan-anim" :src="ASSETSURL + 'unpBg_02.png'" style="width: 134rpx; height: 189rpx"
           mode="aspectFit|aspectFill|widthFix">
         </image>
       </view>
-      <!-- 等级 -->
-      <view class="grade">
-        A
-      </view>
-      <view class="textNumber">
-        <view> 颈纹数量：3</view>
-        <view> 颈纹深度：3mm</view>
-        <view> 颈纹长度：5cm</view>
-      </view>
-      <!-- 诊断结果 -->
-      <view class="results">
-        <view class="results_01">>>诊断结果</view>
-        <view class="results_02">颈部皮肤初老表现，属动态性细纹阶段，建议以预防性治疗为主</view>
-      </view>
-      <view class="resultser">
-        <view class="results_01">A级颈纹治疗方案</view>
-        <view class="results_02">
-          1.日常护理方案 <br>
-          口外用修复<br>
-          ·含神经酰胺/瑷尿酸的颈霜(早晚按摩使用】<br>
-          ·每周2次A醇类产品【夜同薄涂，建立耐受)<br>
-          口 肪睛强化<br>
-          ·硬防晒:偶戴丝中/高领衣物<br>
-          ·化学防晒:SPF304颈部专用防晒霜2.轻医美干预<br>
-          口基础疗程<br>
-          ·无针水光(含速明质酸+氯基酸);每月1次，连续3次<br>
-          ·低浓度酶体1.5ml浅层军铺注射):同隔2个月1次<br>
+      <view class="unpBg_03" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_06.png)` }">
+        <!-- 等级 -->
+        <view class="top_01">1</view>
+        <!-- 内容 -->
+        <view class="top_02">
+          <view class="top_02_text">{{ shareDataAi.jwCount }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwDepth }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwLength }}</view>
         </view>
       </view>
-      <view class="btnBg">
-        <view>
-          <image class="scan-anim" :src="ASSETSURL + 'unpBg_03.png'" style="width: 273rpx; height: 122rpx"
-            mode="aspectFit|aspectFill|widthFix">
-          </image>
-        </view>
-        <view class="unpBg_04">
-          <image class="scan-anim" :src="ASSETSURL + 'unpBg_04.png'" style="width: 107rpx; height: 55rpx"
-            mode="aspectFit|aspectFill|widthFix">
-          </image>
-        </view>
-        <!-- 太阳码 -->
-        <view class="unpBg_05" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_05.png)` }">
+      <view class="unpBg_04">
+        {{ shareDataAi.result }}
+      </view>
+      <!-- 二维码啥的 -->
+      <view class="btnQocd" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_08.png)` }">
 
-        </view>
       </view>
+      <!-- 扫码得社群专属福利 -->
+      <view class="unpBg_05">
+        <image class="scan-anim" :src="ASSETSURL + 'unpBg_07.png'" style="width: 179rpx; height: 18rpx"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+      <!-- 拯救颈纹选嗨体 -->
+      <view class="unpBg_06">
+        <image class="scan-anim" :src="ASSETSURL + 'unpBg_09.png'" style="width: 272rpx; height: 129rpx"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+    </view>
+    <!-- --长按保存结果-- -->
+    <view class="unpBg_07">
+      <image class="scan-anim" :src="ASSETSURL + 'unpBg_10.png'" style="width: 202rpx; height: 27rpx"
+        mode="aspectFit|aspectFill|widthFix">
+      </image>
+    </view>
+    <!-- --邀请好友-- -->
+    <view class="unpBg_08">
+      <button type="primary" open-type="share" hover-class="none" @click="handleShareClick">
+        <image class="scan-anim" :src="ASSETSURL + 'unpBg_11.png'" style="width: 332rpx; height: 96rpx"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </button>
+      <view class="unpBg_08_01">
+        <image class="scan-anim" :src="ASSETSURL + 'unpBg_12.png'" style="width: 418rpx; height: 51rpx"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+    </view>
+    <!-- --*AI生成结果仅供参考，不构成任何医疗建议-- -->
+    <view class="unpBg_09">
+      <image class="scan-anim" :src="ASSETSURL + 'unpBg_13.png'" style="width: 407rpx; height: 24rpx"
+        mode="aspectFit|aspectFill|widthFix">
+      </image>
     </view>
   </view>
 </template>
@@ -73,16 +84,22 @@
 <script>
 import { testAPI, testAPI1 } from './api'
 import Tool from './tool/tool.js'
-
 export default {
   data () {
     return {
-      image: null,
-      intelligentAnimation: false,//是否显示 智能诊断和扫描动画
-      responseData: null,
-      searchValue: '',
+      shareDataAi: '',
       ASSETSURL: Tool.ASSETSURL,
-      titleText: '请上传您的颈部照片',
+      shareInfo: {
+        title: "嗨嗨",
+        path: "/pages-sub/ai-ceyan/index",
+        imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
+      },
+    }
+  },
+  onLoad (options) {
+    if (options.data) {
+      console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
+      this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
     }
   },
   onShow () {
@@ -90,6 +107,16 @@ export default {
   methods: {
     leftClick () {
       uni.navigateBack()
+    },
+    handleShareClick () {
+      // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
+      this.shareInfo = {
+        ...this.shareInfo,
+        buttonTitle: "这是按钮点击的分享标题123123",
+        path: "/pages-sub/ai-ceyan/index",
+        // 按钮点击时候的分享图片
+        buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
+      };
     },
   }
 }
@@ -206,96 +233,124 @@ export default {
 
   .unpBg_01 {
     background-size: 100% 100%;
-    width: 246rpx;
-    height: 283rpx;
+    width: 294rpx;
+    height: 365rpx;
     position: absolute;
-    top: 285rpx;
+    top: 380rpx;
     left: 34rpx;
   }
 
   .unpBg_02 {
     position: absolute;
-    top: 397rpx;
-    left: 211rpx;
+    top: 586rpx;
+    left: 235rpx;
+    z-index: 1;
   }
 
-  .grade {
-    // width: 63rpx;
-    // height: 69rpx;
-    font-family: OPPOSans;
-    font-weight: 800;
-    font-size: 83rpx;
-    color: #FFFFFF;
-    text-stroke: 2rpx #000000;
-    -webkit-text-stroke: 2rpx #000000;
+  .unpBg_03 {
+    width: 333rpx;
+    height: 328rpx;
+    background-size: 100% 100%;
     position: absolute;
-    top: 290rpx;
-    right: 135rpx;
+    top: 410rpx;
+    left: 350rpx;
+
+    .top_01 {
+      position: absolute;
+      top: 14rpx;
+      left: 207rpx;
+      font-family: OPPOSans;
+      font-weight: 800;
+      font-size: 87rpx;
+      color: #FFFFFF;
+      text-stroke: 2rpx #000000;
+      -webkit-text-stroke: 2rpx #000000;
+    }
+
+    .top_02 {
+      position: absolute;
+      top: 170rpx;
+      left: 156rpx;
+
+      .top_02_text {
+        font-family: OPPOSans;
+        font-weight: 500;
+        font-size: 27rpx;
+        color: #000000;
+        line-height: 42rpx;
+      }
+    }
   }
 
-  .textNumber {
+  .unpBg_04 {
+    max-height: 160rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    position: absolute;
+    top: 920rpx;
+    left: 0;
+    margin: 0 64rpx 0 43rpx;
     font-family: OPPOSans;
     font-weight: 500;
-    font-size: 29rpx;
+    font-size: 25rpx;
     color: #000000;
-    line-height: 38rpx;
+    line-height: 35rpx;
+    opacity: 0.73;
+  }
+
+  .btnQocd {
+    width: 376rpx;
+    height: 194rpx;
+    background-size: 100% 100%;
     position: absolute;
-    top: 441rpx;
-    right: 157rpx;
+    bottom: 34rpx;
+    right: 41rpx;
   }
 
-  .results {
-    margin-top: 620rpx;
-
-
-    .results_01 {
-      font-family: OPPOSans;
-      font-weight: 800;
-      font-size: 28rpx;
-      color: #000000;
-    }
-
-    .results_02 {
-      font-size: 28rpx;
-      color: #000000;
-    }
+  .unpBg_05 {
+    position: absolute;
+    left: 98rpx;
+    bottom: 167rpx;
   }
 
-  .resultser {
-    .results_01 {
-      font-family: OPPOSans;
-      font-weight: 800;
-      font-size: 28rpx;
-      color: #000000;
-      margin-top: 10rpx;
-    }
-
-    .results_02 {
-      margin-top: 10rpx;
-      font-family: OPPOSans;
-      font-weight: 500;
-      font-size: 27rpx;
-      color: #000000;
-      line-height: 36rpx;
-    }
+  .unpBg_06 {
+    position: absolute;
+    left: 10rpx;
+    bottom: 0rpx;
   }
+}
 
-  .btnBg {
-    display: flex;
-    margin-top: 17rpx;
+.unpBg_07 {
+  display: flex;
+  justify-content: center;
+  margin-top: -150rpx;
+}
 
-    .unpBg_04 {
-      margin-left: 122rpx;
-      margin-top: auto;
-      margin-bottom: 20rpx;
-    }
+.unpBg_08 {
+  margin-top: 50rpx;
+  position: relative;
+  display: flex;
+  justify-content: center;
 
-    .unpBg_05 {
-      width: 105rpx;
-      height: 106rpx;
-      background-size: 100% 100%;
-      margin-left: 16rpx;
-    }
+  .unpBg_08_01 {
+    position: absolute;
+    left: 50rpx;
+    top: -35rpx;
   }
+}
+
+.unpBg_09 {
+  display: flex;
+  justify-content: center;
+  margin-top: 18rpx;
+}
+
+button {
+  background: none;
+  line-height: 0;
 }
 </style>
