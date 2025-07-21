@@ -13,9 +13,7 @@
     <span style="color: red">页面toast不要用wx.showLoading，要用这个，页面添加x-toast 标签</span>
     <x-btn @click="open">打开弹窗</x-btn>
     <uni-popup ref="popup" border-radius="10px 10px 0 0">
-      <div
-        style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">
-        这是弹窗</div>
+      <div style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">这是弹窗</div>
     </uni-popup>
     <x-btn @click="maidian">埋点记录</x-btn>
     <button type="primary" open-type="share" @click="handleShareClick">按钮分享</button>
@@ -25,9 +23,15 @@
 
     <x-btn @click="handleCaptcha">接口滑块示例</x-btn>
     <x-btn @click="handleUpload">上传图片</x-btn>
-    <image :src="uploadImage" style="width: 200rpx; height: 200rpx" mode="aspectFill" />
-    <text style="color: red">图片地址<br />{{ uploadImage }}</text>
+    <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn>
+    <image v-if="uploadImage" :src="uploadImage" style="width: 200rpx; height: 200rpx" mode="aspectFill" />
+    <text style="color: red" v-if="uploadImage">图片地址<br />{{ uploadImage }}</text>
     <x-toast ref="toast" />
+    <l-painter ref="painter" type="2d" is-canvas-to-temp-file-path custom-style="position: fixed; left: 200%" @success="onSuccess" @fail="onFail">
+    </l-painter>
+    <uni-popup ref="posterPop" type="center">
+      <image :src="posterImage" style="width: 500rpx" mode="widthFix" />
+    </uni-popup>
   </view>
 </template>
 
@@ -36,11 +40,13 @@ import { apiDianzan } from "./api";
 import { mapState } from "vuex";
 import { upload } from "./upload/upload";
 export default {
-  data () {
+  data() {
     return {
       responseData: null,
       addressInfo: "",
       uploadImage: "",
+      posterImage: "",
+      isLoading: false,
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
@@ -53,7 +59,7 @@ export default {
       },
     };
   },
-  onShow () {
+  onShow() {
     // 从地址页面选择完地址返回页面后会读取到地址信息
     const addressInfo = this.lsGet("address");
     if (addressInfo) {
@@ -65,11 +71,120 @@ export default {
     ...mapState(["isLogin", "userInfo"]),
   },
   methods: {
-    showToast (msg) {
+    handlePoster() {
+      const poster = this.getPoster();
+      this.isLoading = true;
+      console.log("poster", poster);
+      this.$nextTick(() => {
+        try {
+          this.$refs.painter.render(poster);
+        } catch (err) {
+          this.onFail(err);
+        }
+      });
+    },
+    onFail(err) {
+      console.error("err", err);
+      this.isLoading = false;
+
+      wx.showToast({
+        title: "生成失败,请重试",
+        icon: "none",
+      });
+    },
+    getPoster() {
+      return {
+        css: {
+          width: "692rpx",
+          backgroundImage: "url(https://udstatic.imeik.com/compressed/1741689495997_%E7%BC%96%E7%BB%84%2010%402x.png)",
+          backgroundSize: "contain",
+          height: "1250rpx",
+          position: "relative",
+        },
+
+        views: [
+          {
+            type: "view",
+            css: {
+              position: "relative",
+              zIndex: 2,
+              width: "622rpx",
+            },
+            views: [
+              {
+                type: "image",
+                src: "https://imeikud.oss-cn-beijing.aliyuncs.com/imeik_iclub/style/a14ace0d49c5a9792dab0149c7708c72.jpg",
+                css: {
+                  width: "540rpx",
+                  height: "960rpx",
+                  top: "72rpx",
+                  left: "76rpx",
+                  borderRadius: "20rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "image",
+                src: "https://udstatic.imeik.com/compressed/1744100493708_%E4%BD%8D%E5%9B%BE%E5%A4%87%E4%BB%BD%402x.png",
+                css: {
+                  width: "540rpx",
+                  height: "960rpx",
+                  top: "72rpx",
+                  left: "76rpx",
+                  borderRadius: "20rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "image",
+                src: "https://udstatic.imeik.com/compressed/1744180590099_qr-test.png",
+                css: {
+                  width: "168rpx",
+                  height: "168rpx",
+                  top: "1060rpx",
+                  left: "72rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "text",
+                text: "来爱+体验风格爆改",
+                css: {
+                  top: "1112rpx",
+                  right: "8rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "text",
+                text: "长按保存海报",
+                css: {
+                  top: "1144rpx",
+                  right: "8rpx",
+                  position: "absolute",
+                },
+              },
+            ],
+          },
+        ],
+      };
+    },
+    onSuccess(path) {
+      console.log("🚀 ~ onSuccess ~ path:", path);
+      this.posterImage = path;
+      this.isLoading = false;
+      this.$refs.posterPop.open();
+      wx.showToast({
+        title: "海报生成成功",
+        icon: "success",
+      });
+      wx.hideLoading();
+    },
+    showToast(msg) {
       this.$refs.toast.show({ message: msg });
     },
 
-    handleShareClick () {
+    handleShareClick() {
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
         ...this.shareInfo,
@@ -122,33 +237,33 @@ export default {
         this.showToast("点赞成功");
       });
     },
-    goAddress () {
+    goAddress() {
       uni.navigateTo({
         url: "/pages/mine/address/list",
       });
     },
-    maidian () {
+    maidian() {
       // 比如签到,点击就记录名称
       // 其他点击同样操作记录
       this.report("嗨嗨:签到点击");
     },
-    toast () {
+    toast() {
       this.showToast("提示信息");
     },
-    async TestAPI () {
+    async TestAPI() {
       if (!this.isLogin) {
         this.goLogin();
       }
     },
-    open () {
+    open() {
       // 参考https://uniapp.dcloud.net.cn/component/uniui/uni-popup.html
       // 通过组件定义的ref调用uni-popup方法 ,如果传入参数 ，type 属性将失效 ，仅支持 ['top','left','bottom','right','center']
       this.$refs.popup.open("center");
     },
-    showDrawer () {
+    showDrawer() {
       this.$refs.showRight.open();
     },
-    closeDrawer () {
+    closeDrawer() {
       this.$refs.showRight.close();
     },
   },

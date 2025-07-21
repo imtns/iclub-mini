@@ -23,7 +23,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 404:
+/***/ 107:
 /*!*************************************************!*\
   !*** ./src/pages-sub/ai-ceyan/upload/upload.js ***!
   \*************************************************/
@@ -39,7 +39,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.upload = upload;
 var _api = __webpack_require__(/*! ../api */ 106);
 var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
-var _base = __webpack_require__(/*! js-base64/base64.js */ 405);
+var _base = __webpack_require__(/*! js-base64/base64.js */ 108);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 function upload(filePath, savePath, callBack) {
   getUploadToken(function (res) {
@@ -139,7 +139,7 @@ function createFileName(length) {
 
 /***/ }),
 
-/***/ 405:
+/***/ 108:
 /*!******************************************!*\
   !*** ./node_modules/js-base64/base64.js ***!
   \******************************************/
