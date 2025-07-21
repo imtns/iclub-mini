@@ -140,6 +140,8 @@ export default {
       titleText: '请上传您的颈部照片',
       addressInfo: "",
       uploadImage: "",
+      posterImage: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
+      isLoading: false,
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失

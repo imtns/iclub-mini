@@ -78,6 +78,9 @@
         mode="aspectFit|aspectFill|widthFix">
       </image>
     </view>
+    <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn>
+    <l-painter ref="painter" type="2d" is-canvas-to-temp-file-path custom-style="position: fixed; left: 200%"
+      @success="onSuccess" @fail="onFail"> </l-painter>
   </view>
 </template>
 
@@ -105,6 +108,115 @@ export default {
   onShow () {
   },
   methods: {
+    handlePoster () {
+      const poster = this.getPoster();
+      this.isLoading = true;
+      console.log("poster", poster);
+      this.$nextTick(() => {
+        try {
+          this.$refs.painter.render(poster);
+        } catch (err) {
+          this.onFail(err);
+        }
+      });
+    },
+    onFail (err) {
+      console.error("err", err);
+      this.isLoading = false;
+
+      wx.showToast({
+        title: "生成失败,请重试",
+        icon: "none",
+      });
+    },
+    getPoster () {
+      return {
+        css: {
+          width: "692rpx",
+          backgroundImage: "url(https://udstatic.imeik.com/compressed/1741689495997_%E7%BC%96%E7%BB%84%2010%402x.png)",
+          backgroundSize: "contain",
+          height: "1250rpx",
+          position: "relative",
+        },
+
+        views: [
+          {
+            type: "view",
+            css: {
+              position: "relative",
+              zIndex: 2,
+              width: "622rpx",
+            },
+            views: [
+              {
+                type: "image",
+                src: "https://imeikud.oss-cn-beijing.aliyuncs.com/imeik_iclub/style/a14ace0d49c5a9792dab0149c7708c72.jpg",
+                css: {
+                  width: "540rpx",
+                  height: "960rpx",
+                  top: "72rpx",
+                  left: "76rpx",
+                  borderRadius: "20rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "image",
+                src: "https://udstatic.imeik.com/compressed/1744100493708_%E4%BD%8D%E5%9B%BE%E5%A4%87%E4%BB%BD%402x.png",
+                css: {
+                  width: "540rpx",
+                  height: "960rpx",
+                  top: "72rpx",
+                  left: "76rpx",
+                  borderRadius: "20rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "image",
+                src: "https://udstatic.imeik.com/compressed/1744180590099_qr-test.png",
+                css: {
+                  width: "168rpx",
+                  height: "168rpx",
+                  top: "1060rpx",
+                  left: "72rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "text",
+                text: "来爱+体验风格爆改",
+                css: {
+                  top: "1112rpx",
+                  right: "8rpx",
+                  position: "absolute",
+                },
+              },
+              {
+                type: "text",
+                text: "长按保存海报",
+                css: {
+                  top: "1144rpx",
+                  right: "8rpx",
+                  position: "absolute",
+                },
+              },
+            ],
+          },
+        ],
+      };
+    },
+    onSuccess (path) {
+      console.log("🚀 ~ onSuccess ~ path:", path);
+      this.posterImage = path;
+      this.isLoading = false;
+      this.$refs.posterPop.open();
+      wx.showToast({
+        title: "海报生成成功",
+        icon: "success",
+      });
+      wx.hideLoading();
+    },
     leftClick () {
       uni.navigateBack()
     },
