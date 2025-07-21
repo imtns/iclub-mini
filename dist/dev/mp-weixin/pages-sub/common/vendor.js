@@ -15,15 +15,36 @@ const {
   request
 } = __webpack_require__(/*! @/http/request */ 16);
 module.exports = {
-  testAPI: params => request("https://picsum.photos/id/0/info", "get", params),
-  testAPI1: data => request("https://xxxx.com", "post", data),
-  apiDianzan: data => request("/iclub/api/content/upvote", "post", data, true),
-  findAliToken: () => request("/iclub/openApi/fileUpload/findAliToken", "post", {}, true, false, false, false)
+  testAPI: params => request('https://picsum.photos/id/0/info', 'get', params),
+  //科技馆 - 用户进入科技馆板块，弹框助力提醒
+  assistRemind: data => request('https://iclub-backend-test.imeik.com/iclub/api/activity/csly/science/assistRemind', 'post', data),
+  apiDianzan: data => request('/iclub/api/content/upvote', 'post', data, true),
+  findAliToken: () => request('/iclub/openApi/fileUpload/findAliToken', 'post', {}, true, false, false, false)
 };
 
 /***/ }),
 
-/***/ 108:
+/***/ 110:
+/*!*********************************************!*\
+  !*** ./src/pages-sub/ai-ceyan/tool/tool.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = exports.default = {
+  ASSETSURL: 'https://cdn1.vrupup.com/s/1549/img/'
+};
+
+/***/ }),
+
+/***/ 413:
 /*!*************************************************!*\
   !*** ./src/pages-sub/ai-ceyan/upload/upload.js ***!
   \*************************************************/
@@ -39,7 +60,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.upload = upload;
 var _api = __webpack_require__(/*! ../api */ 107);
 var _cryptoJs = _interopRequireDefault(__webpack_require__(/*! crypto-js */ 30));
-var _base = __webpack_require__(/*! js-base64/base64.js */ 109);
+var _base = __webpack_require__(/*! js-base64/base64.js */ 414);
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 function upload(filePath, savePath, callBack) {
   getUploadToken(function (res) {
@@ -138,7 +159,7 @@ function createFileName(length) {
 
 /***/ }),
 
-/***/ 109:
+/***/ 414:
 /*!******************************************!*\
   !*** ./node_modules/js-base64/base64.js ***!
   \******************************************/
