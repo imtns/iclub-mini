@@ -11,7 +11,7 @@
       <image class="" :src="`${ASSETSURL}music.png`" style="width: 51rpx; height: 51rpx;"
         mode="aspectFit|aspectFill|widthFix"></image>
     </view>
-    <view class="unpBg" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
+    <view class="unpBg" @longpress="handlePoster" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
       <!-- 照片 -->
       <view class="unpBg_01" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_01.png)` }">
         <image class="scan-anim" :src="shareDataAi.jwImgUrl" style="width: 100%; height: 100%"
@@ -78,20 +78,32 @@
         mode="aspectFit|aspectFill|widthFix">
       </image>
     </view>
-    <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn>
+    <!-- <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn> -->
     <l-painter ref="painter" type="2d" is-canvas-to-temp-file-path custom-style="position: fixed; left: 200%"
       @success="onSuccess" @fail="onFail"> </l-painter>
+    <!-- <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
+      mode="aspectFit|aspectFill|widthFix">
+    </image> -->
   </view>
 </template>
 
 <script>
+import xBtn from "@/components/x/btn.vue"
 import { testAPI, testAPI1 } from './api'
+import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 export default {
+  components: {
+    xBtn
+  },
+  computed: {
+    ...mapState(["isLogin", "userInfo"]),
+  },
   data () {
     return {
       shareDataAi: '',
       ASSETSURL: Tool.ASSETSURL,
+      posterImage: "",
       shareInfo: {
         title: "嗨嗨",
         path: "/pages-sub/ai-ceyan/index",
@@ -109,8 +121,10 @@ export default {
   },
   methods: {
     handlePoster () {
+      uni.showLoading({
+        title: '保存中...'
+      });
       const poster = this.getPoster();
-      this.isLoading = true;
       console.log("poster", poster);
       this.$nextTick(() => {
         try {
@@ -122,7 +136,7 @@ export default {
     },
     onFail (err) {
       console.error("err", err);
-      this.isLoading = false;
+      uni.hideLoading();
 
       wx.showToast({
         title: "生成失败,请重试",
@@ -132,72 +146,249 @@ export default {
     getPoster () {
       return {
         css: {
-          width: "692rpx",
-          backgroundImage: "url(https://udstatic.imeik.com/compressed/1741689495997_%E7%BC%96%E7%BB%84%2010%402x.png)",
-          backgroundSize: "contain",
-          height: "1250rpx",
-          position: "relative",
+          // width: "750rpx",
+          // backgroundImage: `url(${this.ASSETSURL}unpBg.png)`,
+          // backgroundSize: "contain",
+          // height: "1480rpx",
+          // position: "relative",
         },
 
         views: [
           {
             type: "view",
             css: {
+              width: "750rpx",
+              backgroundImage: `url(${this.ASSETSURL}unpBg.png)`,
+              backgroundSize: "contain",
+              height: "1480rpx",
               position: "relative",
-              zIndex: 2,
-              width: "622rpx",
             },
             views: [
               {
                 type: "image",
-                src: "https://imeikud.oss-cn-beijing.aliyuncs.com/imeik_iclub/style/a14ace0d49c5a9792dab0149c7708c72.jpg",
+                src: `${this.ASSETSURL}poster_01.png`,
                 css: {
-                  width: "540rpx",
-                  height: "960rpx",
-                  top: "72rpx",
-                  left: "76rpx",
-                  borderRadius: "20rpx",
+                  width: "722rpx",
+                  height: "1391rpx",
+                  top: "0rpx",
+                  left: "19rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                },
+              },
+              // 用户姓名
+              {
+                type: "text",
+                text: `${this.userInfo.nickName}的`,
+                css: {
+                  width: '148rpx',
+                  fontSize: '49rpx',
+                  top: "310rpx",
+                  left: "51rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                  lineClamp: '1'
+                },
+              },
+              {
+                type: "text",
+                text: `ai颈纹分析结果`,
+                css: {
+                  width: '260rpx',
+                  fontSize: '34rpx',
+                  top: "325rpx",
+                  left: "210rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                  // lineClamp: '1'
+                },
+              },
+              {
+                type: "image",
+                src: `${this.ASSETSURL}poster_02.png`,
+                css: {
+                  width: "294rpx",
+                  height: "365rpx",
+                  top: "399rpx",
+                  left: "49rpx",
+                  borderRadius: "0",
                   position: "absolute",
                 },
               },
               {
                 type: "image",
-                src: "https://udstatic.imeik.com/compressed/1744100493708_%E4%BD%8D%E5%9B%BE%E5%A4%87%E4%BB%BD%402x.png",
+                src: `${this.ASSETSURL}poster_03.png`,
                 css: {
-                  width: "540rpx",
-                  height: "960rpx",
-                  top: "72rpx",
-                  left: "76rpx",
-                  borderRadius: "20rpx",
+                  width: "129rpx",
+                  height: "183rpx",
+                  top: "599rpx",
+                  left: "257rpx",
+                  borderRadius: "0",
                   position: "absolute",
+                  zIndex: 2,
+
+                },
+              },
+              //上传的图片
+              {
+                type: "image",
+                src: `${this.shareDataAi.jwImgUrl}`,
+                css: {
+                  width: "294rpx",
+                  height: "365rpx",
+                  top: "399rpx",
+                  left: "49rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                  zIndex: 1,
                 },
               },
               {
                 type: "image",
-                src: "https://udstatic.imeik.com/compressed/1744180590099_qr-test.png",
+                src: `${this.ASSETSURL}poster_04.png`,
                 css: {
-                  width: "168rpx",
-                  height: "168rpx",
-                  top: "1060rpx",
-                  left: "72rpx",
+                  width: "333rpx",
+                  height: "328rpx",
+                  top: "429rpx",
+                  right: "50rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                  zIndex: 1,
+                },
+              },
+              // 等级
+              {
+                type: "text",
+                text: `1`,
+                css: {
+                  width: "333rpx",
+                  height: "328rpx",
+                  top: "340rpx",
+                  left: "575rpx",
+                  fontWeight: '800',
+                  fontSize: '87rpx',
+                  borderRadius: "0",
+                  textStroke: '2rpx #000000',
+                  position: "absolute",
+                  color: '#FFF',
+                  zIndex: 2,
+                },
+              },
+              // 数量
+              {
+                type: "text",
+                text: `${this.shareDataAi.jwCount}`,
+                css: {
+                  width: "333rpx",
+                  top: "604rpx",
+                  left: "522rpx",
+                  fontSize: '27rpx',
+                  borderRadius: "0",
+                  position: "absolute",
+                  color: '#000000',
+                  zIndex: 2,
+                  lineClamp: '1'
+
+                },
+              },
+              // 深度
+              {
+                type: "text",
+                text: `${this.shareDataAi.jwDepth}`,
+                css: {
+                  width: "333rpx",
+                  top: "646rpx",
+                  left: "522rpx",
+                  fontSize: '27rpx',
+                  borderRadius: "0",
+                  position: "absolute",
+                  color: '#000000',
+                  zIndex: 2,
+                  lineClamp: '1'
+                },
+              },
+              // 长度
+              {
+                type: "text",
+                text: `${this.shareDataAi.jwLength}`,
+                css: {
+                  width: "333rpx",
+                  top: "688rpx",
+                  left: "522rpx",
+                  fontSize: '27rpx',
+                  borderRadius: "0",
+                  position: "absolute",
+                  color: '#000000',
+                  zIndex: 2,
+                  lineClamp: '1'
+                },
+              },
+              // 描述
+              {
+                type: "text",
+                text: `${this.shareDataAi.result}`,
+                css: {
+                  width: "639rpx",
+                  hight: '95rpx',
+                  bottom: "487rpx",
+                  left: "58rpx",
+                  fontSize: '25rpx',
+                  borderRadius: "0",
+                  position: "absolute",
+                  color: '#6E6D6A',
+                  zIndex: 2,
+                  lineClamp: '3'
+                },
+              },
+              // 二维码啥的
+              {
+                type: "image",
+                src: `${this.ASSETSURL}poster_05.png`,
+                css: {
+                  width: "422rpx",
+                  height: "227rpx",
+                  left: "165rpx",
+                  bottom: "227rpx",
+                  borderRadius: "0",
                   position: "absolute",
                 },
               },
+              // 保养攻略 二维码
               {
-                type: "text",
-                text: "来爱+体验风格爆改",
+                type: "image",
+                src: `${this.ASSETSURL}bg.png`,
                 css: {
-                  top: "1112rpx",
-                  right: "8rpx",
+                  width: "149rpx",
+                  height: "149rpx",
+                  left: "174rpx",
+                  bottom: "262rpx",
+                  borderRadius: "0",
                   position: "absolute",
                 },
               },
+              // AI颈纹分析 二维码
               {
-                type: "text",
-                text: "长按保存海报",
+                type: "image",
+                src: `${this.ASSETSURL}bg.png`,
                 css: {
-                  top: "1144rpx",
-                  right: "8rpx",
+                  width: "149rpx",
+                  height: "149rpx",
+                  left: "428rpx",
+                  bottom: "262rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                },
+              },
+              // 拯救颈纹
+              {
+                type: "image",
+                src: `${this.ASSETSURL}poster_06.png`,
+                css: {
+                  width: "272rpx",
+                  height: "129rpx",
+                  left: "26rpx",
+                  bottom: "79rpx",
+                  borderRadius: "0",
                   position: "absolute",
                 },
               },
@@ -206,16 +397,30 @@ export default {
         ],
       };
     },
+    // 保存海报
     onSuccess (path) {
       console.log("🚀 ~ onSuccess ~ path:", path);
       this.posterImage = path;
-      this.isLoading = false;
-      this.$refs.posterPop.open();
-      wx.showToast({
-        title: "海报生成成功",
-        icon: "success",
+      // 保存到相册
+      uni.saveImageToPhotosAlbum({
+        filePath: path,
+        success: () => {
+          uni.showToast({
+            title: "已保存到相册",
+            icon: "success",
+          });
+        },
+        fail: (err) => {
+          uni.showToast({
+            title: "保存失败，请重试",
+            icon: "none",
+          });
+          console.error("保存海报失败", err);
+        },
+        complete: () => {
+          uni.hideLoading();
+        }
       });
-      wx.hideLoading();
     },
     leftClick () {
       uni.navigateBack()
@@ -409,9 +614,8 @@ export default {
     font-family: OPPOSans;
     font-weight: 500;
     font-size: 25rpx;
-    color: #000000;
+    color: #6E6D6A;
     line-height: 35rpx;
-    opacity: 0.73;
   }
 
   .btnQocd {
