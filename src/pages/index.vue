@@ -21,7 +21,7 @@ export default {
   methods: {
     go () {
       wx.navigateTo({
-        url: "/pages-sub/ai-ceyan/index",
+        url: "/pages-sub/ai-ceyan/home",
       });
     },
   },

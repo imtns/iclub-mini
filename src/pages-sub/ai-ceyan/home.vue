@@ -21,7 +21,6 @@
         </button>
       </view>
     </view>
-    <!-- <xToast ref="toast" /> -->
     <uni-popup ref="popupShow" border-radius="10px 10px 0 0" @close="beforeDestroy">
       <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
         <image :src="`${ASSETSURL}home_05.png`" mode="widthFix" />
@@ -43,7 +42,6 @@
 
 <script>
 import xBtn from "@/components/x/btn.vue"
-import xToast from "@/components/x/toast.vue"
 import { testAPI, assistRemind, diagnose } from './api'
 import { mapState } from "vuex";
 import Tool from './tool/tool.js'
@@ -68,7 +66,6 @@ export default {
   },
   components: {
     xBtn,
-    xToast
   },
   onShow () {
     if (!this.isLogin) {
@@ -78,9 +75,6 @@ export default {
     this.intelligentAnimation = false
   },
   methods: {
-    showToast (msg) {
-      this.$refs.toast.show({ message: msg });
-    },
     getNav (e) {
       console.log(e, '-------=========');
       if (e) {
@@ -92,7 +86,6 @@ export default {
           url: '/pages-sub/ai-ceyan/index',
         })
       } else {
-        // this.showToast("请先勾选免责说明");
         uni.showToast({
           title: '请先勾选免责说明',
           icon: 'none'
