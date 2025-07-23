@@ -14,8 +14,7 @@
     <view class="unpBg" @longpress="handlePoster" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
       <!-- 照片 -->
       <view class="unpBg_01" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_01.png)` }">
-        <image class="scan-anim" :src="shareDataAi.jwImgUrl" style="width: 100%; height: 100%"
-          mode="aspectFit|aspectFill|widthFix">
+        <image class="scan-anim" :src="shareDataAi.jwImgUrl" style="width: 100%; height: 100%" mode="aspectFill">
         </image>
       </view>
       <view class="unpBg_02">
@@ -25,12 +24,12 @@
       </view>
       <view class="unpBg_03" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_06.png)` }">
         <!-- 等级 -->
-        <view class="top_01">1</view>
+        <view class="top_01">{{ shareDataAi.scoreLevel }}</view>
         <!-- 内容 -->
         <view class="top_02">
-          <view class="top_02_text">{{ shareDataAi.jwCount }}</view>
-          <view class="top_02_text">{{ shareDataAi.jwDepth }}</view>
-          <view class="top_02_text">{{ shareDataAi.jwLength }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwCountDesc }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwDepthDesc }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwLengthDesc }}</view>
         </view>
       </view>
       <view class="unpBg_04">
@@ -38,7 +37,11 @@
       </view>
       <!-- 二维码啥的 -->
       <view class="btnQocd" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_08.png)` }">
-
+        <view class="btnQocdRight">
+          <image class="scan-anim" :src="shareDataAi.activityImgUrl" style="width: 149rpx; height: 149rpx"
+            mode="aspectFit|aspectFill|widthFix">
+          </image>
+        </view>
       </view>
       <!-- 扫码得社群专属福利 -->
       <view class="unpBg_05">
@@ -259,7 +262,7 @@ export default {
               // 等级
               {
                 type: "text",
-                text: `1`,
+                text: this.shareDataAi.scoreLevel,
                 css: {
                   width: "333rpx",
                   height: "328rpx",
@@ -277,7 +280,7 @@ export default {
               // 数量
               {
                 type: "text",
-                text: `${this.shareDataAi.jwCount}`,
+                text: `${this.shareDataAi.jwCountDesc}`,
                 css: {
                   width: "333rpx",
                   top: "604rpx",
@@ -294,7 +297,7 @@ export default {
               // 深度
               {
                 type: "text",
-                text: `${this.shareDataAi.jwDepth}`,
+                text: `${this.shareDataAi.jwDepthDesc}`,
                 css: {
                   width: "333rpx",
                   top: "646rpx",
@@ -310,7 +313,7 @@ export default {
               // 长度
               {
                 type: "text",
-                text: `${this.shareDataAi.jwLength}`,
+                text: `${this.shareDataAi.jwLengthDesc}`,
                 css: {
                   width: "333rpx",
                   top: "688rpx",
@@ -366,10 +369,10 @@ export default {
                   position: "absolute",
                 },
               },
-              // AI颈纹分析 二维码
+              // AI颈纹分析 二维码 
               {
                 type: "image",
-                src: `${this.ASSETSURL}bg.png`,
+                src: this.shareDataAi.activityImgUrl,
                 css: {
                   width: "149rpx",
                   height: "149rpx",
@@ -625,6 +628,12 @@ export default {
     position: absolute;
     bottom: 34rpx;
     right: 41rpx;
+
+    .btnQocdRight {
+      position: absolute;
+      right: 10rpx;
+      top: 8rpx;
+    }
   }
 
   .unpBg_05 {

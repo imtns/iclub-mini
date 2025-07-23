@@ -53,8 +53,8 @@ export default {
       popupShow: false,//弹窗
       home_03: false,//是否勾选免责说明
       shareInfo: {
-        title: "嗨嗨",
-        path: "/pages-sub/ai-ceyan/index",
+        title: "点击查收你的AI颈纹分析结果",
+        path: "/pages-sub/ai-ceyan/home",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
       countdown: 15, // 倒计时秒数

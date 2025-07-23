@@ -38,7 +38,7 @@
       <!-- 前置摄像头 -->
       <view class="camera">
         <view style="width: 100%; height: 100%;" v-if="intelligentAnimation">
-          <image class="scan-anim" :src="image" style="width: 100%; height: 100%;" mode="aspectFit|aspectFill|widthFix">
+          <image class="scan-anim" :src="image" style="width: 100%; height: 100%;" mode="aspectFill">
           </image>
         </view>
         <view style="width: 100%; height: 100%;" v-else>
@@ -260,9 +260,18 @@ export default {
             const ctx = uni.createCameraContext();
             ctx.takePhoto({
               quality: 'high',
-              success: (res) => {
+              success: async (res) => {
                 console.log(res.tempImagePath, '拍照上传');
                 // {"errMsg": "operateCamera:ok", "width": 720, "tempImagePath": "wxfile://tmp_86c2f196b102a4fb1b2553ac442e40ca.jpg", "height": 828} 拍照上传
+                thst.image = res.tempImagePath
+                thst.intelligentAnimation = true
+                const { code, data, message } = await diagnose({ jwImgUrl: res.tempImagePath, inviterCode: '' })
+                if (code == 200) {
+                  this.intelligentAnimation = false
+                  this.shareDataAi = data
+                }
+                this.$refs.popup.open('center')
+                console.log(data, 'datadata');
               }
             });
           } else {
