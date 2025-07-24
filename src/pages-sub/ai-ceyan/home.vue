@@ -1,42 +1,63 @@
 <template>
-  <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}home_01.png)` }">
-    <!-- 免责说明 -->
-    <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}home_02.png)` }" @click="home_03 = !home_03">
-      <view class="home_03" v-if="home_03">
-        <image @click="getReupload" :src="`${ASSETSURL}home_03.png`" style="width: 28rpx; height: 29rpx;"
-          mode="aspectFit|aspectFill|widthFix" />
+  <view style="background-color: #FEBD01;min-height: 100vh;">
+    <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}home_01.png)` }">
+      <!-- 免责说明 -->
+      <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}home_02.png)` }" @click="home_03 = !home_03">
+        <view class="home_03" v-if="home_03">
+          <!-- <image @click="getReupload" :src="`${ASSETSURL}home_03.png`" style="width: 28rpx; height: 28rpx;"
+          mode="aspectFit|aspectFill|widthFix" /> -->
+        </view>
+        <view class="agreement" @click.stop="openPopupWithCountdown"></view>
       </view>
-      <view class="agreement" @click.stop="openPopupWithCountdown"></view>
-    </view>
-    <!-- 底部按钮 -->
-    <view class="home_btn">
-      <view class="home_04" @click="getNav()">
-        <image :src="`${ASSETSURL}home_04.png`" style="width: 297rpx; height: 96rpx;"
-          mode="aspectFit|aspectFill|widthFix" />
-      </view>
-      <view class="home_05">
-        <button type="primary" open-type="share" hover-class="none" @click="handleShareClick">
-          <image :src="`${ASSETSURL}home_05.png`" style="width: 297rpx; height: 96rpx;"
+      <!-- 底部按钮 -->
+      <view class="home_btn">
+        <view class="home_04" @click="getNav()">
+          <image :src="`${ASSETSURL}home_04.png`" style="width: 297rpx; height: 96rpx;"
             mode="aspectFit|aspectFill|widthFix" />
-        </button>
+        </view>
+        <view class="home_05">
+          <button type="primary" open-type="share" hover-class="none" @click="handleShareClick">
+            <image :src="`${ASSETSURL}home_05.png`" style="width: 297rpx; height: 96rpx;"
+              mode="aspectFit|aspectFill|widthFix" />
+          </button>
+        </view>
       </view>
+      <uni-popup ref="popupShow" border-radius="10px 10px 0 0" @close="beforeDestroy"
+        maskBackgroundColor="rgba(0,0,0,0.7)">
+        <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
+          <image :src="`${ASSETSURL}home_05.png`" mode="widthFix" />
+        </view>
+        <view class="popupShowClone" v-if="countdown > 0" :style="{ backgroundImage: `url(${ASSETSURL}home_07.png)` }">
+          {{ countdown }}s
+        </view>
+        <view class="popupShowElse" v-else>
+          <view style="margin-right: 17rpx;" @click="$refs.popupShow.close();">
+            <image :src="`${ASSETSURL}home_08.png`" mode="widthFix" style="width: 174rpx; height: 96rpx;" />
+          </view>
+          <view @click="getNav(1)">
+            <image :src="`${ASSETSURL}home_09.png`" mode="widthFix" style="width: 330rpx; height: 96rpx;" />
+          </view>
+        </view>
+      </uni-popup>
+      <!-- 弹窗部分 -->
+      <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
+        <!-- 助力成功弹窗 -->
+        <view class="diagnostics" v-if="true">
+          <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
+            mode="aspectFit|aspectFill|widthFix">
+          </image>
+          <view class="diagnosticstext" style="margin-top: 0;">
+            {{ shareData.assistUserName || '' }}已完成颈纹分析
+          </view>
+          <view class="diagnosticstexts">
+            恭喜您获得{{ shareData.count || 0 }}个嗨嗨宝盒
+          </view>
+          <image @click="$refs.popup.close()" :src="`${ASSETSURL}lq.png`"
+            style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
+          </image>
+        </view>
+      </uni-popup>
     </view>
-    <uni-popup ref="popupShow" border-radius="10px 10px 0 0" @close="beforeDestroy">
-      <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
-        <image :src="`${ASSETSURL}home_05.png`" mode="widthFix" />
-      </view>
-      <view class="popupShowClone" v-if="countdown > 0" :style="{ backgroundImage: `url(${ASSETSURL}home_07.png)` }">
-        {{ countdown }}s
-      </view>
-      <view class="popupShowElse" v-else>
-        <view style="margin-right: 17rpx;" @click="$refs.popupShow.close();">
-          <image :src="`${ASSETSURL}home_08.png`" mode="widthFix" style="width: 174rpx; height: 96rpx;" />
-        </view>
-        <view @click="getNav(1)">
-          <image :src="`${ASSETSURL}home_09.png`" mode="widthFix" style="width: 330rpx; height: 96rpx;" />
-        </view>
-      </view>
-    </uni-popup>
   </view>
 </template>
 
@@ -59,6 +80,7 @@ export default {
       },
       countdown: 15, // 倒计时秒数
       countdownTimer: null, // 计时器引用
+      shareData: null,
     };
   },
   computed: {
@@ -68,19 +90,33 @@ export default {
     xBtn,
   },
   onShow () {
-    if (!this.isLogin) {
-      this.goLogin();
-      return;
-    }
-    this.intelligentAnimation = false
+    this.getAssis()
   },
   methods: {
+    //科技馆 - 用户进入科技馆板块，弹框助力提醒
+    async getAssis () {
+      try {
+        const { code, data, message } = await assistRemind()
+        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
+        if (code == 200 && data) {
+          this.shareData = data
+          this.$refs.popup.open('center')
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    },
     getNav (e) {
+      if (!this.isLogin) {
+        this.goLogin();
+        return;
+      }
       console.log(e, '-------=========');
       if (e) {
         uni.navigateTo({
           url: '/pages-sub/ai-ceyan/index',
         })
+        this.$refs.popupShow.close();
       } else if (this.home_03) {
         uni.navigateTo({
           url: '/pages-sub/ai-ceyan/index',
@@ -126,8 +162,8 @@ export default {
 </script>
 <style lang="scss" scoped>
 .box {
-  width: 100vw;
-  height: 100vh;
+  width: 750rpx;
+  height: 1480rpx;
   background-size: 100% 100%;
   position: relative;
 
@@ -143,7 +179,12 @@ export default {
     .home_03 {
       position: absolute;
       left: 39rpx;
-      top: 24rpx;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28rpx;
+      height: 28rpx;
+      background: #FA7700;
+      border-radius: 50%;
     }
 
     .agreement {
@@ -187,14 +228,39 @@ export default {
     font-weight: 800;
     font-size: 39rpx;
     color: #FFFFFF;
-    text-stroke: 2rpx #000000;
-    -webkit-text-stroke: 2rpx #000000;
+    // text-stroke: 2rpx #000000;
+    // -webkit-text-stroke: 2rpx #000000;
   }
 
   .popupShowElse {
     display: flex;
     align-items: center;
     margin-top: 31rpx;
+  }
+}
+
+.diagnostics {
+  margin: 0 118rpx;
+  text-align: center;
+
+  .diagnosticstext {
+    font-family: OPPOSans;
+    font-weight: 800;
+    font-size: 52rpx;
+    color: #FFFFFF;
+    // -webkit-text-stroke: 2rpx #000000;
+    // text-stroke: 2rpx #000000;
+    margin-top: 43rpx;
+  }
+
+  .diagnosticstexts {
+    font-family: OPPOSans;
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #FFFFFF;
+    // text-stroke: 2rpx #000000;
+    // -webkit-text-stroke: 2rpx #000000;
+    margin-top: 12rpx;
   }
 }
 

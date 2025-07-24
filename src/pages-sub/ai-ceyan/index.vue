@@ -41,6 +41,11 @@
           <image class="scan-anim" :src="image" style="width: 100%; height: 100%;" mode="aspectFill">
           </image>
         </view>
+        <view style="width: 100%; height: 100%;" v-else-if="!intelligentAnimation && !takePictures">
+          <image class="scan-anim" :src="`${ASSETSURL}takePicturesbg_02.png`" style="width: 100%; height: 100%;"
+            mode="aspectFill">
+          </image>
+        </view>
         <view style="width: 100%; height: 100%;" v-else>
           <camera device-position="front" flash="auto" style="width: 100%; height: 100%;" @error="onCameraError">
           </camera>
@@ -73,39 +78,9 @@
         mode="aspectFit|aspectFill|widthFix"></image>
     </view>
     <!-- 弹窗部分 -->
-    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0">
-      <!-- 助力成功弹窗 -->
-      <view class="diagnostics" v-if="shareData">
-        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
-          mode="aspectFit|aspectFill|widthFix">
-        </image>
-        <view class="diagnosticstext" style="margin-top: 0;">
-          {{ shareData.assistUserName || '' }}已完成颈纹分析
-        </view>
-        <view class="diagnosticstexts">
-          恭喜您获得{{ shareData.count || 0 }}个嗨嗨宝盒
-        </view>
-        <image @click="getReupload" :src="`${ASSETSURL}lq.png`" style="margin-top: 58rpx; width: 230rpx; height: 97rpx;"
-          mode="aspectFit|aspectFill|widthFix">
-        </image>
-      </view>
-      <!-- AI成功弹窗 -->
-      <view class="diagnostics" v-if="shareDataAi">
-        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
-          mode="aspectFit|aspectFill|widthFix">
-        </image>
-        <view class="diagnosticstext" style="margin-top: 0;">
-          颈纹诊断已完成
-        </view>
-        <view class="diagnosticstexts">
-          恭喜您获得{{ shareDataAi.diagnoseBoxCount || 0 }}个嗨嗨宝盒
-        </view>
-        <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
-          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
-        </image>
-      </view>
+    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
       <!-- AI失败弹窗 -->
-      <view class="diagnostics" v-else>
+      <view class="diagnostics">
         <image :src="`${ASSETSURL}diagnostics.png`" style="width: 228rpx; height: 367rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
         <view class="diagnosticstext">
@@ -116,10 +91,6 @@
         </image>
       </view>
     </uni-popup>
-    <!-- <x-btn @click="handleUpload">上传图片</x-btn>
-    <image :src="uploadImage" style="width: 200rpx; height: 200rpx" mode="aspectFill" />
-    <text style="color: red">图片地址<br />{{ uploadImage }}</text> -->
-    <!-- <x-toast ref="toast" /> -->
   </view>
 </template>
 
@@ -132,6 +103,7 @@ import { upload } from "./upload/upload";
 export default {
   data () {
     return {
+      takePictures: false,//是否开启拍照
       image: null,
       intelligentAnimation: false,//是否显示 智能诊断和扫描动画
       responseData: null,
@@ -164,11 +136,10 @@ export default {
   },
   onShow () {
 
-    if (!this.isLogin) {
-      this.goLogin();
-      return;
-    }
-    this.getAssis()
+    // if (!this.isLogin) {
+    //   this.goLogin();
+    //   return;
+    // }
     this.intelligentAnimation = false
   },
   methods: {
@@ -185,7 +156,6 @@ export default {
             const filePath = res.tempFiles[0].tempFilePath;
             thst.image = filePath
             thst.intelligentAnimation = true
-
             upload(filePath, savePath, (imageUrl) => {
               console.log("imageUrl----------", imageUrl);
               if (imageUrl) {
@@ -206,32 +176,27 @@ export default {
         const imageUrl = await this.getUploadImage();
         console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
         this.uploadImage = imageUrl;
-        this.intelligentAnimation = false
         const { code, data, message } = await diagnose({ jwImgUrl: imageUrl, inviterCode: '' })
         if (code == 200) {
           this.shareDataAi = data
+          // this.$refs.popup.open('center')
+          uni.navigateTo({
+            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+          })
+        } else {
+          this.$refs.popup.open('center')
+          uni.showToast({
+            title: message,
+            icon: 'none'
+          });
         }
-        this.$refs.popup.open('center')
-        console.log(data, 'datadata');
+        this.intelligentAnimation = false
       } catch (error) {
         console.log(error, 'error');
       }
     },
     leftClick () {
       uni.navigateBack()
-    },
-    //科技馆 - 用户进入科技馆板块，弹框助力提醒
-    async getAssis () {
-      try {
-        const { code, data, message } = await assistRemind()
-        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
-        if (code == 200 && data) {
-          this.shareData = data
-          this.$refs.popup.open('center')
-        }
-      } catch (err) {
-        console.log(err)
-      }
     },
     //拒绝摄像头后
     onCameraError (e) {
@@ -250,7 +215,12 @@ export default {
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload () {
       let thst = this
-      // 检查摄像头权限
+      if (!thst.takePictures) {
+        thst.takePictures = true
+        return
+      }
+      // 检
+      // 查摄像头权限
       uni.getSetting({
         success: (res) => {
           thst.titleText = '嗨嗨颈纹知识话术'
@@ -262,16 +232,35 @@ export default {
               quality: 'high',
               success: async (res) => {
                 console.log(res.tempImagePath, '拍照上传');
-                // {"errMsg": "operateCamera:ok", "width": 720, "tempImagePath": "wxfile://tmp_86c2f196b102a4fb1b2553ac442e40ca.jpg", "height": 828} 拍照上传
-                thst.image = res.tempImagePath
+                const savePath = "image";
+                const filePath = res.tempImagePath;
+                thst.image = filePath
                 thst.intelligentAnimation = true
-                const { code, data, message } = await diagnose({ jwImgUrl: res.tempImagePath, inviterCode: '' })
-                if (code == 200) {
-                  this.intelligentAnimation = false
-                  this.shareDataAi = data
-                }
-                this.$refs.popup.open('center')
-                console.log(data, 'datadata');
+                upload(filePath, savePath, async (imageUrl) => {
+                  console.log("imageUrl----------", imageUrl);
+                  if (imageUrl) {
+                    const { code, data, message } = await diagnose({ jwImgUrl: res.tempImagePath, inviterCode: '' })
+                    if (code == 200) {
+                      this.shareDataAi = data
+                      uni.navigateTo({
+                        url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+                      })
+                    } else {
+                      uni.showToast({
+                        title: message,
+                        icon: 'none'
+                      });
+                      this.$refs.popup.open('center')
+                    }
+                    this.intelligentAnimation = false
+                  } else {
+                    uni.showToast({
+                      title: '图片上传失败，请稍后重试',
+                      icon: 'none'
+                    });
+                    console.log("图片上传失败，请稍后重试");
+                  }
+                });
               }
             });
           } else {
@@ -298,35 +287,6 @@ export default {
         }
       });
     },
-    // 相册上传
-    // getUploadPhotoAlbum () {
-    //   let thst = this
-    //   uni.chooseImage({
-    //     count: 1, // 默认选择一张
-    //     sizeType: ['original', 'compressed'], // 可以选择原图或压缩图
-    //     sourceType: ['album'], // 只允许从相册选择
-    //     success: (res) => {
-    //       thst.titleText = '嗨嗨颈纹知识话术'
-    //       thst.intelligentAnimation = true
-    //       thst.image = res.tempFilePaths[0]
-    //       console.log(res, '相册上传');
-
-    //       setTimeout(() => {
-    //         uni.navigateTo({
-    //           url: '/pages-sub/ai-ceyan/uploaded'
-    //         })
-    //         //   this.$refs.popup.open('center')
-    //       }, 3000);
-    //     },
-    //     fail: (err) => {
-    //       uni.showToast({
-    //         title: '选择图片失败',
-    //         icon: 'none'
-    //       });
-    //       console.error('选择图片失败', err);
-    //     }
-    //   });
-    // },
     //重新上传
     getReupload (e) {
       this.$refs.popup.close()
@@ -377,7 +337,7 @@ export default {
       height: 687rpx;
       top: 161rpx;
       right: 29rpx;
-      background: red;
+      // background: red;
     }
 
     .saomiao {
@@ -413,8 +373,8 @@ export default {
     font-weight: 800;
     font-size: 52rpx;
     color: #FFFFFF;
-    -webkit-text-stroke: 2rpx #000000;
-    text-stroke: 2rpx #000000;
+    // -webkit-text-stroke: 2rpx #000000;
+    // text-stroke: 2rpx #000000;
     margin-top: 43rpx;
   }
 

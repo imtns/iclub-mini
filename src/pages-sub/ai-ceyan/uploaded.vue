@@ -426,7 +426,9 @@ export default {
       });
     },
     leftClick () {
-      uni.navigateBack()
+      uni.navigateBack({
+        delta: 2,
+      })
     },
     handleShareClick () {
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
