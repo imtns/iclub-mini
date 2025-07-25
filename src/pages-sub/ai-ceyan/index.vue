@@ -1,26 +1,5 @@
 <template>
   <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}bg.png)` }">
-    <!-- <button type="primary" @click="TestAPI">测试请求</button>
-    {{ responseData }}
-    <button type="primary" @click="showDrawer">右侧弹出 显示Drawer</button>
-    <uni-drawer ref="showRight" mode="right" :mask-click="false">
-      <scroll-view style="height: 100%" scroll-y="true">
-        <button type="primary" @click="closeDrawer">关闭Drawer</button>
-        <view v-for="item in 60" :key="item">可滚动内容 {{ item }}</view>
-      </scroll-view>
-    </uni-drawer>
-    <button @click="open">打开弹窗</button>
-    <uni-search-bar @confirm="search" :focus="true" v-model="searchValue" @blur="blur" @focus="focus" @input="input"
-      @cancel="cancel" @clear="clear"> 
-    </uni-search-bar>
-    <view class="search-result">
-      <text class="search-result-text">当前输入为：{{ searchValue }}</text>
-    </view>
-    <uni-popup ref="popup" border-radius="10px 10px 0 0">
-      <div
-        style="display: flex; align-items: center; justify-content: center; width: 300px; height: 200px; background-color: #fff">
-        这是弹窗</div>
-    </uni-popup> -->
     <uni-nav-bar fixed statusBar title=" " :border="false" backgroundColor="transparent">
       <template #left>
         <image @click="leftClick" class="" :src="`${ASSETSURL}leftIcon.png`" style="width: 32rpx; height: 48rpx;"
@@ -79,8 +58,23 @@
     </view>
     <!-- 弹窗部分 -->
     <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
+      <!-- AI成功弹窗 -->
+      <view class="diagnostics" v-if="shareDataAi">
+        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+        <view class="diagnosticstext" style="margin-top: 0;">
+          颈纹诊断已完成
+        </view>
+        <view class="diagnosticstexts">
+          恭喜您获得{{ shareDataAi.diagnoseBoxCount || shareDataAi.diagnoseTime || 0 }}个嗨嗨宝盒
+        </view>
+        <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
+          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
       <!-- AI失败弹窗 -->
-      <view class="diagnostics">
+      <view class="diagnostics" v-else>
         <image :src="`${ASSETSURL}diagnostics.png`" style="width: 228rpx; height: 367rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
         <view class="diagnosticstext">
@@ -106,14 +100,10 @@ export default {
       takePictures: false,//是否开启拍照
       image: null,
       intelligentAnimation: false,//是否显示 智能诊断和扫描动画
-      responseData: null,
-      searchValue: '',
       ASSETSURL: Tool.ASSETSURL,
-      titleText: '请上传您的颈部照片',
-      addressInfo: "",
+      titleTextArr: ['有颈纹，嗨体一下', '拯救颈纹，选嗨体', '嗨体一下，纠正中重度颈纹'],
+      titleText: '',
       uploadImage: "",
-      posterImage: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
-      isLoading: false,
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
@@ -124,7 +114,6 @@ export default {
         path: "/pages-sub/ai-ceyan/index",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
-      shareData: null,
       shareDataAi: null,
     };
   },
@@ -134,8 +123,10 @@ export default {
   components: {
     xBtn
   },
+  onLoad () {
+    this.titleText = this.titleTextArr[Math.floor(Math.random() * this.titleTextArr.length)]
+  },
   onShow () {
-
     // if (!this.isLogin) {
     //   this.goLogin();
     //   return;
@@ -143,13 +134,33 @@ export default {
     this.intelligentAnimation = false
   },
   methods: {
+    //科技馆 - 用户进入科技馆板块，弹框助力提醒
+    async getAssis () {
+      try {
+        const { code, data, message } = await assistRemind()
+        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
+        if (code == 200 && data) {
+          this.report('新用户/老用户')
+          this.$refs.popup.open('center')
+        } else {
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+            })
+          }, 3000);
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    // 图片上传方法
     getUploadImage () {
       let thst = this
       return new Promise((resolve, reject) => {
         wx.chooseMedia({
           mediaType: ["image"],
           count: 1,
-          sourceType: ["album", "camera"],
+          sourceType: ["album"],
           sizeType: ["original", "compressed"],
           success: async (res) => {
             const savePath = "image";
@@ -159,6 +170,7 @@ export default {
             upload(filePath, savePath, (imageUrl) => {
               console.log("imageUrl----------", imageUrl);
               if (imageUrl) {
+                this.report('照片上传成功的次数/人次')
                 console.log("图片上传成功", imageUrl);
                 resolve(imageUrl);
               } else {
@@ -179,10 +191,15 @@ export default {
         const { code, data, message } = await diagnose({ jwImgUrl: imageUrl, inviterCode: '' })
         if (code == 200) {
           this.shareDataAi = data
-          // this.$refs.popup.open('center')
-          uni.navigateTo({
-            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-          })
+          if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+            this.$refs.popup.open('center')
+          } else {
+            setTimeout(() => {
+              uni.navigateTo({
+                url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+              })
+            }, 3000);
+          }
         } else {
           this.$refs.popup.open('center')
           uni.showToast({
@@ -190,7 +207,9 @@ export default {
             icon: 'none'
           });
         }
-        this.intelligentAnimation = false
+        setTimeout(() => {
+          this.intelligentAnimation = false
+        }, 3000);
       } catch (error) {
         console.log(error, 'error');
       }
@@ -200,6 +219,8 @@ export default {
     },
     //拒绝摄像头后
     onCameraError (e) {
+      this.takePictures = false
+      console.log(this.takePictures, 'thst.takePictures');
       uni.showModal({
         title: '提示',
         content: '请前往设置打开摄像头权限',
@@ -208,22 +229,22 @@ export default {
         success: function (modalRes) {
           if (modalRes.confirm) {
             uni.openSetting()
+          } else if (modalRes.cancel) {
           }
         }
       });
     },
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload () {
+      this.report('【开始分析】按钮点击次数/人次')
       let thst = this
-      if (!thst.takePictures) {
-        thst.takePictures = true
-        return
-      }
-      // 检
-      // 查摄像头权限
+      // 检查摄像头权限
       uni.getSetting({
         success: (res) => {
-          thst.titleText = '嗨嗨颈纹知识话术'
+          if (!thst.takePictures) {
+            thst.takePictures = true
+            return
+          }
           const cameraAuth = res.authSetting['scope.camera'];
           if (cameraAuth) {
             // 已授权，拍照
@@ -238,27 +259,41 @@ export default {
                 thst.intelligentAnimation = true
                 upload(filePath, savePath, async (imageUrl) => {
                   console.log("imageUrl----------", imageUrl);
+                  this.report('照片上传成功的次数/人次')
                   if (imageUrl) {
                     const { code, data, message } = await diagnose({ jwImgUrl: res.tempImagePath, inviterCode: '' })
                     if (code == 200) {
+                      this.report('完成AI颈纹检测的次数/人次')
                       this.shareDataAi = data
-                      uni.navigateTo({
-                        url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-                      })
+                      if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+                        this.$refs.popup.open('center')
+                      } else {
+                        setTimeout(() => {
+                          uni.navigateTo({
+                            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+                          })
+                        }, 3000);
+                      }
                     } else {
                       uni.showToast({
                         title: message,
                         icon: 'none'
                       });
+                      this.report('AI颈纹检测失败的次数/人次')
                       this.$refs.popup.open('center')
                     }
-                    this.intelligentAnimation = false
+                    setTimeout(() => {
+                      this.intelligentAnimation = false
+                    }, 3000);
                   } else {
                     uni.showToast({
                       title: '图片上传失败，请稍后重试',
                       icon: 'none'
                     });
                     console.log("图片上传失败，请稍后重试");
+                    setTimeout(() => {
+                      this.intelligentAnimation = false
+                    }, 3000);
                   }
                 });
               }
@@ -273,11 +308,16 @@ export default {
               success: function (modalRes) {
                 if (modalRes.confirm) {
                   uni.openSetting();
+                  console.log(thst.takePictures, 'thst.takePictures');
+                } else if (modalRes.cancel) {
+                  thst.takePictures = false
+                  console.log(thst.takePictures, 'thst.takePictures');
                 }
               }
             });
           }
         },
+
         fail: () => {
           uni.showModal({
             title: '错误',
@@ -290,7 +330,6 @@ export default {
     //重新上传
     getReupload (e) {
       this.$refs.popup.close()
-      this.titleText = '请上传您的颈部照片'
       this.intelligentAnimation = false
       if (e == 1) {
         uni.navigateTo({
@@ -324,11 +363,17 @@ export default {
     .poaText {
       position: absolute;
       top: 48rpx;
-      right: 153rpx;
+      left: 260rpx;
       font-family: OPPOSans;
       font-weight: 500;
       font-size: 25rpx;
       color: #000000;
+      width: 260rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
     }
 
     .camera {

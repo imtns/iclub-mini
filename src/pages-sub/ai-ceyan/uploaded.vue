@@ -37,6 +37,11 @@
       </view>
       <!-- 二维码啥的 -->
       <view class="btnQocd" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_08.png)` }">
+        <view class="btnQocdLeft">
+          <image class="scan-anim" :src="`${ASSETSURL}strategy.png`" style="width: 149rpx; height: 149rpx"
+            mode="aspectFit|aspectFill|widthFix">
+          </image>
+        </view>
         <view class="btnQocdRight">
           <image class="scan-anim" :src="shareDataAi.activityImgUrl" style="width: 149rpx; height: 149rpx"
             mode="aspectFit|aspectFill|widthFix">
@@ -108,8 +113,8 @@ export default {
       ASSETSURL: Tool.ASSETSURL,
       posterImage: "",
       shareInfo: {
-        title: "嗨嗨",
-        path: "/pages-sub/ai-ceyan/index",
+        title: "点击查收你的AI颈纹分析结果",
+        path: "/pages-sub/ai-ceyan/home",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
     }
@@ -359,7 +364,7 @@ export default {
               // 保养攻略 二维码
               {
                 type: "image",
-                src: `${this.ASSETSURL}bg.png`,
+                src: `${this.ASSETSURL}strategy.png`,
                 css: {
                   width: "149rpx",
                   height: "149rpx",
@@ -431,13 +436,14 @@ export default {
       })
     },
     handleShareClick () {
+      this.report('【邀请好友检测】点击次数/人次')
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
         ...this.shareInfo,
-        buttonTitle: "这是按钮点击的分享标题123123",
-        path: "/pages-sub/ai-ceyan/index",
-        // 按钮点击时候的分享图片
-        buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
+        // buttonTitle: "这是按钮点击的分享标题123123",
+        // path: "/pages-sub/ai-ceyan/index",
+        // // 按钮点击时候的分享图片
+        // buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
       };
     },
   }
@@ -631,10 +637,16 @@ export default {
     bottom: 34rpx;
     right: 41rpx;
 
+    .btnQocdLeft {
+      position: absolute;
+      left: 10rpx;
+      top: 10rpx;
+    }
+
     .btnQocdRight {
       position: absolute;
       right: 10rpx;
-      top: 8rpx;
+      top: 10rpx;
     }
   }
 

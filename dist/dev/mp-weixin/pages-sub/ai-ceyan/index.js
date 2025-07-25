@@ -264,33 +264,18 @@ var xBtn = function () {
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 var _default = exports.default = {
   data() {
     return {
+      takePictures: false,
+      //是否开启拍照
       image: null,
       intelligentAnimation: false,
       //是否显示 智能诊断和扫描动画
-      responseData: null,
-      searchValue: '',
       ASSETSURL: _tool.default.ASSETSURL,
-      titleText: '请上传您的颈部照片',
-      addressInfo: "",
+      titleTextArr: ['有颈纹，嗨体一下', '拯救颈纹，选嗨体', '嗨体一下，纠正中重度颈纹'],
+      titleText: '',
       uploadImage: "",
-      posterImage: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
-      isLoading: false,
       /**
        * 注意~！！！ 分享的时候不要在页面添加
        * onShareAppMessage和onShareTimeline 方法，否则分享的时候拉新逻辑会丢失
@@ -301,7 +286,6 @@ var _default = exports.default = {
         path: "/pages-sub/ai-ceyan/index",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg"
       },
-      shareData: null,
       shareDataAi: null
     };
   },
@@ -311,22 +295,48 @@ var _default = exports.default = {
   components: {
     xBtn
   },
+  onLoad() {
+    this.titleText = this.titleTextArr[Math.floor(Math.random() * this.titleTextArr.length)];
+  },
   onShow() {
-    if (!this.isLogin) {
-      this.goLogin();
-      return;
-    }
-    this.getAssis();
+    // if (!this.isLogin) {
+    //   this.goLogin();
+    //   return;
+    // }
     this.intelligentAnimation = false;
   },
   methods: {
+    //科技馆 - 用户进入科技馆板块，弹框助力提醒
+    async getAssis() {
+      try {
+        const {
+          code,
+          data,
+          message
+        } = await (0, _api.assistRemind)();
+        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒');
+        if (code == 200 && data) {
+          this.report('新用户/老用户');
+          this.$refs.popup.open('center');
+        } else {
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+            });
+          }, 3000);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    // 图片上传方法
     getUploadImage() {
       let thst = this;
       return new Promise((resolve, reject) => {
         wx.chooseMedia({
           mediaType: ["image"],
           count: 1,
-          sourceType: ["album", "camera"],
+          sourceType: ["album"],
           sizeType: ["original", "compressed"],
           success: async res => {
             const savePath = "image";
@@ -336,6 +346,7 @@ var _default = exports.default = {
             (0, _upload.upload)(filePath, savePath, imageUrl => {
               console.log("imageUrl----------", imageUrl);
               if (imageUrl) {
+                this.report('照片上传成功的次数/人次');
                 console.log("图片上传成功", imageUrl);
                 resolve(imageUrl);
               } else {
@@ -353,7 +364,6 @@ var _default = exports.default = {
         const imageUrl = await this.getUploadImage();
         console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
         this.uploadImage = imageUrl;
-        this.intelligentAnimation = false;
         const {
           code,
           data,
@@ -364,9 +374,25 @@ var _default = exports.default = {
         });
         if (code == 200) {
           this.shareDataAi = data;
+          if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+            this.$refs.popup.open('center');
+          } else {
+            setTimeout(() => {
+              uni.navigateTo({
+                url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+              });
+            }, 3000);
+          }
+        } else {
+          this.$refs.popup.open('center');
+          uni.showToast({
+            title: message,
+            icon: 'none'
+          });
         }
-        this.$refs.popup.open('center');
-        console.log(data, 'datadata');
+        setTimeout(() => {
+          this.intelligentAnimation = false;
+        }, 3000);
       } catch (error) {
         console.log(error, 'error');
       }
@@ -374,25 +400,10 @@ var _default = exports.default = {
     leftClick() {
       uni.navigateBack();
     },
-    //科技馆 - 用户进入科技馆板块，弹框助力提醒
-    async getAssis() {
-      try {
-        const {
-          code,
-          data,
-          message
-        } = await (0, _api.assistRemind)();
-        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒');
-        if (code == 200 && data) {
-          this.shareData = data;
-          this.$refs.popup.open('center');
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    },
     //拒绝摄像头后
     onCameraError(e) {
+      this.takePictures = false;
+      console.log(this.takePictures, 'thst.takePictures');
       uni.showModal({
         title: '提示',
         content: '请前往设置打开摄像头权限',
@@ -401,26 +412,79 @@ var _default = exports.default = {
         success: function (modalRes) {
           if (modalRes.confirm) {
             uni.openSetting();
-          }
+          } else if (modalRes.cancel) {}
         }
       });
     },
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload() {
+      this.report('【开始分析】按钮点击次数/人次');
       let thst = this;
       // 检查摄像头权限
       uni.getSetting({
         success: res => {
-          thst.titleText = '嗨嗨颈纹知识话术';
+          if (!thst.takePictures) {
+            thst.takePictures = true;
+            return;
+          }
           const cameraAuth = res.authSetting['scope.camera'];
           if (cameraAuth) {
             // 已授权，拍照
             const ctx = uni.createCameraContext();
             ctx.takePhoto({
               quality: 'high',
-              success: res => {
+              success: async res => {
                 console.log(res.tempImagePath, '拍照上传');
-                // {"errMsg": "operateCamera:ok", "width": 720, "tempImagePath": "wxfile://tmp_86c2f196b102a4fb1b2553ac442e40ca.jpg", "height": 828} 拍照上传
+                const savePath = "image";
+                const filePath = res.tempImagePath;
+                thst.image = filePath;
+                thst.intelligentAnimation = true;
+                (0, _upload.upload)(filePath, savePath, async imageUrl => {
+                  console.log("imageUrl----------", imageUrl);
+                  this.report('照片上传成功的次数/人次');
+                  if (imageUrl) {
+                    const {
+                      code,
+                      data,
+                      message
+                    } = await (0, _api.diagnose)({
+                      jwImgUrl: res.tempImagePath,
+                      inviterCode: ''
+                    });
+                    if (code == 200) {
+                      this.report('完成AI颈纹检测的次数/人次');
+                      this.shareDataAi = data;
+                      if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+                        this.$refs.popup.open('center');
+                      } else {
+                        setTimeout(() => {
+                          uni.navigateTo({
+                            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+                          });
+                        }, 3000);
+                      }
+                    } else {
+                      uni.showToast({
+                        title: message,
+                        icon: 'none'
+                      });
+                      this.report('AI颈纹检测失败的次数/人次');
+                      this.$refs.popup.open('center');
+                    }
+                    setTimeout(() => {
+                      this.intelligentAnimation = false;
+                    }, 3000);
+                  } else {
+                    uni.showToast({
+                      title: '图片上传失败，请稍后重试',
+                      icon: 'none'
+                    });
+                    console.log("图片上传失败，请稍后重试");
+                    setTimeout(() => {
+                      this.intelligentAnimation = false;
+                    }, 3000);
+                  }
+                });
               }
             });
           } else {
@@ -433,6 +497,10 @@ var _default = exports.default = {
               success: function (modalRes) {
                 if (modalRes.confirm) {
                   uni.openSetting();
+                  console.log(thst.takePictures, 'thst.takePictures');
+                } else if (modalRes.cancel) {
+                  thst.takePictures = false;
+                  console.log(thst.takePictures, 'thst.takePictures');
                 }
               }
             });
@@ -447,39 +515,9 @@ var _default = exports.default = {
         }
       });
     },
-    // 相册上传
-    // getUploadPhotoAlbum () {
-    //   let thst = this
-    //   uni.chooseImage({
-    //     count: 1, // 默认选择一张
-    //     sizeType: ['original', 'compressed'], // 可以选择原图或压缩图
-    //     sourceType: ['album'], // 只允许从相册选择
-    //     success: (res) => {
-    //       thst.titleText = '嗨嗨颈纹知识话术'
-    //       thst.intelligentAnimation = true
-    //       thst.image = res.tempFilePaths[0]
-    //       console.log(res, '相册上传');
-
-    //       setTimeout(() => {
-    //         uni.navigateTo({
-    //           url: '/pages-sub/ai-ceyan/uploaded'
-    //         })
-    //         //   this.$refs.popup.open('center')
-    //       }, 3000);
-    //     },
-    //     fail: (err) => {
-    //       uni.showToast({
-    //         title: '选择图片失败',
-    //         icon: 'none'
-    //       });
-    //       console.error('选择图片失败', err);
-    //     }
-    //   });
-    // },
     //重新上传
     getReupload(e) {
       this.$refs.popup.close();
-      this.titleText = '请上传您的颈部照片';
       this.intelligentAnimation = false;
       if (e == 1) {
         uni.navigateTo({

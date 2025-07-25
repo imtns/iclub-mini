@@ -2,11 +2,12 @@
   <view style="background-color: #FEBD01;min-height: 100vh;">
     <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}home_01.png)` }">
       <!-- 免责说明 -->
-      <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}home_02.png)` }" @click="home_03 = !home_03">
-        <view class="home_03" v-if="home_03">
-          <!-- <image @click="getReupload" :src="`${ASSETSURL}home_03.png`" style="width: 28rpx; height: 28rpx;"
+      <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}${home_03 ? 'home_02s' : 'home_02'}.png)` }"
+        @click="home_03 = !home_03">
+        <!-- <view class="home_03" v-if="home_03"> -->
+        <!-- <image @click="getReupload" :src="`${ASSETSURL}home_03.png`" style="width: 28rpx; height: 28rpx;"
           mode="aspectFit|aspectFill|widthFix" /> -->
-        </view>
+        <!-- </view> -->
         <view class="agreement" @click.stop="openPopupWithCountdown"></view>
       </view>
       <!-- 底部按钮 -->
@@ -99,6 +100,7 @@ export default {
         const { code, data, message } = await assistRemind()
         console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
         if (code == 200 && data) {
+          this.report('新用户/老用户')
           this.shareData = data
           this.$refs.popup.open('center')
         }
@@ -116,8 +118,10 @@ export default {
         uni.navigateTo({
           url: '/pages-sub/ai-ceyan/index',
         })
+        this.report('完成免责声明的用户人数')
         this.$refs.popupShow.close();
       } else if (this.home_03) {
+        this.report('【开始检测】点击次数/人次')
         uni.navigateTo({
           url: '/pages-sub/ai-ceyan/index',
         })
@@ -129,6 +133,7 @@ export default {
       }
     },
     handleShareClick () {
+      this.report('【邀请好友检测】点击次数/人次')
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
         ...this.shareInfo,
