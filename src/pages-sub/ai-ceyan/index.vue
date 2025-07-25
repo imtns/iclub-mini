@@ -67,7 +67,7 @@
           颈纹诊断已完成
         </view>
         <view class="diagnosticstexts">
-          恭喜您获得{{ shareDataAi.diagnoseBoxCount || shareDataAi.diagnoseTime || 0 }}个嗨嗨宝盒
+          恭喜您获得{{ shareDataAi.diagnoseBoxCount + shareDataAi.assistBoxCount || 0 }}个嗨嗨宝盒
         </view>
         <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
           style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
@@ -191,7 +191,8 @@ export default {
         const { code, data, message } = await diagnose({ jwImgUrl: imageUrl, inviterCode: '' })
         if (code == 200) {
           this.shareDataAi = data
-          if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==========');
+          if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
             this.$refs.popup.open('center')
           } else {
             setTimeout(() => {
@@ -265,7 +266,7 @@ export default {
                     if (code == 200) {
                       this.report('完成AI颈纹检测的次数/人次')
                       this.shareDataAi = data
-                      if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
+                      if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
                         this.$refs.popup.open('center')
                       } else {
                         setTimeout(() => {
