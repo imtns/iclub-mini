@@ -23,7 +23,7 @@
           </button>
         </view>
       </view>
-      <uni-popup ref="popupShow" border-radius="10px 10px 0 0" @close="beforeDestroy"
+      <uni-popup ref="popupShow" :mask-click="false" border-radius="10px 10px 0 0" @close="beforeDestroy"
         maskBackgroundColor="rgba(0,0,0,0.7)">
         <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
           <image :src="`${ASSETSURL}home_05.png`" mode="widthFix" />
@@ -48,7 +48,7 @@
             mode="aspectFit|aspectFill|widthFix">
           </image>
           <view class="diagnosticstext" style="margin-top: 0;">
-            {{ shareData.assistUserName || '' }}已完成颈纹分析
+            {{ shareData.assistUserName || '' }} <br>已完成颈纹分析
           </view>
           <view class="diagnosticstexts">
             恭喜您获得{{ shareData.count || 0 }}个嗨嗨宝盒
@@ -79,7 +79,7 @@ export default {
         path: "/pages-sub/ai-ceyan/home",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
-      countdown: 15, // 倒计时秒数
+      countdown: 10, // 倒计时秒数
       countdownTimer: null, // 计时器引用
       shareData: null,
     };
@@ -144,7 +144,7 @@ export default {
       };
     },
     openPopupWithCountdown () {
-      this.countdown = 15;
+      this.countdown = 10;
       this.$refs.popupShow.open('center');
       if (this.countdownTimer) clearInterval(this.countdownTimer);
       this.countdownTimer = setInterval(() => {
