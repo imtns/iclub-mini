@@ -91,6 +91,7 @@
 <script>
 import xBtn from "@/components/x/btn.vue"
 import { testAPI, assistRemind, diagnose } from './api'
+import report from "@/utils/report/report"; // 埋点上报
 import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 import { upload } from "./upload/upload";
