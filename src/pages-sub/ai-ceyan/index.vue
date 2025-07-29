@@ -16,7 +16,7 @@
       <view class="poaText font-26">{{ titleText }}</view>
       <!-- 前置摄像头 -->
       <view class="camera">
-        <view style="width: 100%; height: 100%;" v-if="intelligentAnimation">
+        <view style="width: 100%; height: 100%;" v-if="states == 2">
           <image class="scan-anim" :src="image" style="width: 100%; height: 100%;" mode="aspectFill">
           </image>
         </view>
@@ -42,13 +42,24 @@
         mode="aspectFit|aspectFill|widthFix"></image>
     </view>
     <!-- 底部拍照相册按钮 -->
-    <view class="btnFlex" v-else>
+    <view class="btnFlex" v-if="!intelligentAnimation && states == 1">
       <view @click="getPhotoUpload">
         <image class="" :src="`${ASSETSURL}photoUpload.png`" style="width: 272rpx; height: 114rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
       <view @click="handleUpload">
         <image class="" :src="`${ASSETSURL}UploadPhotoAlbum.png`" style="width: 274rpx; height: 116rpx;"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+    </view>
+    <!-- 重新上传 开始分析 -->
+    <view class="btnFlex" v-if="!intelligentAnimation && states == 2">
+      <view @click="states = 1">
+        <image class="" :src="`${ASSETSURL}index_01.png`" style="width: 272rpx; height: 114rpx;"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+      <view @click="getdiagnose">
+        <image class="" :src="`${ASSETSURL}index_02.png`" style="width: 274rpx; height: 116rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
     </view>
@@ -116,6 +127,7 @@ export default {
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg",
       },
       shareDataAi: null,
+      states: 1,//1 默认  2 重新上传开始分析
     };
   },
   computed: {
@@ -135,61 +147,11 @@ export default {
     this.intelligentAnimation = false
   },
   methods: {
-    //科技馆 - 用户进入科技馆板块，弹框助力提醒
-    async getAssis () {
+    // ai分析
+    async getdiagnose () {
+      this.intelligentAnimation = true
       try {
-        const { code, data, message } = await assistRemind()
-        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
-        if (code == 200 && data) {
-          this.report('新用户/老用户')
-          this.$refs.popup.open('center')
-        } else {
-          setTimeout(() => {
-            uni.navigateTo({
-              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-            })
-          }, 3000);
-        }
-      } catch (err) {
-        console.log(err)
-      }
-    },
-    // 图片上传方法
-    getUploadImage () {
-      let thst = this
-      return new Promise((resolve, reject) => {
-        wx.chooseMedia({
-          mediaType: ["image"],
-          count: 1,
-          sourceType: ["album"],
-          sizeType: ["original", "compressed"],
-          success: async (res) => {
-            const savePath = "image";
-            const filePath = res.tempFiles[0].tempFilePath;
-            thst.image = filePath
-            thst.intelligentAnimation = true
-            upload(filePath, savePath, (imageUrl) => {
-              console.log("imageUrl----------", imageUrl);
-              if (imageUrl) {
-                this.report('照片上传成功的次数/人次')
-                console.log("图片上传成功", imageUrl);
-                resolve(imageUrl);
-              } else {
-                console.log("图片上传失败，请稍后重试");
-              }
-            });
-          },
-          fail: reject,
-        });
-      });
-    },
-    //图片上传
-    async handleUpload () {
-      try {
-        const imageUrl = await this.getUploadImage();
-        console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
-        this.uploadImage = imageUrl;
-        const { code, data, message } = await diagnose({ jwImgUrl: imageUrl, inviterCode: '' })
+        const { code, data, message } = await diagnose({ jwImgUrl: this.uploadImage, inviterCode: '' })
         if (code == 200) {
           this.shareDataAi = data
           console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==========');
@@ -211,7 +173,70 @@ export default {
         }
         setTimeout(() => {
           this.intelligentAnimation = false
+          this.states = 1
         }, 3000);
+
+      } catch (error) {
+        console.log(error, 'error');
+
+      }
+    },
+    //科技馆 - 用户进入科技馆板块，弹框助力提醒
+    async getAssis () {
+      try {
+        const { code, data, message } = await assistRemind()
+        console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
+        if (code == 200 && data) {
+          this.report('新用户/老用户')
+          this.$refs.popup.open('center')
+        } else {
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+            })
+          }, 3000);
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    // 图片上传方法
+
+    getUploadImage () {
+      let thst = this
+      return new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          mediaType: ["image"],
+          count: 1,
+          sourceType: ["album"],
+          sizeType: ["original", "compressed"],
+          success: async (res) => {
+            const savePath = "image";
+            const filePath = res.tempFiles[0].tempFilePath;
+            thst.image = filePath
+            upload(filePath, savePath, (imageUrl) => {
+              console.log("imageUrl----------", imageUrl);
+              if (imageUrl) {
+                this.report('照片上传成功的次数/人次')
+                console.log("图片上传成功", imageUrl);
+                resolve(imageUrl);
+              } else {
+                console.log("图片上传失败，请稍后重试");
+              }
+            });
+          },
+          fail: reject,
+        });
+      });
+    },
+    //图片上传
+    async handleUpload () {
+      try {
+        const imageUrl = await this.getUploadImage();
+        console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
+        this.uploadImage = imageUrl;
+        // this.getdiagnose(imageUrl)
+        this.states = 2
       } catch (error) {
         console.log(error, 'error');
       }
@@ -258,35 +283,12 @@ export default {
                 const savePath = "image";
                 const filePath = res.tempImagePath;
                 thst.image = filePath
-                thst.intelligentAnimation = true
                 upload(filePath, savePath, async (imageUrl) => {
                   console.log("imageUrl----------", imageUrl);
                   this.report('照片上传成功的次数/人次')
                   if (imageUrl) {
-                    const { code, data, message } = await diagnose({ jwImgUrl: res.tempImagePath, inviterCode: '' })
-                    if (code == 200) {
-                      this.report('完成AI颈纹检测的次数/人次')
-                      this.shareDataAi = data
-                      if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
-                        this.$refs.popup.open('center')
-                      } else {
-                        setTimeout(() => {
-                          uni.navigateTo({
-                            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-                          })
-                        }, 3000);
-                      }
-                    } else {
-                      uni.showToast({
-                        title: message,
-                        icon: 'none'
-                      });
-                      this.report('AI颈纹检测失败的次数/人次')
-                      this.$refs.popup.open('center')
-                    }
-                    setTimeout(() => {
-                      this.intelligentAnimation = false
-                    }, 3000);
+                    this.uploadImage = imageUrl;
+                    this.states = 2
                   } else {
                     uni.showToast({
                       title: '图片上传失败，请稍后重试',
