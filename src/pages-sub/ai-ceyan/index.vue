@@ -7,10 +7,10 @@
       </template>
     </uni-nav-bar>
     <!-- 背景音乐 -->
-    <view class="music">
+    <!-- <view class="music">
       <image class="" :src="`${ASSETSURL}music.png`" style="width: 51rpx; height: 51rpx;"
         mode="aspectFit|aspectFill|widthFix"></image>
-    </view>
+    </view> -->
     <!-- 拍照区域 -->
     <view class="takePictures" :style="{ backgroundImage: `url(${ASSETSURL}takePicturesbg_01.png)` }">
       <view class="poaText font-26">{{ titleText }}</view>

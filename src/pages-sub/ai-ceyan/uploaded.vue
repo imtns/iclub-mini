@@ -7,9 +7,14 @@
       </template>
     </uni-nav-bar>
     <!-- 背景音乐 -->
-    <view class="music">
+    <!-- <view class="music">
       <image class="" :src="`${ASSETSURL}music.png`" style="width: 51rpx; height: 51rpx;"
         mode="aspectFit|aspectFill|widthFix"></image>
+    </view> -->
+    <!-- 咨询 -->
+    <view class="music">
+      <image @click="$refs.popup.open()" class="" :src="`${ASSETSURL}consultingService.png`"
+        style="width: 96rpx; height: 118rpx;" mode="aspectFit|aspectFill|widthFix"></image>
     </view>
     <view class="unpBg" @longpress="handlePoster" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
       <!-- 照片 -->
@@ -32,8 +37,11 @@
           <view class="top_02_text">{{ shareDataAi.jwLengthDesc }}</view>
         </view>
       </view>
-      <view class="unpBg_04">
-        {{ shareDataAi.result }}
+      <view class="textIcon">
+        <view class="unpBg_04_wrap">
+          <text class="wrap-text">{{ shareDataAi.result }}</text>
+          <image class="wrap-img" :src="`${ASSETSURL}expand.png`" @click="$refs.analysisPopup.open()" />
+        </view>
       </view>
       <!-- 二维码啥的 -->
       <view class="btnQocd" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_08.png)` }">
@@ -92,6 +100,30 @@
     <!-- <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
       mode="aspectFit|aspectFill|widthFix">
     </image> -->
+    <!-- 咨询弹窗部分 -->
+    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
+      <view class="consultingService" :style="{ backgroundImage: `url(${ASSETSURL}customerService.png)` }">
+        <image class="images" :src="`${ASSETSURL}strategy.png`" style="width: 486rpx; height: 485rpx;"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+      <view>
+        <image @click="$refs.popup.close()" class="closeIcon" :src="`${ASSETSURL}close.png`"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+    </uni-popup>
+    <!-- 分析结果 -->
+    <uni-popup ref="analysisPopup" :mask-click="false" border-radius="10px 10px 0 0"
+      maskBackgroundColor="rgba(0,0,0,0.7)">
+      <view class="analysis" :style="{ backgroundImage: `url(${ASSETSURL}analysis.png)` }">
+        <view class="analysisText">
+          {{ shareDataAi.result }}
+        </view>
+      </view>
+      <view>
+        <image @click="$refs.analysisPopup.close()" class="closeIcons" :src="`${ASSETSURL}myOk.png`"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+    </uni-popup>
   </view>
 </template>
 
@@ -456,10 +488,14 @@ export default {
   background-size: 100% 100%;
 
   .music {
+    z-index: 66;
     display: flex;
     justify-content: flex-end;
     margin-right: 20rpx;
     margin-top: 20rpx;
+    position: absolute;
+    right: 0;
+    top: 150rpx;
   }
 
   .takePictures {
@@ -557,7 +593,7 @@ export default {
   padding: 0 30rpx 0 28rpx;
   box-sizing: border-box;
   display: inline-block;
-  top: -150rpx;
+  top: -134rpx;
 
   .unpBg_01 {
     background-size: 100% 100%;
@@ -597,7 +633,7 @@ export default {
 
     .top_02 {
       position: absolute;
-      top: 170rpx;
+      top: 174rpx;
       left: 156rpx;
 
       .top_02_text {
@@ -610,23 +646,40 @@ export default {
     }
   }
 
-  .unpBg_04 {
-    max-height: 160rpx;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
+  .textIcon {
+    display: flex;
     position: absolute;
     top: 920rpx;
     left: 0;
     margin: 0 64rpx 0 43rpx;
-    font-family: OPPOSans;
-    font-weight: 500;
-    font-size: 25rpx;
-    color: #6E6D6A;
-    line-height: 35rpx;
+
+    .unpBg_04_wrap {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+
+      .wrap-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 25rpx;
+        color: #6E6D6A;
+        line-height: 35rpx;
+        word-break: break-all;
+        max-width: calc(100% - 90rpx);
+      }
+
+      .wrap-img {
+        flex-shrink: 0;
+        width: 80rpx;
+        height: 30rpx;
+        margin-left: 10rpx;
+        cursor: pointer;
+        margin-top: auto;
+      }
+    }
   }
 
   .btnQocd {
@@ -666,7 +719,7 @@ export default {
 .unpBg_07 {
   display: flex;
   justify-content: center;
-  margin-top: -150rpx;
+  margin-top: -134rpx;
 }
 
 .unpBg_08 {
@@ -686,6 +739,53 @@ export default {
   display: flex;
   justify-content: center;
   margin-top: 18rpx;
+}
+
+.consultingService {
+  width: 523rpx;
+  height: 728rpx;
+  background-size: 100% 100%;
+
+  .images {
+    margin: 150rpx 18rpx 93rpx;
+
+  }
+}
+
+.closeIcon {
+  width: 60rpx;
+  height: 60rpx;
+  margin: 83rpx auto 0;
+  display: flex;
+  justify-content: center;
+}
+
+.analysis {
+  width: 521rpx;
+  height: 719rpx;
+  background-size: 100% 100%;
+  padding: 120rpx 40rpx 26rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  .analysisText {
+    width: 444rpx;
+    height: 100%;
+    // background: red;
+    // text-align: center;
+    font-size: 24rpx;
+    color: #6E6D6A;
+    line-height: 40rpx;
+    overflow-y: auto;
+  }
+}
+
+.closeIcons {
+  width: 230rpx;
+  height: 97rpx;
+  display: flex;
+  margin: 35rpx auto 0;
+  justify-content: center;
 }
 
 button {

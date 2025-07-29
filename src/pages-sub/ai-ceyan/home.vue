@@ -90,6 +90,14 @@ export default {
   components: {
     xBtn,
   },
+  onLoad (ope) {
+    if (ope.shareExpire == 1) {
+      uni.showToast({
+        title: '助力链接已失效',
+        icon: 'none'
+      })
+    }
+  },
   onShow () {
     this.getAssis()
   },

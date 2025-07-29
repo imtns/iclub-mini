@@ -128,6 +128,11 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
+  if (!_vm._isMounted) {
+    _vm.e0 = function ($event) {
+      _vm.states = 1
+    }
+  }
 }
 var recyclableRender = false
 var staticRenderFns = []
@@ -168,6 +173,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _api = __webpack_require__(/*! ./api */ 107);
+var _report = _interopRequireDefault(__webpack_require__(/*! @/utils/report/report */ 67));
 var _vuex = __webpack_require__(/*! vuex */ 14);
 var _tool = _interopRequireDefault(__webpack_require__(/*! ./tool/tool.js */ 108));
 var _upload = __webpack_require__(/*! ./upload/upload */ 109);
@@ -264,6 +270,15 @@ var xBtn = function () {
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+// 埋点上报
 var _default = exports.default = {
   data() {
     return {
@@ -286,7 +301,8 @@ var _default = exports.default = {
         path: "/pages-sub/ai-ceyan/index",
         imageUrl: "https://udstatic.imeik.com/compressed/1751595118141_images.jpeg"
       },
-      shareDataAi: null
+      shareDataAi: null,
+      states: 1 //1 默认  2 重新上传开始分析
     };
   },
   computed: {
@@ -306,6 +322,45 @@ var _default = exports.default = {
     this.intelligentAnimation = false;
   },
   methods: {
+    // ai分析
+    async getdiagnose() {
+      this.intelligentAnimation = true;
+      try {
+        const {
+          code,
+          data,
+          message
+        } = await (0, _api.diagnose)({
+          jwImgUrl: this.uploadImage,
+          inviterCode: ''
+        });
+        if (code == 200) {
+          this.shareDataAi = data;
+          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==========');
+          if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
+            this.$refs.popup.open('center');
+          } else {
+            setTimeout(() => {
+              uni.navigateTo({
+                url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+              });
+            }, 3000);
+          }
+        } else {
+          this.$refs.popup.open('center');
+          uni.showToast({
+            title: message,
+            icon: 'none'
+          });
+        }
+        setTimeout(() => {
+          this.intelligentAnimation = false;
+          this.states = 1;
+        }, 3000);
+      } catch (error) {
+        console.log(error, 'error');
+      }
+    },
     //科技馆 - 用户进入科技馆板块，弹框助力提醒
     async getAssis() {
       try {
@@ -330,6 +385,7 @@ var _default = exports.default = {
       }
     },
     // 图片上传方法
+
     getUploadImage() {
       let thst = this;
       return new Promise((resolve, reject) => {
@@ -342,7 +398,6 @@ var _default = exports.default = {
             const savePath = "image";
             const filePath = res.tempFiles[0].tempFilePath;
             thst.image = filePath;
-            thst.intelligentAnimation = true;
             (0, _upload.upload)(filePath, savePath, imageUrl => {
               console.log("imageUrl----------", imageUrl);
               if (imageUrl) {
@@ -364,35 +419,8 @@ var _default = exports.default = {
         const imageUrl = await this.getUploadImage();
         console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
         this.uploadImage = imageUrl;
-        const {
-          code,
-          data,
-          message
-        } = await (0, _api.diagnose)({
-          jwImgUrl: imageUrl,
-          inviterCode: ''
-        });
-        if (code == 200) {
-          this.shareDataAi = data;
-          if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
-            this.$refs.popup.open('center');
-          } else {
-            setTimeout(() => {
-              uni.navigateTo({
-                url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-              });
-            }, 3000);
-          }
-        } else {
-          this.$refs.popup.open('center');
-          uni.showToast({
-            title: message,
-            icon: 'none'
-          });
-        }
-        setTimeout(() => {
-          this.intelligentAnimation = false;
-        }, 3000);
+        // this.getdiagnose(imageUrl)
+        this.states = 2;
       } catch (error) {
         console.log(error, 'error');
       }
@@ -438,42 +466,12 @@ var _default = exports.default = {
                 const savePath = "image";
                 const filePath = res.tempImagePath;
                 thst.image = filePath;
-                thst.intelligentAnimation = true;
                 (0, _upload.upload)(filePath, savePath, async imageUrl => {
                   console.log("imageUrl----------", imageUrl);
                   this.report('照片上传成功的次数/人次');
                   if (imageUrl) {
-                    const {
-                      code,
-                      data,
-                      message
-                    } = await (0, _api.diagnose)({
-                      jwImgUrl: res.tempImagePath,
-                      inviterCode: ''
-                    });
-                    if (code == 200) {
-                      this.report('完成AI颈纹检测的次数/人次');
-                      this.shareDataAi = data;
-                      if (data.diagnoseBoxCount > 0 || data.diagnoseTime > 0) {
-                        this.$refs.popup.open('center');
-                      } else {
-                        setTimeout(() => {
-                          uni.navigateTo({
-                            url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-                          });
-                        }, 3000);
-                      }
-                    } else {
-                      uni.showToast({
-                        title: message,
-                        icon: 'none'
-                      });
-                      this.report('AI颈纹检测失败的次数/人次');
-                      this.$refs.popup.open('center');
-                    }
-                    setTimeout(() => {
-                      this.intelligentAnimation = false;
-                    }, 3000);
+                    this.uploadImage = imageUrl;
+                    this.states = 2;
                   } else {
                     uni.showToast({
                       title: '图片上传失败，请稍后重试',
