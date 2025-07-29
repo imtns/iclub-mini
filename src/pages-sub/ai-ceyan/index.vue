@@ -53,7 +53,7 @@
       </view>
     </view>
     <!-- 重新上传 开始分析 -->
-    <view class="btnFlex" v-if="!intelligentAnimation && states == 2">
+    <view class="btnFlex" v-else-if="!intelligentAnimation && states == 2">
       <view @click="states = 1">
         <image class="" :src="`${ASSETSURL}index_01.png`" style="width: 272rpx; height: 114rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
@@ -201,7 +201,6 @@ export default {
       }
     },
     // 图片上传方法
-
     getUploadImage () {
       let thst = this
       return new Promise((resolve, reject) => {
