@@ -149,6 +149,7 @@ export default {
   methods: {
     // ai分析
     async getdiagnose () {
+      this.report('【开始分析】按钮点击次数/人次')
       this.intelligentAnimation = true
       try {
         const { code, data, message } = await diagnose({ jwImgUrl: this.uploadImage, inviterCode: '' })
@@ -201,6 +202,7 @@ export default {
       }
     },
     // 图片上传方法
+
     getUploadImage () {
       let thst = this
       return new Promise((resolve, reject) => {
@@ -262,7 +264,6 @@ export default {
     },
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload () {
-      this.report('【开始分析】按钮点击次数/人次')
       let thst = this
       // 检查摄像头权限
       uni.getSetting({

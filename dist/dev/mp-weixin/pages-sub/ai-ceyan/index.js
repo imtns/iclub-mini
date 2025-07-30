@@ -324,6 +324,7 @@ var _default = exports.default = {
   methods: {
     // ai分析
     async getdiagnose() {
+      this.report('【开始分析】按钮点击次数/人次');
       this.intelligentAnimation = true;
       try {
         const {
@@ -446,7 +447,6 @@ var _default = exports.default = {
     },
     // 拍照上传，先判断是否开启摄像头权限
     getPhotoUpload() {
-      this.report('【开始分析】按钮点击次数/人次');
       let thst = this;
       // 检查摄像头权限
       uni.getSetting({
