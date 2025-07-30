@@ -83,6 +83,7 @@ export default {
     xBtn,
   },
   onLoad(ope) {
+    const hasInviteCode = (getApp().globalData && getApp().globalData.inviteCode) || "";
     const shareLinkTime = (getApp().globalData && getApp().globalData.shareLinkTime) || "";
     const date = moment(shareLinkTime);
     const isToday = date.isSame(moment(), "day");
