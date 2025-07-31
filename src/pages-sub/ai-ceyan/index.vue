@@ -19,6 +19,8 @@
         <view style="width: 100%; height: 100%;" v-if="states == 2">
           <image class="scan-anim" :src="image" style="width: 100%; height: 100%;" mode="aspectFill">
           </image>
+          <image class="scanKuan" :src="`${ASSETSURL}takePicturesbg_03.png`" mode="aspectFill">
+          </image>
         </view>
         <view style="width: 100%; height: 100%;" v-else-if="!intelligentAnimation && !takePictures">
           <image class="scan-anim" :src="`${ASSETSURL}takePicturesbg_02.png`" style="width: 100%; height: 100%;"
@@ -28,6 +30,8 @@
         <view style="width: 100%; height: 100%;" v-else>
           <camera device-position="front" flash="auto" style="width: 100%; height: 100%;" @error="onCameraError">
           </camera>
+          <image class="scanKuan" :src="`${ASSETSURL}takePicturesbg_03.png`" mode="aspectFill">
+          </image>
         </view>
       </view>
 
@@ -386,7 +390,15 @@ export default {
       height: 687rpx;
       top: 161rpx;
       right: 29rpx;
+
       // background: red;
+      .scanKuan {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 596rpx;
+        height: 453rpx;
+      }
     }
 
     .saomiao {

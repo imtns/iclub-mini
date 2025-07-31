@@ -23,6 +23,14 @@ module.exports = {
       data,
       false
     ),
+  //活动基础配置
+  activityIfo: (data) =>
+    request(
+      'https://iclub-backend-test.imeik.com/iclub/openApi/activity/info',
+      'post',
+      data,
+      false
+    ),
   apiDianzan: (data) =>
     request('/iclub/api/content/upvote', 'post', data, true),
   findAliToken: () =>

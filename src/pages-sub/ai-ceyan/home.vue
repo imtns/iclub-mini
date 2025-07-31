@@ -2,7 +2,8 @@
   <view style="background-color: #febd01; min-height: 100vh">
     <view class="box" :style="{ backgroundImage: `url(${ASSETSURL}home_01.png)` }">
       <!-- 免责说明 -->
-      <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}${home_03 ? 'home_02s' : 'home_02'}.png)` }" @click="home_03 = !home_03">
+      <view class="home_02" :style="{ backgroundImage: `url(${ASSETSURL}${home_03 ? 'home_02s' : 'home_02'}.png)` }"
+        @click="home_03 = !home_03">
         <!-- <view class="home_03" v-if="home_03"> -->
         <!-- <image @click="getReupload" :src="`${ASSETSURL}home_03.png`" style="width: 28rpx; height: 28rpx;"
           mode="aspectFit|aspectFill|widthFix" /> -->
@@ -12,19 +13,23 @@
       <!-- 底部按钮 -->
       <view class="home_btn">
         <view class="home_04" @click="getNav()">
-          <image :src="`${ASSETSURL}home_04.png`" style="width: 297rpx; height: 96rpx" mode="aspectFit|aspectFill|widthFix" />
+          <image :src="`${ASSETSURL}home_04.png`" style="width: 297rpx; height: 96rpx"
+            mode="aspectFit|aspectFill|widthFix" />
         </view>
         <view class="home_05">
           <button type="primary" open-type="share" hover-class="none" @click="handleShareClick">
-            <image :src="`${ASSETSURL}home_05.png`" style="width: 297rpx; height: 96rpx" mode="aspectFit|aspectFill|widthFix" />
+            <image :src="`${ASSETSURL}home_05.png`" style="width: 297rpx; height: 96rpx"
+              mode="aspectFit|aspectFill|widthFix" />
           </button>
         </view>
       </view>
-      <uni-popup ref="popupShow" :mask-click="false" border-radius="10px 10px 0 0" @close="beforeDestroy" maskBackgroundColor="rgba(0,0,0,0.7)">
+      <uni-popup ref="popupShow" :mask-click="false" border-radius="10px 10px 0 0" @close="beforeDestroy"
+        maskBackgroundColor="rgba(0,0,0,0.7)">
         <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
           <image :src="`${ASSETSURL}home_05.png`" mode="widthFix" />
         </view>
-        <view class="popupShowClone" v-if="countdown > 0" :style="{ backgroundImage: `url(${ASSETSURL}home_07.png)` }"> {{ countdown }}s </view>
+        <view class="popupShowClone" v-if="countdown > 0" :style="{ backgroundImage: `url(${ASSETSURL}home_07.png)` }">
+          {{ countdown }}s </view>
         <view class="popupShowElse" v-else>
           <view style="margin-right: 17rpx" @click="$refs.popupShow.close()">
             <image :src="`${ASSETSURL}home_08.png`" mode="widthFix" style="width: 174rpx; height: 96rpx" />
@@ -38,15 +43,13 @@
       <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
         <!-- 助力成功弹窗 -->
         <view class="diagnostics" v-if="true">
-          <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx" mode="aspectFit|aspectFill|widthFix"> </image>
-          <view class="diagnosticstext" style="margin-top: 0"> {{ shareData.assistUserName || "" }} <br />已完成颈纹分析 </view>
+          <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx"
+            mode="aspectFit|aspectFill|widthFix"> </image>
+          <view class="diagnosticstext" style="margin-top: 0"> {{ shareData.assistUserName || "" }} <br />已完成颈纹分析
+          </view>
           <view class="diagnosticstexts"> 恭喜您获得{{ shareData.count || 0 }}个嗨嗨宝盒 </view>
-          <image
-            @click="$refs.popup.close()"
-            :src="`${ASSETSURL}lq.png`"
-            style="margin-top: 58rpx; width: 230rpx; height: 97rpx"
-            mode="aspectFit|aspectFill|widthFix"
-          >
+          <image @click="$refs.popup.close()" :src="`${ASSETSURL}lq.png`"
+            style="margin-top: 58rpx; width: 230rpx; height: 97rpx" mode="aspectFit|aspectFill|widthFix">
           </image>
         </view>
       </uni-popup>
@@ -56,12 +59,12 @@
 
 <script>
 import xBtn from "@/components/x/btn.vue";
-import { testAPI, assistRemind, diagnose } from "./api";
+import { testAPI, assistRemind, diagnose, activityIfo } from "./api";
 import { mapState } from "vuex";
 import Tool from "./tool/tool.js";
 import { upload } from "./upload/upload";
 export default {
-  data() {
+  data () {
     return {
       ASSETSURL: Tool.ASSETSURL,
       popupShow: false, //弹窗
@@ -74,6 +77,8 @@ export default {
       countdown: 10, // 倒计时秒数
       countdownTimer: null, // 计时器引用
       shareData: null,
+      isStarted: null, //活动时间是否开启' true  开启 false 结束
+      isEnded: null,//活动时间是否结束 true  结束 false 开启
     };
   },
   computed: {
@@ -82,7 +87,7 @@ export default {
   components: {
     xBtn,
   },
-  onLoad(ope) {
+  onLoad (ope) {
     const hasInviteCode = (getApp().globalData && getApp().globalData.inviteCode) || "";
     const shareLinkTime = (getApp().globalData && getApp().globalData.shareLinkTime) || "";
     const date = moment(shareLinkTime);
@@ -93,6 +98,7 @@ export default {
       uni.showToast({
         title: "助力链接已失效",
         icon: "none",
+        duration: 3000,
       });
     }
     // if (ope.shareExpire == 1) {
@@ -102,12 +108,33 @@ export default {
     //   })
     // }
   },
-  onShow() {
+  onShow () {
     this.getAssis();
+    this.getaCtivityIfo();
   },
   methods: {
+    //活动基础配置
+    async getaCtivityIfo () {
+      try {
+        const { code, data, message } = await activityIfo();
+        console.log(code, data, message, "活动基础配置");
+        if (code == 200 && data) {
+          // 判断活动是否开始和结束
+          console.log(data.startTime, '活动开始时间');
+          console.log(data.endTime, '活动结束时间');
+          console.log(data.sysTime, '系统时间');
+          this.isStarted = data.startTime < data.sysTime;
+          this.isEnded = data.endTime < data.sysTime;
+          console.log(this.isStarted, '活动时间是否开启');
+          console.log(this.isEnded, '活动时间是否结束');
+
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    },
     //科技馆 - 用户进入科技馆板块，弹框助力提醒
-    async getAssis() {
+    async getAssis () {
       try {
         const { code, data, message } = await assistRemind();
         console.log(code, data, message, "用户进入科技馆板块，弹框助力提醒");
@@ -120,7 +147,24 @@ export default {
         console.log(err);
       }
     },
-    getNav(e) {
+    //开始检测
+    getNav (e) {
+      // 判断活动是否开启
+      if (!this.isStarted) {
+        uni.showToast({
+          title: "活动未开始",
+          icon: "none"
+        });
+        return;
+      }
+      // 判断活动是否已结束
+      if (this.isEnded) {
+        uni.showToast({
+          title: "活动已结束",
+          icon: "none"
+        });
+        return;
+      }
       if (!this.isLogin) {
         this.goLogin();
         return;
@@ -144,7 +188,7 @@ export default {
         });
       }
     },
-    handleShareClick() {
+    handleShareClick () {
       this.report("【邀请好友检测】点击次数/人次");
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
@@ -155,7 +199,7 @@ export default {
         // buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
       };
     },
-    openPopupWithCountdown() {
+    openPopupWithCountdown () {
       this.countdown = 10;
       this.$refs.popupShow.open("center");
       if (this.countdownTimer) clearInterval(this.countdownTimer);
@@ -172,7 +216,7 @@ export default {
       }, 1000);
     },
   },
-  beforeDestroy() {
+  beforeDestroy () {
     if (this.countdownTimer) clearInterval(this.countdownTimer);
   },
 };

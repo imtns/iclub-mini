@@ -19,8 +19,10 @@
     <view class="unpBg" @longpress="handlePoster" :style="{ backgroundImage: `url(${ASSETSURL}unpBg2.png)` }">
       <!-- 照片 -->
       <view class="unpBg_01" :style="{ backgroundImage: `url(${ASSETSURL}unpBg_01.png)` }">
-        <image class="scan-anim" :src="shareDataAi.jwImgUrl" style="width: 100%; height: 100%" mode="aspectFill">
-        </image>
+        <view class="unpBg_01_bg" :style="{ backgroundImage: `url(${shareDataAi.newJwImgUrl})` }">
+          <image class="scan-anim" :src="shareDataAi.oldJwImgUrl" style="width: 100%; height: 100%" mode="aspectFill">
+          </image>
+        </view>
       </view>
       <view class="unpBg_02">
         <image class="scan-anim" :src="ASSETSURL + 'unpBg_02.png'" style="width: 134rpx; height: 189rpx"
@@ -265,14 +267,14 @@ export default {
                   left: "257rpx",
                   borderRadius: "0",
                   position: "absolute",
-                  zIndex: 2,
+                  zIndex: 3,
 
                 },
               },
-              //上传的图片
+              //上传的图片 背景
               {
                 type: "image",
-                src: `${this.shareDataAi.jwImgUrl}`,
+                src: `${this.shareDataAi.newJwImgUrl}`,
                 css: {
                   width: "294rpx",
                   height: "365rpx",
@@ -281,6 +283,20 @@ export default {
                   borderRadius: "0",
                   position: "absolute",
                   zIndex: 1,
+                },
+              },
+              //上传的图片
+              {
+                type: "image",
+                src: `${this.shareDataAi.oldJwImgUrl}`,
+                css: {
+                  width: "294rpx",
+                  height: "365rpx",
+                  top: "399rpx",
+                  left: "49rpx",
+                  borderRadius: "0",
+                  position: "absolute",
+                  zIndex: 2,
                 },
               },
               {
@@ -602,6 +618,11 @@ export default {
     position: absolute;
     top: 380rpx;
     left: 34rpx;
+
+    .unpBg_01_bg {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   .unpBg_02 {
