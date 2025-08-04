@@ -41,8 +41,8 @@
       </view>
       <view class="textIcon">
         <view class="unpBg_04_wrap">
-          <text class="wrap-text">{{ shareDataAi.result }}</text>
-          <image class="wrap-img" :src="`${ASSETSURL}expand.png`" @click="$refs.analysisPopup.open()" />
+          <view class="wrap-text" v-html="resultWithBr.text1"></view>
+          <!-- <image class="wrap-img" :src="`${ASSETSURL}expand.png`" @click="$refs.analysisPopup.open()" /> -->
         </view>
       </view>
       <!-- 二维码啥的 -->
@@ -126,6 +126,35 @@
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
     </uni-popup>
+    <!-- 弹窗部分 -->
+    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
+      <!-- AI成功弹窗 -->
+      <view class="diagnostics" v-if="shareDataAi">
+        <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
+          mode="aspectFit|aspectFill|widthFix">
+        </image>
+        <view class="diagnosticstext" style="margin-top: 0;">
+          颈纹诊断已完成
+        </view>
+        <view class="diagnosticstexts">
+          恭喜您获得{{ shareDataAi.diagnoseBoxCount + shareDataAi.assistBoxCount || 0 }}个嗨嗨宝盒
+        </view>
+        <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
+          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+      <!-- AI失败弹窗 -->
+      <view class="diagnostics" v-else>
+        <image :src="`${ASSETSURL}diagnostics.png`" style="width: 228rpx; height: 367rpx;"
+          mode="aspectFit|aspectFill|widthFix"></image>
+        <view class="diagnosticstext">
+          颈纹分析失败 请上传清晰的颈部照片
+        </view>
+        <image @click="getReupload" :src="`${ASSETSURL}reupload.png`"
+          style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
+        </image>
+      </view>
+    </uni-popup>
   </view>
 </template>
 
@@ -140,10 +169,19 @@ export default {
   },
   computed: {
     ...mapState(["isLogin", "userInfo"]),
+    resultWithBr() {
+      if (!this.shareDataAi || !this.shareDataAi.result) return '';
+      console.log(this.shareDataAi.result, '=====-----123123--------');
+      // 替换。和!为。<br/>和!<br/>
+      return {
+        text1: this.shareDataAi.result.replace(/([。!！])/g, '$1<br/>'),
+        text2: this.shareDataAi.result.replace(/([。!！])/g, '$1\n')
+      }
+    }
   },
-  data () {
+  data() {
     return {
-      shareDataAi: '',
+      shareDataAi: null,
       ASSETSURL: Tool.ASSETSURL,
       posterImage: "",
       shareInfo: {
@@ -153,16 +191,19 @@ export default {
       },
     }
   },
-  onLoad (options) {
+  onLoad(options) {
     if (options.data) {
       console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
       this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
+      if (this.shareDataAi.diagnoseBoxCount > 0 || this.shareDataAi.assistBoxCount > 0) {
+        this.$refs.popup.open('center')
+      }
     }
   },
-  onShow () {
+  onShow() {
   },
   methods: {
-    handlePoster () {
+    handlePoster() {
       uni.showLoading({
         title: '保存中...'
       });
@@ -176,7 +217,7 @@ export default {
         }
       });
     },
-    onFail (err) {
+    onFail(err) {
       console.error("err", err);
       uni.hideLoading();
 
@@ -185,7 +226,7 @@ export default {
         icon: "none",
       });
     },
-    getPoster () {
+    getPoster() {
       return {
         css: {
           // width: "750rpx",
@@ -382,7 +423,7 @@ export default {
               // 描述
               {
                 type: "text",
-                text: `${this.shareDataAi.result}`,
+                text: `${this.resultWithBr.text2}`,
                 css: {
                   width: "639rpx",
                   hight: '95rpx',
@@ -454,7 +495,7 @@ export default {
       };
     },
     // 保存海报
-    onSuccess (path) {
+    onSuccess(path) {
       console.log("🚀 ~ onSuccess ~ path:", path);
       this.posterImage = path;
       // 保存到相册
@@ -478,12 +519,12 @@ export default {
         }
       });
     },
-    leftClick () {
+    leftClick() {
       uni.navigateBack({
         delta: 2,
       })
     },
-    handleShareClick () {
+    handleShareClick() {
       this.report('【邀请好友检测】点击次数/人次')
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
@@ -494,6 +535,10 @@ export default {
         // buttonImage: "https://udstatic.imeik.com/compressed/1751595501058_52e7dd424e57ad14f1dc8460962e33791c3ad6e04e5074417c2f73d49148c4_640.jpeg",
       };
     },
+    //重新上传
+    getReupload(e) {
+      this.$refs.popup.close()
+    }
   }
 }
 </script>
@@ -689,7 +734,7 @@ export default {
         color: #6E6D6A;
         line-height: 35rpx;
         word-break: break-all;
-        max-width: calc(100% - 90rpx);
+        // max-width: calc(100% - 90rpx);
       }
 
       .wrap-img {
@@ -744,15 +789,16 @@ export default {
 }
 
 .unpBg_08 {
-  margin-top: 50rpx;
+  margin-top: 70rpx;
   position: relative;
   display: flex;
   justify-content: center;
 
   .unpBg_08_01 {
     position: absolute;
-    left: 50rpx;
-    top: -35rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    top: -50rpx;
   }
 }
 
@@ -808,6 +854,32 @@ export default {
   margin: 35rpx auto 0;
   justify-content: center;
 }
+
+.diagnostics {
+  margin: 0 118rpx;
+  text-align: center;
+
+  .diagnosticstext {
+    font-family: OPPOSans;
+    font-weight: 800;
+    font-size: 52rpx;
+    color: #FFFFFF;
+    // -webkit-text-stroke: 2rpx #000000;
+    // text-stroke: 2rpx #000000;
+    margin-top: 43rpx;
+  }
+
+  .diagnosticstexts {
+    font-family: OPPOSans;
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #FFFFFF;
+    // text-stroke: 2rpx #000000;
+    // -webkit-text-stroke: 2rpx #000000;
+    margin-top: 12rpx;
+  }
+}
+
 
 button {
   background: none;

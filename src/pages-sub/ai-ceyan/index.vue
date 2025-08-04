@@ -160,15 +160,15 @@ export default {
         if (code == 200) {
           this.shareDataAi = data
           console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==========');
-          if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
-            this.$refs.popup.open('center')
-          } else {
+          // if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
+          //   this.$refs.popup.open('center')
+          // } else {
             setTimeout(() => {
               uni.navigateTo({
                 url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
               })
             }, 3000);
-          }
+          // }
         } else {
           this.$refs.popup.open('center')
           uni.showToast({
