@@ -341,7 +341,7 @@ var _default = exports.default = {
         });
         if (code == 200) {
           this.shareDataAi = data;
-          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==========');
+          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==更新更新========');
           // if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
           //   this.$refs.popup.open('center')
           // } else {
