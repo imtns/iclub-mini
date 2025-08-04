@@ -127,7 +127,7 @@
       </view>
     </uni-popup>
     <!-- 弹窗部分 -->
-    <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
+    <uni-popup ref="popupAi" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
       <!-- AI成功弹窗 -->
       <view class="diagnostics" v-if="shareDataAi">
         <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
@@ -196,7 +196,7 @@ export default {
       console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
       this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
       if (this.shareDataAi.diagnoseBoxCount > 0 || this.shareDataAi.assistBoxCount > 0) {
-        this.$refs.popup.open('center')
+        this.$refs.popupAi.open('center')
       }
     }
   },
