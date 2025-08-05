@@ -195,7 +195,6 @@ export default {
     if (options.data) {
       console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
       this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
-      this.$refs.popupAi.open('center')
       if (this.shareDataAi.diagnoseBoxCount > 0 || this.shareDataAi.assistBoxCount > 0) {
         setTimeout(() => {
           this.$refs.popupAi.open('center')
