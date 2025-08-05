@@ -163,11 +163,11 @@ export default {
           // if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
           //   this.$refs.popup.open('center')
           // } else {
-            setTimeout(() => {
-              uni.navigateTo({
-                url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
-              })
-            }, 3000);
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+            })
+          }, 3000);
           // }
         } else {
           this.$refs.popup.open('center')
@@ -376,7 +376,7 @@ export default {
       font-weight: 500;
       font-size: 25rpx;
       color: #000000;
-      width: 260rpx;
+      width: 350rpx;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;

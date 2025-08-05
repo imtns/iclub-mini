@@ -169,7 +169,7 @@ export default {
   },
   computed: {
     ...mapState(["isLogin", "userInfo"]),
-    resultWithBr() {
+    resultWithBr () {
       if (!this.shareDataAi || !this.shareDataAi.result) return '';
       console.log(this.shareDataAi.result, '=====-----123123--------');
       // 替换。和!为。<br/>和!<br/>
@@ -179,7 +179,7 @@ export default {
       }
     }
   },
-  data() {
+  data () {
     return {
       shareDataAi: null,
       ASSETSURL: Tool.ASSETSURL,
@@ -191,7 +191,7 @@ export default {
       },
     }
   },
-  onLoad(options) {
+  onLoad (options) {
     if (options.data) {
       console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
       this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
@@ -200,10 +200,10 @@ export default {
       }
     }
   },
-  onShow() {
+  onShow () {
   },
   methods: {
-    handlePoster() {
+    handlePoster () {
       uni.showLoading({
         title: '保存中...'
       });
@@ -217,7 +217,7 @@ export default {
         }
       });
     },
-    onFail(err) {
+    onFail (err) {
       console.error("err", err);
       uni.hideLoading();
 
@@ -226,7 +226,7 @@ export default {
         icon: "none",
       });
     },
-    getPoster() {
+    getPoster () {
       return {
         css: {
           // width: "750rpx",
@@ -495,7 +495,7 @@ export default {
       };
     },
     // 保存海报
-    onSuccess(path) {
+    onSuccess (path) {
       console.log("🚀 ~ onSuccess ~ path:", path);
       this.posterImage = path;
       // 保存到相册
@@ -519,12 +519,12 @@ export default {
         }
       });
     },
-    leftClick() {
+    leftClick () {
       uni.navigateBack({
         delta: 2,
       })
     },
-    handleShareClick() {
+    handleShareClick () {
       this.report('【邀请好友检测】点击次数/人次')
       // 如果页面有按钮点击分享，按钮点击分享的title在shareInfo的buttonTitle里定义
       this.shareInfo = {
@@ -536,8 +536,8 @@ export default {
       };
     },
     //重新上传
-    getReupload(e) {
-      this.$refs.popup.close()
+    getReupload (e) {
+      this.$refs.popupAi.close()
     }
   }
 }
