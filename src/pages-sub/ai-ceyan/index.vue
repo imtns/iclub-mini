@@ -159,10 +159,10 @@ export default {
         const { code, data, message } = await diagnose({ jwImgUrl: this.uploadImage, inviterCode: '' })
         if (code == 200) {
           this.shareDataAi = data
-          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==更新更新222========');
+          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==更新更新333========');
           setTimeout(() => {
             uni.navigateTo({
-              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + encodeURIComponent(JSON.stringify(this.shareDataAi))
             })
           }, 3000);
         } else {
@@ -381,6 +381,7 @@ export default {
       display: -webkit-box;
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
+      text-align: center;
     }
 
     .camera {

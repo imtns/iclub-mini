@@ -195,8 +195,11 @@ export default {
     if (options.data) {
       console.log(JSON.parse(decodeURIComponent(options.data)), '=====-------------');
       this.shareDataAi = JSON.parse(decodeURIComponent(options.data))
+      this.$refs.popupAi.open('center')
       if (this.shareDataAi.diagnoseBoxCount > 0 || this.shareDataAi.assistBoxCount > 0) {
-        this.$refs.popupAi.open('center')
+        setTimeout(() => {
+          this.$refs.popupAi.open('center')
+        }, 1000)
       }
     }
   },
@@ -618,10 +621,15 @@ export default {
     font-weight: 800;
     font-size: 52rpx;
     color: #FFFFFF;
-    -webkit-text-stroke: 2rpx #000000;
-    text-stroke: 2rpx #000000;
     margin-top: 43rpx;
-    margin-bottom: 58rpx;
+  }
+
+  .diagnosticstexts {
+    font-family: OPPOSans;
+    font-weight: 500;
+    font-size: 32rpx;
+    color: #FFFFFF;
+    margin-top: 12rpx;
   }
 }
 
