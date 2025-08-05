@@ -26,7 +26,9 @@
       <uni-popup ref="popupShow" :mask-click="false" border-radius="10px 10px 0 0" @close="beforeDestroy"
         maskBackgroundColor="rgba(0,0,0,0.7)">
         <view class="popupShow" :style="{ backgroundImage: `url(${ASSETSURL}home_06.png)` }">
-          <image :src="`${ASSETSURL}rule.png`" mode="widthFix" />
+          <view class="popupShowRule">
+            <image :src="`${ASSETSURL}rule.png`" mode="widthFix" />
+          </view>
         </view>
         <view class="popupShowClone" v-if="countdown > 0" :style="{ backgroundImage: `url(${ASSETSURL}home_07.png)` }">
           {{ countdown }}s </view>
@@ -273,8 +275,16 @@ export default {
     width: 530rpx;
     height: 903rpx;
     background-size: 100% 100%;
-    padding: 215rpx 24rpx 0 32rpx;
+    padding: 215rpx 24rpx 66rpx 32rpx;
     box-sizing: border-box;
+    overflow: hidden;
+
+    .popupShowRule {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+
+    }
   }
 
   .popupShowClone {
