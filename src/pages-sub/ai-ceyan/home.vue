@@ -275,7 +275,7 @@ export default {
     width: 530rpx;
     height: 903rpx;
     background-size: 100% 100%;
-    padding: 215rpx 24rpx 66rpx 32rpx;
+    padding: 236rpx 42rpx 46rpx 52rpx;
     box-sizing: border-box;
     overflow: hidden;
 
