@@ -99,9 +99,9 @@
     <!-- <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn> -->
     <l-painter ref="painter" type="2d" is-canvas-to-temp-file-path custom-style="position: fixed; left: 200%"
       @success="onSuccess" @fail="onFail"> </l-painter>
-    <!-- <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
+    <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
       mode="aspectFit|aspectFill|widthFix">
-    </image> -->
+    </image>
     <!-- 咨询弹窗部分 -->
     <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
       <view class="consultingService" :style="{ backgroundImage: `url(${ASSETSURL}customerService.png)` }">
@@ -175,7 +175,7 @@ export default {
       // 替换。和!为。<br/>和!<br/>
       return {
         text1: this.shareDataAi.result.replace(/([。!！])/g, '$1<br/>'),
-        text2: this.shareDataAi.result.replace(/([。!！])/g, '$1\n')
+        text2: this.shareDataAi.result.replace(/([。！])/g, '$1 ')
       }
     }
   },
@@ -437,6 +437,7 @@ export default {
                   borderRadius: "0",
                   position: "absolute",
                   color: '#6E6D6A',
+                  // backgroundColor: 'red',
                   zIndex: 2,
                   lineClamp: '3'
                 },
