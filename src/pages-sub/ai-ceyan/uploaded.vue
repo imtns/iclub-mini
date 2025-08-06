@@ -264,30 +264,32 @@ export default {
               // 用户姓名
               {
                 type: "text",
-                text: `${this.userInfo.nickName}的`,
+                text: `${this.userInfo.nickName}的ai颈纹分析结果`,
                 css: {
-                  width: '148rpx',
-                  fontSize: '49rpx',
-                  top: "310rpx",
+                  width: '660rpx',
+                  fontSize: '40rpx',
+                  top: "320rpx",
                   left: "51rpx",
                   borderRadius: "0",
                   position: "absolute",
+                  // textAlign: 'center',
+                  // backgroundColor: 'red',
                   lineClamp: '1'
                 },
               },
-              {
-                type: "text",
-                text: `ai颈纹分析结果`,
-                css: {
-                  width: '260rpx',
-                  fontSize: '34rpx',
-                  top: "325rpx",
-                  left: "210rpx",
-                  borderRadius: "0",
-                  position: "absolute",
-                  // lineClamp: '1'
-                },
-              },
+              // {
+              //   type: "text",
+              //   text: ``,
+              //   css: {
+              //     width: '260rpx',
+              //     fontSize: '34rpx',
+              //     top: "325rpx",
+              //     left: "260rpx",
+              //     borderRadius: "0",
+              //     position: "absolute",
+              //     // lineClamp: '1'
+              //   },
+              // },
               {
                 type: "image",
                 src: `${this.ASSETSURL}poster_02.png`,

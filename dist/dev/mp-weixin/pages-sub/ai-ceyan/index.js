@@ -341,16 +341,12 @@ var _default = exports.default = {
         });
         if (code == 200) {
           this.shareDataAi = data;
-          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==更新更新========');
-          // if (data.diagnoseBoxCount > 0 || data.assistBoxCount > 0) {
-          //   this.$refs.popup.open('center')
-          // } else {
+          console.log(this.shareDataAi.diagnoseBoxCount + this.shareDataAi.assistBoxCount, '------==更新更新333========');
           setTimeout(() => {
             uni.navigateTo({
-              url: '/pages-sub/ai-ceyan/uploaded?data=' + decodeURIComponent(JSON.stringify(this.shareDataAi))
+              url: '/pages-sub/ai-ceyan/uploaded?data=' + encodeURIComponent(JSON.stringify(this.shareDataAi))
             });
           }, 3000);
-          // }
         } else {
           this.$refs.popup.open('center');
           uni.showToast({
@@ -364,6 +360,12 @@ var _default = exports.default = {
         }, 3000);
       } catch (error) {
         console.log(error, 'error');
+        uni.showToast({
+          title: error.message,
+          icon: 'none'
+        });
+        this.intelligentAnimation = false;
+        this.states = 1;
       }
     },
     //科技馆 - 用户进入科技馆板块，弹框助力提醒
@@ -390,7 +392,6 @@ var _default = exports.default = {
       }
     },
     // 图片上传方法
-
     getUploadImage() {
       let thst = this;
       return new Promise((resolve, reject) => {
