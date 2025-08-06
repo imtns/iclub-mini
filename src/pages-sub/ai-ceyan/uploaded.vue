@@ -99,9 +99,9 @@
     <!-- <x-btn :loading="isLoading" @click="handlePoster">生成海报</x-btn> -->
     <l-painter ref="painter" type="2d" is-canvas-to-temp-file-path custom-style="position: fixed; left: 200%"
       @success="onSuccess" @fail="onFail"> </l-painter>
-    <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
+    <!-- <image class="scan-anim" :src="posterImage" style="width: 100vw; height: 1480rpx"
       mode="aspectFit|aspectFill|widthFix">
-    </image>
+    </image> -->
     <!-- 咨询弹窗部分 -->
     <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
       <view class="consultingService" :style="{ backgroundImage: `url(${ASSETSURL}customerService.png)` }">
@@ -327,6 +327,7 @@ export default {
                   left: "49rpx",
                   borderRadius: "0",
                   position: "absolute",
+                  objectFit: 'cover',
                   zIndex: 1,
                 },
               },
@@ -341,6 +342,7 @@ export default {
                   left: "49rpx",
                   borderRadius: "0",
                   position: "absolute",
+                  objectFit: 'cover',
                   zIndex: 2,
                 },
               },
