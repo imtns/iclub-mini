@@ -185,7 +185,7 @@ export default {
         });
       } else {
         uni.showToast({
-          title: "请先勾选免责说明",
+          title: "请先阅读并同意《活动服务协议》",
           icon: "none",
         });
       }

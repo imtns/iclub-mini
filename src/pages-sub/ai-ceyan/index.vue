@@ -47,8 +47,12 @@
     </view>
     <!-- 底部拍照相册按钮 -->
     <view class="btnFlex" v-if="!intelligentAnimation && states == 1">
-      <view @click="getPhotoUpload">
+      <view @click="getPhotoUpload" v-if="!takePictures">
         <image class="" :src="`${ASSETSURL}photoUpload.png`" style="width: 272rpx; height: 114rpx;"
+          mode="aspectFit|aspectFill|widthFix"></image>
+      </view>
+      <view @click="getPhotoUpload" v-else>
+        <image class="" :src="`${ASSETSURL}dianjiPaiz.png`" style="width: 272rpx; height: 114rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
       </view>
       <view @click="handleUpload">
