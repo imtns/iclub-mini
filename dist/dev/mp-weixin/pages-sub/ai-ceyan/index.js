@@ -351,12 +351,6 @@ var _default = exports.default = {
               url: '/pages-sub/ai-ceyan/uploaded?data=' + encodeURIComponent(JSON.stringify(this.shareDataAi))
             });
           }, 3000);
-        } else {
-          this.$refs.popup.open('center');
-          uni.showToast({
-            title: message,
-            icon: 'none'
-          });
         }
         setTimeout(() => {
           this.intelligentAnimation = false;
@@ -364,10 +358,14 @@ var _default = exports.default = {
         }, 3000);
       } catch (error) {
         console.log(error, 'error');
-        uni.showToast({
-          title: error.message,
-          icon: 'none'
-        });
+        if (error.code == '-1') {
+          this.$refs.popup.open('center');
+        } else {
+          uni.showToast({
+            title: error.message,
+            icon: 'none'
+          });
+        }
         this.intelligentAnimation = false;
         this.states = 1;
       }
@@ -405,6 +403,11 @@ var _default = exports.default = {
           sourceType: ["album"],
           sizeType: ["original", "compressed"],
           success: async res => {
+            setTimeout(() => {
+              uni.showLoading({
+                title: '上传中...'
+              });
+            }, 500);
             const savePath = "image";
             const filePath = res.tempFiles[0].tempFilePath;
             thst.image = filePath;
@@ -431,7 +434,14 @@ var _default = exports.default = {
         this.uploadImage = imageUrl;
         // this.getdiagnose(imageUrl)
         this.states = 2;
+        uni.hideLoading();
+        setTimeout(() => {
+          uni.hideLoading();
+        }, 500);
       } catch (error) {
+        setTimeout(() => {
+          uni.hideLoading();
+        }, 500);
         console.log(error, 'error');
       }
     },

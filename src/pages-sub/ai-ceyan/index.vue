@@ -115,7 +115,7 @@ import { mapState } from "vuex";
 import Tool from './tool/tool.js'
 import { upload } from "./upload/upload";
 export default {
-  data () {
+  data() {
     return {
       takePictures: false,//是否开启拍照
       image: null,
@@ -144,10 +144,10 @@ export default {
   components: {
     xBtn
   },
-  onLoad () {
+  onLoad() {
     this.titleText = this.titleTextArr[Math.floor(Math.random() * this.titleTextArr.length)]
   },
-  onShow () {
+  onShow() {
     // if (!this.isLogin) {
     //   this.goLogin();
     //   return;
@@ -156,7 +156,7 @@ export default {
   },
   methods: {
     // ai分析
-    async getdiagnose () {
+    async getdiagnose() {
       this.report('【开始分析】按钮点击次数/人次')
       this.intelligentAnimation = true
       try {
@@ -169,12 +169,6 @@ export default {
               url: '/pages-sub/ai-ceyan/uploaded?data=' + encodeURIComponent(JSON.stringify(this.shareDataAi))
             })
           }, 3000);
-        } else {
-          this.$refs.popup.open('center')
-          uni.showToast({
-            title: message,
-            icon: 'none'
-          });
         }
         setTimeout(() => {
           this.intelligentAnimation = false
@@ -182,16 +176,20 @@ export default {
         }, 3000);
       } catch (error) {
         console.log(error, 'error');
-        uni.showToast({
-          title: error.message,
-          icon: 'none'
-        });
+        if (error.code == '-1') {
+          this.$refs.popup.open('center')
+        } else {
+          uni.showToast({
+            title: error.message,
+            icon: 'none'
+          });
+        }
         this.intelligentAnimation = false
         this.states = 1
       }
     },
     //科技馆 - 用户进入科技馆板块，弹框助力提醒
-    async getAssis () {
+    async getAssis() {
       try {
         const { code, data, message } = await assistRemind()
         console.log(code, data, message, '用户进入科技馆板块，弹框助力提醒')
@@ -210,7 +208,7 @@ export default {
       }
     },
     // 图片上传方法
-    getUploadImage () {
+    getUploadImage() {
       let thst = this
       return new Promise((resolve, reject) => {
         wx.chooseMedia({
@@ -219,6 +217,11 @@ export default {
           sourceType: ["album"],
           sizeType: ["original", "compressed"],
           success: async (res) => {
+            setTimeout(() => {
+              uni.showLoading({
+                title: '上传中...',
+              });
+            }, 500);
             const savePath = "image";
             const filePath = res.tempFiles[0].tempFilePath;
             thst.image = filePath
@@ -238,22 +241,29 @@ export default {
       });
     },
     //图片上传
-    async handleUpload () {
+    async handleUpload() {
       try {
         const imageUrl = await this.getUploadImage();
         console.log("🚀 ~ handleUpload ~ imageUrl:", imageUrl);
         this.uploadImage = imageUrl;
         // this.getdiagnose(imageUrl)
         this.states = 2
+        uni.hideLoading()
+        setTimeout(() => {
+          uni.hideLoading()
+        }, 500);
       } catch (error) {
+        setTimeout(() => {
+          uni.hideLoading()
+        }, 500);
         console.log(error, 'error');
       }
     },
-    leftClick () {
+    leftClick() {
       uni.navigateBack()
     },
     //拒绝摄像头后
-    onCameraError (e) {
+    onCameraError(e) {
       this.takePictures = false
       console.log(this.takePictures, 'thst.takePictures');
       uni.showModal({
@@ -270,7 +280,7 @@ export default {
       });
     },
     // 拍照上传，先判断是否开启摄像头权限
-    getPhotoUpload () {
+    getPhotoUpload() {
       let thst = this
       // 检查摄像头权限
       uni.getSetting({
@@ -339,7 +349,7 @@ export default {
       });
     },
     //重新上传
-    getReupload (e) {
+    getReupload(e) {
       this.$refs.popup.close()
       this.intelligentAnimation = false
       if (e == 1) {

@@ -34,7 +34,7 @@
         <view class="top_01">{{ shareDataAi.scoreLevel }}</view>
         <!-- 内容 -->
         <view class="top_02">
-          <view class="top_02_text">{{ shareDataAi.jwCountDesc }}</view>
+          <view class="top_02_text">{{ shareDataAi.jwCountDesc }}条</view>
           <view class="top_02_text">{{ shareDataAi.jwDepthDesc }}</view>
           <view class="top_02_text">{{ shareDataAi.jwLengthDesc }}</view>
         </view>
@@ -380,7 +380,7 @@ export default {
               // 数量
               {
                 type: "text",
-                text: `${this.shareDataAi.jwCountDesc}`,
+                text: `${this.shareDataAi.jwCountDesc}条`,
                 css: {
                   width: "333rpx",
                   top: "604rpx",
