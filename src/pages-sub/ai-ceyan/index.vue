@@ -78,7 +78,7 @@
     <!-- 弹窗部分 -->
     <uni-popup ref="popup" :mask-click="false" border-radius="10px 10px 0 0" maskBackgroundColor="rgba(0,0,0,0.7)">
       <!-- AI成功弹窗 -->
-      <view class="diagnostics" v-if="shareDataAi">
+      <!-- <view class="diagnostics" v-if="shareDataAi">
         <image :src="`${ASSETSURL}success.png`" style="width: 493rpx; height: 493rpx;"
           mode="aspectFit|aspectFill|widthFix">
         </image>
@@ -91,9 +91,9 @@
         <image @click="getReupload(1)" :src="`${ASSETSURL}lq.png`"
           style="margin-top: 58rpx; width: 230rpx; height: 97rpx;" mode="aspectFit|aspectFill|widthFix">
         </image>
-      </view>
+      </view> -->
       <!-- AI失败弹窗 -->
-      <view class="diagnostics" v-else>
+      <view class="diagnostics">
         <image :src="`${ASSETSURL}diagnostics.png`" style="width: 228rpx; height: 367rpx;"
           mode="aspectFit|aspectFill|widthFix"></image>
         <view class="diagnosticstext">
