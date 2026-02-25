@@ -1,0 +1,33 @@
+.button-wrap {
+  text-align: center;
+}
+
+.oily-wrap {
+  position: relative;
+}
+
+.oily-wrap .text {
+  position: absolute;
+  color: #666;
+  font-size: 28rpx;
+}
+
+.oily-wrap .t {
+  top: 64rpx;
+  left: 80rpx;
+}
+
+.oily-wrap .left {
+  top: 224rpx;
+  left: 40rpx;
+}
+
+.oily-wrap .right {
+  top: 224rpx;
+  right: 40rpx;
+}
+
+.oily-wrap .jaw {
+  top: 280rpx;
+  left: 70rpx;
+}

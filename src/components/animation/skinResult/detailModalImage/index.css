@@ -1,0 +1,91 @@
+.wrap {
+  position: relative;
+  right: 0;
+  left: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+  overflow: hidden;
+  border: 4rpx solid #356ad3;
+  border-radius: 28rpx;
+}
+
+.wrap .bottom-left,
+.wrap .bottom-right,
+.wrap .top-left,
+.wrap .top-right {
+  position: absolute;
+  height: 30rpx;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: contain;
+}
+
+.wrap .bottom-right,
+.wrap .top-left {
+  width: 30rpx;
+  background-image: url('https://cdn.faceplusplus.com.cn/wechat-miniprogram-skin-demo/assets/images/result/modal/AnimationTipTL.png');
+}
+
+.wrap .bottom-left,
+.wrap .top-right {
+  width: 172rpx;
+  background-image: url('https://cdn.faceplusplus.com.cn/wechat-miniprogram-skin-demo/assets/images/result/modal/AnimationTipTR.png');
+}
+
+.wrap .top-left {
+  top: -12rpx;
+  left: -12rpx;
+}
+
+.wrap .top-right {
+  top: -12rpx;
+  right: -12rpx;
+}
+
+.wrap .bottom-left {
+  left: -12rpx;
+}
+
+.wrap .bottom-left,
+.wrap .bottom-right {
+  bottom: -12rpx;
+  transform: rotateZ(180deg);
+}
+
+.wrap .bottom-right {
+  right: -12rpx;
+}
+
+.wrap .border1 {
+  margin: 10rpx;
+  padding: 2rpx;
+  border: 2rpx dashed #fff;
+  border-radius: 28rpx;
+}
+
+.wrap .border2 {
+  border: 4rpx solid #fff;
+  border-radius: 24rpx;
+}
+
+.wrap .border3 {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 18rpx;
+  /* background-image: url(~assets/images/AnimationTip-bg.png-do-not-use-local-path-./components/skinResult/detailModalImage/index.wxss&1&970); */
+  border: 2rpx solid #356ad3;
+  border-radius: 24rpx;
+}
+
+.wrap .img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

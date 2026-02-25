@@ -1,0 +1,40 @@
+.navigation {
+  position: relative;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  bottom: unset;
+  left: 0;
+  z-index: 999;
+  border-bottom: 1px solid rgba(0, 0, 0, 10%);
+}
+
+.navigation .mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  backdrop-filter: blur(10px);
+}
+
+.navigation .return {
+  position: absolute;
+  left: 17px;
+  width: 9px;
+  height: 18px;
+}
+
+.navigation .title {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  color: #000;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 22px;
+  text-align: center;
+}

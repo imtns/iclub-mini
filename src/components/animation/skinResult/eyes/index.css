@@ -1,0 +1,82 @@
+.button-wrap {
+  text-align: center;
+}
+
+.content,
+.content .imageWrap {
+  position: relative;
+  margin: auto;
+}
+
+.content .imageWrap {
+  width: 48vw;
+  height: 22vw;
+}
+
+.content .imageWrap .base {
+  width: 100%;
+  height: 100%;
+}
+
+.content .imageWrap .mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.content .side {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  flex-direction: column;
+  justify-content: center;
+  transform: translateY(-50%);
+}
+
+.content .side,
+.content .side .item {
+  display: flex;
+  align-items: center;
+}
+
+.content .side .item {
+  justify-content: flex-end;
+  margin-bottom: 12rpx;
+}
+
+.content .side .item .icon {
+  width: 16rpx;
+  height: 16rpx;
+  margin-right: 12rpx;
+}
+
+.content .side .item .icon-1 {
+  background: #ffe5d9;
+  border-radius: 100%;
+}
+
+.content .side .item .icon-2 {
+  background: #a5577c;
+  border-radius: 100%;
+}
+
+.content .side .item .icon-3 {
+  width: 24rpx;
+  height: 0;
+  border-bottom: 2rpx solid #979797;
+}
+
+.content .side .item .text {
+  color: #666;
+  font-size: 24rpx;
+  line-height: 34rpx;
+}
+
+.ringGroup {
+  display: flex;
+  justify-content: space-between;
+}

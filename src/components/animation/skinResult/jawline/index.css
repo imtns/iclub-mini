@@ -1,0 +1,120 @@
+.content {
+  border-top: 2rpx dashed #e7e7f3;
+}
+
+.content .title {
+  padding-top: 32rpx;
+  padding-bottom: 16rpx;
+}
+
+.content .title .text {
+  margin-right: 16rpx;
+  color: #2a2a2a;
+  font-weight: 700;
+  font-size: 28rpx;
+  line-height: 30rpx;
+}
+
+.content .title .level {
+  position: relative;
+  display: inline-block;
+  padding-left: 8rpx;
+  font-weight: bolder;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
+.content .title .level .icon {
+  width: 34rpx;
+  height: 34rpx;
+  margin-left: 4rpx;
+  vertical-align: text-top;
+}
+
+.content .title .level .line {
+  position: absolute;
+  bottom: 0;
+  left: -8rpx;
+  width: 104rpx;
+  height: 12rpx;
+  border-radius: 6rpx;
+  opacity: 0.1;
+}
+
+.content .title .great {
+  color: #ff6791;
+}
+
+.content .title .great .line {
+  background-color: #ff6791;
+}
+
+.content .title .great {
+  color: #f78441;
+}
+
+.content .title .great .line {
+  background-color: #ff8867;
+}
+
+.content .faceArea {
+  position: relative;
+  width: 440rpx;
+  height: 440rpx;
+  margin: auto;
+}
+
+.content .faceArea .base {
+  width: 100%;
+  height: 100%;
+}
+
+.content .button-wrap {
+  text-align: center;
+}
+
+.content .angle-wrap {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 32rpx;
+}
+
+.content .angle-wrap .label {
+  position: relative;
+  top: 4rpx;
+  margin-right: 24rpx;
+  color: #666;
+  font-size: 24rpx;
+  line-height: 26rpx;
+}
+
+.content .angle-wrap .value {
+  color: #2a2a2a;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
+.content .angle-wrap .value .angle {
+  display: flex;
+  align-items: center;
+  margin-bottom: 26rpx;
+}
+
+.content .angle-wrap .value .angle .icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-left: 8rpx;
+}
+
+.content .desc-wrap .title {
+  margin-bottom: 8rpx;
+  color: #2a2a2a;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
+.content .desc-wrap .text {
+  color: #666;
+  font-size: 24rpx;
+  line-height: 34rpx;
+}

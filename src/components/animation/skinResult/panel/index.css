@@ -1,0 +1,54 @@
+.panel {
+  padding: 0 32rpx 32rpx;
+  background-color: #fff;
+  border-bottom: 8rpx solid #f7f8f9;
+}
+
+.panel .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel .header .msg {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.panel .header .msg .icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin: 24rpx 16rpx 24rpx 0;
+}
+
+.panel .header .msg .content {
+  margin: 24rpx 0;
+}
+
+.panel .header .msg .content .title {
+  color: #2a2a2a;
+  font-weight: 700;
+  font-size: 32rpx;
+  line-height: 44rpx;
+}
+
+.panel .header .msg .content .desc {
+  color: #a4a4aa;
+  font-size: 20rpx;
+  line-height: 40rpx;
+}
+
+.panel .header .msg .content .desc .score {
+  display: inline;
+  color: #2a2a2a;
+  font-weight: 700;
+  font-size: 40rpx;
+  line-height: 44rpx;
+}
+
+.panel .header .tag {
+  width: 110rpx;
+  height: 96rpx;
+  margin: 24rpx 0;
+}

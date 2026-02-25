@@ -1,0 +1,69 @@
+.linesGroup {
+  margin-bottom: 16rpx;
+  padding-bottom: 44rpx;
+}
+
+.linesGroup,
+.linesGroup .group {
+  position: relative;
+}
+
+.linesGroup .group .item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.linesGroup .group .item .title {
+  margin-right: 16rpx;
+  color: #666;
+  font-size: 24rpx;
+}
+
+.linesGroup .group .item .line {
+  position: relative;
+  height: 12rpx;
+  overflow: hidden;
+  border-radius: 12rpx;
+}
+
+.linesGroup .group .item .line .strong {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 12rpx;
+}
+
+.linesGroup .group .labels {
+  position: absolute;
+  top: -4rpx;
+  right: 0;
+  bottom: -44rpx;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.linesGroup .group .labels .dashed1,
+.linesGroup .group .labels .dashed2,
+.linesGroup .group .labels .dashed3 {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 33.33%;
+  height: 100%;
+  border-left: 2rpx dashed #e7e7f3;
+}
+
+.linesGroup .group .labels .dashed1 .text,
+.linesGroup .group .labels .dashed2 .text,
+.linesGroup .group .labels .dashed3 .text {
+  color: #a4a4aa;
+  font-size: 20rpx;
+}
+
+.linesGroup .group .labels .dashed3 {
+  border-right: 2rpx dashed #e7e7f3;
+}

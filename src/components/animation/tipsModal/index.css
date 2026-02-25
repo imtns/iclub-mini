@@ -1,0 +1,47 @@
+.body {
+  flex-direction: column;
+}
+
+.body,
+.body .item {
+  display: flex;
+}
+
+.body .item {
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 0;
+  border-top: 2rpx solid hsla(240deg, 3%, 65%, 20%);
+}
+
+.body .item:first-child {
+  border-top: none;
+}
+
+.body .item .text {
+  display: inline;
+  color: #2a2a2a;
+  font-size: 28rpx;
+  text-align: left;
+}
+
+.body .item .text .index {
+  display: inline;
+  margin-right: 36rpx;
+  color: #356ad3;
+  font-size: 80rpx;
+  vertical-align: middle;
+}
+
+.body .item .pic {
+  display: inline;
+  width: 184rpx;
+  height: 112rpx;
+}
+
+.body .timeout {
+  margin-bottom: 24rpx;
+  color: #a4a4aa;
+  font-size: 28rpx;
+  text-align: center;
+}
