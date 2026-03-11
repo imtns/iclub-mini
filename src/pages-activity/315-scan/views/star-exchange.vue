@@ -110,7 +110,7 @@ import StarExchangeTabs from '../components/star-exchange-tabs'
 import { getStaticImage } from '../utils/staticAssets'
 
 // 兑换列表本地 mock，数据结构与 apiGetPrizeList 的 list 一致，后端接入稳定后可整体删除
-const ENABLE_EXCHANGE_MOCK = true
+const ENABLE_EXCHANGE_MOCK = false
 const MOCK_EXCHANGE_GIFT_BY_LEVEL = {
   1: [
     { prizeCode: 'P1-1', prizeName: '1星体验装', prizeImageUrl: getStaticImage('cards/CD001.png'), needStarCount: 1, totalCount: 100, remainCount: 50, canExchange: true, indexNum: 1 },
@@ -288,7 +288,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/static/assets/315-scan/common.scss';
+@import '@/pages-activity/315-scan/assets/common.scss';
 
 /* 导航栏背景渐变蒙层 */
 .nav-bg-overlay {

@@ -99,7 +99,7 @@ e. 所有实物奖励均以实物为准。
 </script>
 
 <style lang="scss" scoped>
-@import '@/static/assets/315-scan/common.scss';
+@import '@/pages-activity/315-scan/assets/common.scss';
 
 .nav-bg-overlay {
   position: fixed;

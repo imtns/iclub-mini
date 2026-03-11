@@ -1,0 +1,17 @@
+@font-face {
+    font-family: 'SourceHanSans-Regular';
+    src: url('https://cdn.vrupup.com/s/1952/f/static/assets/315-scan/SourceHanSans-Regular.ttf') format('truetype'),
+    url('https://cdn.vrupup.com/s/1952/f/static/assets/315-scan/SourceHanSans-Regular.woff') format('woff');
+}
+
+/* 315-scan 活动页全局字体：覆盖弹窗、button、第三方组件等可能脱离 container 的元素 */
+page {
+  font-family: 'SourceHanSans-Regular', sans-serif;
+
+  text,
+  input,
+  textarea,
+  button {
+    font-family: 'SourceHanSans-Regular', sans-serif;
+  }
+}

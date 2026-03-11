@@ -41,7 +41,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/static/assets/315-scan/common.scss';
+@import '@/pages-activity/315-scan/assets/common.scss';
 
 .light-card {
   font-family: 'SourceHanSans-Regular', sans-serif;
