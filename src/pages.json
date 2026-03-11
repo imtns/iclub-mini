@@ -9,7 +9,33 @@
       "root": "pages-activity",
       "pages": [
         {
-          "path": "315-scan/index",
+          "path": "315-scan/views/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "315-scan/views/star-record",
+          "style": {
+            "navigationStyle": "custom",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "315-scan/views/star-exchange",
+          "style": {
+            "navigationStyle": "custom",
+            "disableScroll": true
+          }
+        },
+        {
+          "path": "315-scan/views/rule",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "315-scan/views/network-error",
           "style": {
             "navigationStyle": "custom"
           }

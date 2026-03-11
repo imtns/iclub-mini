@@ -87,7 +87,7 @@ export default {
   data() {
     return {
       shareInfo: {
-        path: "/pages-activity/315-scan/index", // 分享路径
+        path: "/pages-activity/315-scan/views/index", // 分享路径
         title: "测试爱美客分享标题", // 分享标题
         imageUrl: "https://udstatic.imeik.com/compressed/1772013728917_2.jpeg", // 分享图片的URL
       },
@@ -104,7 +104,7 @@ export default {
       // 当点击分享按钮时，分享文案这样设置
       this.shareInfo.buttonTitle = "测试爱美客分享按钮文案";
       this.shareInfo.buttonImage = "https://udstatic.imeik.com/compressed/1772013862447_8.jpeg";
-      this.shareInfo.path = "/pages-activity/315-scan/index?a=1&b=2"; // 分享路径，可以携带参数
+      this.shareInfo.path = "/pages-activity/315-scan/views/index?a=1&b=2"; // 分享路径，可以携带参数
     },
     logout() {
       try {
@@ -131,7 +131,7 @@ export default {
     },
     go315() {
       uni.navigateTo({
-        url: "/pages-activity/315-scan/index",
+        url: "/pages-activity/315-scan/views/index",
       });
     },
     goposter() {

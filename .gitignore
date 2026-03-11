@@ -31,3 +31,6 @@ build/
 /.vscode
 /unpackage
 .stylelintcache
+
+.cursor/
+src/static/assets/315-scan/

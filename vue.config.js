@@ -33,12 +33,12 @@ module.exports = {
       // 解决momentjs打包时把所有的语言都打进去导致包过大的问题
       new webpack.ContextReplacementPlugin(/moment[\\/]locale$/, /^\.\/(zh-cn)$/),
       new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
-      // stylelint 校验
-      new StyleLintPlugin({
-        files: ['src/**/*.{vue,css,sass,scss}'],
-        fix: true, // 是否自动修复，自动修复并不能修复全部问题，所以前期建议设置成false，自己手动解决
-        cache: true
-      })
+      // stylelint 校验（如需开启，请移除下方注释）
+      // new StyleLintPlugin({
+      //   files: ['src/**/*.{vue,css,sass,scss}'],
+      //   fix: true, // 是否自动修复，自动修复并不能修复全部问题，所以前期建议设置成 false ，自己手动解决
+      //   cache: true
+      // })
     ]
     // webpack-bundle-analyzer
     if (isReport) {
