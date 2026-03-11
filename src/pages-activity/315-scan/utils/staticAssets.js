@@ -9,11 +9,14 @@ const CDN_PREFIX = 'https://cdn.vrupup.com/s/1952/f/static/assets/315-scan'
 // 分包目录 src/pages-activity/xxx/assets/ 下的图片不会被 uni-app 复制到 dist，不能用！
 const LOCAL_PREFIX = '/static/assets/315-scan'
 
+// CDN 图片需拼接 OSS 处理参数：缩放宽 800、转 webp；非 CDN 不拼接
+const CDN_IMAGE_SUFFIX = '?x-oss-process=image/resize,m_mfit,w_800/format,webp'
+
 export function getStaticImage(filename) {
   if (!filename) return ''
   const name = filename.charAt(0) === '/' ? filename.slice(1) : filename
   if (USE_CDN) {
-    return `${CDN_PREFIX.replace(/\/$/, '')}/${name}`
+    return `${CDN_PREFIX.replace(/\/$/, '')}/${name}${CDN_IMAGE_SUFFIX}`
   }
   return `${LOCAL_PREFIX}/${name}`
 }

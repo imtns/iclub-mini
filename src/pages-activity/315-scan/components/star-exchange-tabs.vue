@@ -97,6 +97,7 @@ export default {
   position: relative;
   width: 100%;
   min-height: 64rpx;
+  margin-top: -6rpx;
 }
 
 .tab-item-selected-bg {

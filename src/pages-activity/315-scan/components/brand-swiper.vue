@@ -107,10 +107,19 @@ export default {
     // 根据次数返回对应的边框图片，仅对 1 / 3 / 5 次生效
     getBorderImage(card) {
       const times = this.getCardTimes(card)
-      if (times === 0) {
+      // 0 ~ 2 次：使用 1 次边框
+      if (times >= 0 && times <= 2) {
         return this.borderImgMap[1]
       }
-      return this.borderImgMap[times] || ''
+      // 3 ~ 4 次：使用 3 次边框
+      if (times >= 3 && times <= 4) {
+        return this.borderImgMap[3]
+      }
+      // ≥ 5 次：使用 5 次边框
+      if (times >= 5) {
+        return this.borderImgMap[5]
+      }
+      return ''
     },
     // 阴影只做 scale/opacity，不旋转
     getShadowClass(idx) {

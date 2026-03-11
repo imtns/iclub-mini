@@ -1,5 +1,5 @@
 <template>
-  <view class="home-gift-card" @tap="onTap">
+  <view class="home-gift-card" @tap.stop="onTap">
     <view class="home-gift-card__img-wrap">
       <image class="home-gift-card__img" :src="item.prizeImageUrl || item.imgUrl || ''" mode="aspectFit" />
     </view>

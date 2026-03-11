@@ -77,9 +77,10 @@
               class="field-input"
               :value="addressForm.phone"
               type="number"
+              maxlength="11"
               placeholder="请输入收货人联系电话"
               placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-              @input="onAddressFormUpdate('phone', $event.detail.value)"
+              @input="onPhoneInput"
             />
           </view>
           <view class="address-field">
@@ -115,7 +116,7 @@ const MOCK_EXCHANGE_GIFT_BY_LEVEL = {
   1: [
     { prizeCode: 'P1-1', prizeName: '1星体验装', prizeImageUrl: getStaticImage('cards/CD001.png'), needStarCount: 1, totalCount: 100, remainCount: 50, canExchange: true, indexNum: 1 },
     { prizeCode: 'P1-2', prizeName: '1星小样', prizeImageUrl: getStaticImage('cards/CD001.png'), needStarCount: 1, totalCount: 80, remainCount: 0, canExchange: false, indexNum: 2 },
-    { prizeCode: 'P1-3', prizeName: '1星试用礼', prizeImageUrl: '', needStarCount: 1, totalCount: 60, remainCount: 10, canExchange: true, indexNum: 3 },
+    { prizeCode: 'P1-3', prizeName: '1星试用礼', prizeImageUrl: '', needStarCount: 1, totalCount: 60, remainCount: 10, canExchange: false, indexNum: 3 },
     { prizeCode: 'P1-3', prizeName: '1星试用礼', prizeImageUrl: '', needStarCount: 1, totalCount: 60, remainCount: 10, canExchange: true, indexNum: 3 },
     { prizeCode: 'P1-3', prizeName: '1星试用礼', prizeImageUrl: '', needStarCount: 1, totalCount: 60, remainCount: 10, canExchange: true, indexNum: 3 },
     { prizeCode: 'P1-3', prizeName: '1星试用礼', prizeImageUrl: '', needStarCount: 1, totalCount: 60, remainCount: 10, canExchange: true, indexNum: 3 },
@@ -168,7 +169,7 @@ export default {
     userTotalStars() { return store.state.userTotalStars },
     exchangeGiftList() {
       const list = store.state.exchangeGiftList
-      if (ENABLE_EXCHANGE_MOCK && list.length === 0 && !store.state.exchangeLoading) {
+      if (ENABLE_EXCHANGE_MOCK) {
         return MOCK_EXCHANGE_GIFT_BY_LEVEL[this.tabLevel] || []
       }
       return list
@@ -235,16 +236,25 @@ export default {
         uni.showToast({ title: '该礼品库存不足', icon: 'none' })
         return
       }
-      // if (this.userTotalStars < needStars) {
-      //   uni.showToast({ title: '星星数量不足，无法兑换', icon: 'none' })
-      //   return
-      // }
+      if (item.canExchange === false) {
+        uni.showToast({ title: '该礼品暂不可兑换', icon: 'none' })
+        return
+      }
+      if (this.userTotalStars < needStars) {
+        uni.showToast({ title: '星星数量不足，无法兑换', icon: 'none' })
+        return
+      }
       store.commit('SET_EXCHANGE_GIFT_ITEM', item)
       uni.navigateTo({ url: '/pages/mine/address/list' })
     },
 
     onAddressFormUpdate(field, value) {
       store.commit('SET_ADDRESS_FORM', { [field]: value })
+    },
+    onPhoneInput(e) {
+      const val = e.detail.value.replace(/[^\d]/g, '').slice(0, 11)
+      store.commit('SET_ADDRESS_FORM', { phone: val })
+      return val
     },
 
     onAddressPopupCancel() {

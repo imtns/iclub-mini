@@ -16,7 +16,7 @@
     <view v-else>
       <!-- ── 头部区域 ── -->
       <view class="header-area">
-        <view class="user-avatar-wrap">
+        <view v-if="isLogin" class="user-avatar-wrap">
           <image class="user-avatar" :src="(userInfo && userInfo.avatar) || ''" mode="aspectFill" />
         </view>
         <image class="title-img" :src="getStaticImage('title.png')" mode="widthFix" />
@@ -95,7 +95,7 @@
           </view>
           <view class="transfer-submit-btn" @tap="onTransferSubmit">
             <image class="transfer-submit-bg" :src="getStaticImage('pop-btn-bg.png')" mode="widthFix" />
-            <text class="transfer-submit-text">分享好友</text>
+            <text class="transfer-submit-text">生成链接</text>
           </view>
         </view>
         <image class="transfer-close-btn" :src="getStaticImage('close-btn.png')" mode="aspectFit"
@@ -116,13 +116,14 @@
             <text class="transfer-amount-unit">颗</text>
           </view>
           <text class="transfer-result-msg">
-            {{ transferResultStatus === 'success' ? '成功转赠好友' : (transferResultMessage || '网络不好请重试~') }}
+            {{ transferResultStatus === 'success' ? '转赠星星给好友' : (transferResultMessage || '网络不好请重试~') }}
           </text>
           <!-- 转赠成功且接口返回分享参数时展示「分享给好友」，点击前已通过编辑分享链接设置 path（带 transferCode、fromUserCode） -->
-          <view v-if="transferResultStatus === 'success' && transferShareCode && transferShareFromUserCode" class="transfer-result-share-wrap">
+          <view v-if="transferResultStatus === 'success' && transferShareCode && transferShareFromUserCode"
+            class="transfer-result-share-wrap">
             <button class="transfer-result-share-btn" open-type="share" @tap="onTransferResultShareTap">
               <image class="transfer-result-share-bg" :src="getStaticImage('pop-btn-bg.png')" mode="widthFix" />
-              <text class="transfer-result-share-text">分享给好友</text>
+              <text class="transfer-result-share-text">分享好友</text>
             </button>
           </view>
         </view>
@@ -252,7 +253,7 @@ const BRAND_CARDS_MOCK = [
 ]
 
 const ENABLE_USER_STARS_MOCK = false
-const MOCK_USER_TOTAL_STARS = 15
+const MOCK_USER_TOTAL_STARS = 1
 
 const ENABLE_PRIZE_LIST_HOME_MOCK = false
 const MOCK_PRIZE_LIST_HOME = [
@@ -320,6 +321,11 @@ const MOCK_MY_GIFTS_LIST = [
   }
 ]
 
+// 领取转赠星星参数 mock（仅用于本地调试）
+const ENABLE_RECEIVE_TRANSFER_MOCK = false
+const MOCK_TRANSFER_CODE = '2031718021107081218'
+const MOCK_FROM_USER_CODE = '1972581621231980545'
+
 export default {
   components: { BrandSwiper, HomeGiftCard, LightCard },
 
@@ -327,8 +333,9 @@ export default {
     const defaultSharePath = '/pages-activity/315-scan/views/index'
     const defaultShareTitle = '医美人有自己的小卡'
     return {
+      // 首次进入已通过 initPage 拉取完成，后续通过 onShow 做刷新
+      hasRefreshedOnce: false,
       currentCardIndex: 0,
-      userInfo: null,
       navBgOpacity: 0,
       navBarHeight: 0,
       giftMoreText: '更多礼品 >',
@@ -343,6 +350,8 @@ export default {
   },
 
   computed: {
+    isLogin() { return this.$store && this.$store.state.isLogin },
+    userInfo() { return store.state.userInfo },
     pageLoading() { return store.state.pageLoading },
     userTotalStars() {
       if (ENABLE_USER_STARS_MOCK) return MOCK_USER_TOTAL_STARS
@@ -395,12 +404,13 @@ export default {
     myGiftsPage() { return store.state.myGiftsPage },
     myGiftsTotalPage() { return store.state.myGiftsTotalPage },
     myGiftsLoadMoreStatus() {
-      // 这里默认没有单独的 loading 状态，仅根据分页信息展示「更多 / 没有更多」
+      if (store.state.myGiftsLoading) return 'loading'
       return this.myGiftsPage >= this.myGiftsTotalPage ? 'noMore' : 'more'
     },
     isTransferOverLimit() {
       const amount = Number(store.state.transferAmount)
-      return amount > 0 && amount > store.state.userTotalStars
+      const total = this.userTotalStars
+      return amount > 0 && amount > total
     },
     anyPopupOpen() {
       return this.showTransferPopup ||
@@ -424,6 +434,8 @@ export default {
           this.shareInfo.path = `${base}?transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
           this.shareInfo.buttonTitle = `送你${this.transferResultAmount}颗星星，快来领取吧`
           if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('btn-share.png')
+          // 开发调试：查看当前编辑后的分享参数
+          // console.log('[315-scan] transfer shareInfo 更新：', JSON.stringify(this.shareInfo))
         }
       } else {
         store.commit('CLEAR_TRANSFER_SHARE_PARAMS')
@@ -447,13 +459,20 @@ export default {
 
   onLoad(options) {
     this.initPage(options)
-    if (ENABLE_LIGHT_CARD_MOCK) {
-      this.$nextTick(() => this.mockAndShowLightCard())
-    }
   },
 
   onShow() {
+    this._giftMoreTapLock = false
     this.report('首页pv', true)
+    // 首次进入已在 initPage 中完成初始化，这里只负责后续回到首页时刷新数据
+    if (this.hasRefreshedOnce) {
+      this.refreshPageData()
+    } else {
+      this.hasRefreshedOnce = true
+    }
+    if (ENABLE_LIGHT_CARD_MOCK) {
+      this.$nextTick(() => this.mockAndShowLightCard())
+    }
   },
 
   onPageScroll(e) {
@@ -463,9 +482,24 @@ export default {
   methods: {
     getStaticImage,
     async initPage(options) {
+      this._giftMoreTapLock = false
+      await this.refreshPageData()
+      await this.handleEntryOptions(options)
+    },
+
+    // 首页数据刷新：onLoad 首次进入会执行一次，后续通过 onShow 进入时也复用该逻辑
+    async refreshPageData() {
       await store.dispatch('fetchActivityCardInfo')
       await store.dispatch('fetchPrizeListHome')
+      if (this.$store && this.$store.state.isLogin) {
+        await store.dispatch('fetchUserInfo')
+      } else {
+        store.commit('SET_USER_INFO', null)
+      }
+    },
 
+    // 处理从分享 / 转赠链接进入时带的参数（shine、transferCode 等），只在 initPage 首次调用
+    async handleEntryOptions(options) {
       // 点亮小卡：从链接 query 上带 shine，对应 cardCode
       if (options && options.shine) {
         const shineCode = options.shine
@@ -481,18 +515,35 @@ export default {
 
       // 领取转赠星星：从链接 query 上带 transferCode / fromUserCode
       if (options && options.transferCode && options.fromUserCode) {
-        store.dispatch('doReceiveStar', {
+        await store.dispatch('doReceiveStar', {
           transferCode: options.transferCode,
           fromUserCode: options.fromUserCode
+        })
+      } else if (ENABLE_RECEIVE_TRANSFER_MOCK) {
+        // 未携带领取参数时，走 mock 固定参数，方便本地调试领取流程
+        await store.dispatch('doReceiveStar', {
+          transferCode: MOCK_TRANSFER_CODE,
+          fromUserCode: MOCK_FROM_USER_CODE
         })
       }
     },
 
     formatTime: formatTimestamp,
 
+    /** 登录校验：未登录则跳转登录页（参考主包 goLogin），返回 false；已登录返回 true */
+    requireLogin() {
+      const isLogin = this.$store && this.$store.state.isLogin
+      if (!isLogin) {
+        this.goLogin()
+        return false
+      }
+      return true
+    },
+
     onCardChange(idx) { this.currentCardIndex = idx },
     onRuleBtnTap() { uni.navigateTo({ url: '/pages-activity/315-scan/views/rule' }) },
     onMyStarsTap() {
+      if (!this.requireLogin()) return
       this.report('星星记录入口点击')
       uni.navigateTo({ url: '/pages-activity/315-scan/views/star-record' })
     },
@@ -501,22 +552,36 @@ export default {
       uni.navigateTo({ url: '/pages/index' })
     },
     onGiftMoreTap() {
+      // 防止事件冒泡或重复触发导致星星兑换页被打开两次
+      if (this._giftMoreTapLock) return
+      this._giftMoreTapLock = true
       this.report('积分商城入口点击')
       uni.navigateTo({ url: '/pages-activity/315-scan/views/star-exchange' })
     },
 
-    onTransferTap() { store.commit('SET_SHOW_TRANSFER_POPUP', true) },
-    onTransferAmountInput(e) { store.commit('SET_TRANSFER_AMOUNT', e.detail.value) },
-    onTransferPopupClose() { store.commit('SET_SHOW_TRANSFER_POPUP', false) },
+    onTransferTap() {
+      if (!this.requireLogin()) return
+      store.commit('SET_SHOW_TRANSFER_POPUP', true)
+    },
+    onTransferAmountInput(e) {
+      const val = e.detail.value.replace(/[^\d]/g, '')
+      store.commit('SET_TRANSFER_AMOUNT', val)
+      return val
+    },
+    onTransferPopupClose() {
+      store.commit('SET_SHOW_TRANSFER_POPUP', false)
+      store.commit('SET_TRANSFER_AMOUNT', '')
+    },
     onTransferSubmit() {
       const amount = Number(store.state.transferAmount)
       if (!amount || amount <= 0) { uni.showToast({ title: '请输入转赠数量', icon: 'none' }); return }
-      if (amount > store.state.userTotalStars) { uni.showToast({ title: '超过当前星星数量', icon: 'none' }); return }
+      if (amount > this.userTotalStars) { uni.showToast({ title: '超过当前星星数量', icon: 'none' }); return }
       this.report('分享星星点击次数')
       store.dispatch('doTransferStar', { starCount: amount })
     },
     onTransferResultPopupClose() {
       store.commit('SET_SHOW_TRANSFER_RESULT_POPUP', false)
+      store.commit('SET_TRANSFER_AMOUNT', '')
       store.commit('CLEAR_TRANSFER_SHARE_PARAMS')
       this.shareInfo.path = this.defaultSharePath
       this.shareInfo.title = this.defaultShareTitle
@@ -525,6 +590,7 @@ export default {
       this.$refs.transferResultPop && this.$refs.transferResultPop.close()
     },
     onTransferResultShareTap() {
+      if (!this.requireLogin()) return
       this.report('转赠结果弹窗-分享给好友点击')
     },
 
@@ -550,16 +616,23 @@ export default {
       store.commit('SET_SHOW_LIGHT_CARD_POPUP', true)
     },
 
-    /** 根据 scanTimes 返回对应边框图（与 brand-swiper 逻辑一致） */
+    /** 根据 scanTimes 返回对应边框图（与 brand-swiper 逻辑一致：0~2→1；3~4→3；≥5→5） */
     getLightCardBorderImage(card) {
       if (!card) return ''
       const times = card.scanTimes != null ? Number(card.scanTimes) : 0
-      const map = {
-        1: getStaticImage('card-border-1.png'),
-        3: getStaticImage('card-border-3.png'),
-        5: getStaticImage('card-border-5.png')
+      // 0 ~ 2 次：使用 1 次边框
+      if (times >= 0 && times <= 2) {
+        return getStaticImage('card-border-1.png')
       }
-      return map[times === 0 ? 1 : times] || ''
+      // 3 ~ 4 次：使用 3 次边框
+      if (times >= 3 && times <= 4) {
+        return getStaticImage('card-border-3.png')
+      }
+      // ≥ 5 次：使用 5 次边框
+      if (times >= 5) {
+        return getStaticImage('card-border-5.png')
+      }
+      return ''
     },
 
     /** 根据 cardCode 返回卡片图片 */
@@ -573,6 +646,7 @@ export default {
     },
 
     onMyGiftTap() {
+      if (!this.requireLogin()) return
       this.report('我的奖品入口点击')
       store.commit('SET_SHOW_MY_GIFTS_DRAWER', true)
       if (store.state.myGiftsList.length === 0) {
@@ -587,11 +661,11 @@ export default {
       }
     },
     onMyGiftsListReachBottom() {
-      if (this.myGiftsPage >= this.myGiftsTotalPage) return
+      if (this.myGiftsPage >= this.myGiftsTotalPage || store.state.myGiftsLoading) return
       store.dispatch('fetchMyPrizes', { page: this.myGiftsPage + 1, isLoadMore: true })
     },
     onMyGiftItemBtnTap(gift) {
-      if (gift.jumpUrl) { uni.navigateTo({ url: gift.jumpUrl }) }
+      uni.navigateTo({ url: "/pages-activity/ai-poster/index", });
     },
 
     onShareBtnTap() {
@@ -776,6 +850,7 @@ export default {
     font-size: 28rpx;
     font-weight: bold;
     line-height: 1;
+    margin-top: 2rpx;
   }
 }
 
@@ -1395,7 +1470,7 @@ export default {
 .gifts-list {
   position: relative;
   z-index: 1;
-  height: 536rpx;
+  height: 572rpx;
   margin-top: 140rpx;
 }
 

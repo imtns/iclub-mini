@@ -8,7 +8,8 @@ import {
   apiGetMyPrizes,
   apiGetStarFlows,
   apiExchangePrize,
-  apiGetReceiveAddressDetail
+  apiGetReceiveAddressDetail,
+  apiQueryUserInfo
 } from '../api/index'
 import { validateAddress } from '../utils/validate'
 
@@ -27,6 +28,8 @@ const store = new Vuex.Store({
     /* ─── 首页公共 ─── */
     pageLoading: false,
     userTotalStars: 0,
+    /** 用户信息（头像、昵称等），登录后由 fetchUserInfo 拉取 */
+    userInfo: null,
     brandCards: [],
     brandCardCodes: [],
     giftListHome: [],
@@ -60,6 +63,7 @@ const store = new Vuex.Store({
     myGiftsList: [],
     myGiftsPage: 1,
     myGiftsTotalPage: 1,
+    myGiftsLoading: false,
 
     /* ─── 星星记录页 ─── */
     recordList: [],
@@ -109,6 +113,7 @@ const store = new Vuex.Store({
   mutations: {
     SET_PAGE_LOADING: (state, v) => { state.pageLoading = v },
     SET_USER_TOTAL_STARS: (state, v) => { state.userTotalStars = v },
+    SET_USER_INFO: (state, v) => { state.userInfo = v },
     SET_BRAND_CARDS: (state, v) => { state.brandCards = v },
     SET_BRAND_CARD_CODES: (state, v) => { state.brandCardCodes = v },
     SET_GIFT_LIST_HOME: (state, v) => { state.giftListHome = v },
@@ -151,6 +156,7 @@ const store = new Vuex.Store({
     APPEND_MY_GIFTS_LIST: (state, v) => { state.myGiftsList = state.myGiftsList.concat(v) },
     SET_MY_GIFTS_PAGE: (state, v) => { state.myGiftsPage = v },
     SET_MY_GIFTS_TOTAL_PAGE: (state, v) => { state.myGiftsTotalPage = v },
+    SET_MY_GIFTS_LOADING: (state, v) => { state.myGiftsLoading = v },
 
     SET_RECORD_LIST: (state, v) => { state.recordList = v },
     APPEND_RECORD_LIST: (state, v) => { state.recordList = state.recordList.concat(v) },
@@ -222,6 +228,24 @@ const store = new Vuex.Store({
         uni.showToast({ title: e.message || '加载失败，请重试', icon: 'none' })
       } finally {
         commit('SET_PAGE_LOADING', false)
+      }
+    },
+
+    /** 获取用户信息（头像、昵称），用于活动首页头像展示 */
+    async fetchUserInfo({ commit }) {
+      try {
+        const res = await apiQueryUserInfo()
+        const data = (res && res.data) || res
+        if (data) {
+          commit('SET_USER_INFO', {
+            avatar: data.avatar || data.avatarUrl || data.headUrl || '',
+            nickName: data.nickName || data.nickname || ''
+          })
+        } else {
+          commit('SET_USER_INFO', null)
+        }
+      } catch {
+        commit('SET_USER_INFO', null)
       }
     },
 
@@ -300,7 +324,7 @@ const store = new Vuex.Store({
     async doReceiveStar({ commit }, { transferCode, fromUserCode }) {
       try {
         const res = await apiReceiveStar({ transferCode, fromUserCode })
-        const amount = (res.data && (res.data.starCount || res.data.amount)) || 0
+        const amount = (res.data && (res.data.receiveStarCount)) || 0
         commit('SET_RECEIVE_STARS_RESULT', { status: 'success', amount })
         commit('SET_SHOW_RECEIVE_STARS_RESULT_POPUP', true)
       } catch (e) {
@@ -325,6 +349,7 @@ const store = new Vuex.Store({
      * @param {{ page: number, isLoadMore: boolean }} payload
      */
     async fetchMyPrizes({ commit }, { page = 1, isLoadMore = false } = {}) {
+      commit('SET_MY_GIFTS_LOADING', true)
       try {
         const res = await apiGetMyPrizes({ page, limit: 3, orderBy: 'exchangeTime', orderType: 'desc' })
         const { list = [], totalPage = 1 } = res.data || {}
@@ -337,6 +362,8 @@ const store = new Vuex.Store({
         commit('SET_MY_GIFTS_TOTAL_PAGE', totalPage)
       } catch (e) {
         uni.showToast({ title: e.message || '加载失败', icon: 'none' })
+      } finally {
+        commit('SET_MY_GIFTS_LOADING', false)
       }
     },
 
