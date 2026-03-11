@@ -229,7 +229,18 @@ export default {
       this.loadList(this.exchangePage + 1, true)
     },
 
+    /** 登录校验：未登录则跳转登录页（参考 index.vue requireLogin），返回 false；已登录返回 true */
+    requireLogin() {
+      const isLogin = this.$store && this.$store.state.isLogin
+      if (!isLogin) {
+        this.goLogin()
+        return false
+      }
+      return true
+    },
+
     onExchange(item) {
+      if (!this.requireLogin()) return
       const needStars = item.needStarCount ?? item.starCost ?? 0
       const outOfStock = Number(item.remainCount) === 0
       if (outOfStock) {
