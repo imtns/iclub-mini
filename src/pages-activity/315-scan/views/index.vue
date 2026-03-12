@@ -896,6 +896,7 @@ export default {
 .func-btn {
   position: relative;
   margin-left: -4rpx;
+  margin-bottom: -6rpx;
 }
 
 .func-btn__badge {
@@ -923,14 +924,14 @@ export default {
 
 .func-btn__img {
   width: 164rpx;
-  height: 160rpx;
+  height: 162rpx;
   margin-left: -6rpx;
 }
 
 .scan-btn {
   width: 398rpx;
-  height: 126rpx;
-  margin-bottom: 8rpx;
+  height: 120rpx;
+  margin-bottom: 12rpx;
 }
 
 .transfer-btn {
