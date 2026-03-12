@@ -524,7 +524,7 @@ export default {
         if (codes.includes(shineCode)) {
           const card = (store.state.brandCards || []).find(c => c.cardCode === shineCode)
           if (card) {
-            store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: card.scanTimes || 1 })
+            store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: (card.starCount != null ? card.starCount : card.scanTimes) || 1 })
             store.commit('SET_SHOW_LIGHT_CARD_POPUP', true)
           }
         }
@@ -629,7 +629,7 @@ export default {
       if (picked === -1) return
       const card = BRAND_CARDS_MOCK.find(c => c.cardCode === picked)
       if (!card) return
-      store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: card.scanTimes || 1 })
+      store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: (card.starCount != null ? card.starCount : card.scanTimes) || 1 })
       store.commit('SET_SHOW_LIGHT_CARD_POPUP', true)
     },
 

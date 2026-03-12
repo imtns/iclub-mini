@@ -1,5 +1,5 @@
 <template>
-  <uni-popup ref="popRef" type="center" background-color="transparent" @change="onPopupChange">
+  <uni-popup ref="popRef" type="center" background-color="transparent" :is-mask-click="false" @change="onPopupChange">
     <view class="address-popup">
       <text class="address-popup-title">{{ edit ? '填写收货地址' : '收货地址' }}</text>
       <view class="address-fields">

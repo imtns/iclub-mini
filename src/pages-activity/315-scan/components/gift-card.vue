@@ -27,7 +27,7 @@
         </view>
         <image
           class="gift-card__status-img"
-          :src="canExchange && !isOutOfStock ? exchangeStatus1 : exchangeStatus0"
+          :src="canExchange ? exchangeStatus1 : exchangeStatus0"
           mode="aspectFit"
         />
       </view>
@@ -37,6 +37,7 @@
 
 <script>
 import { getStaticImage } from '../utils/staticAssets'
+import store from '../store/index'
 
 export default {
   name: 'GiftCard',
@@ -58,9 +59,17 @@ export default {
     isOutOfStock() {
       return Number(this.item.remainCount) === 0
     },
-    // 仅用于展示可兑换/不可兑换图标，仅依据接口 canExchange 判断，不在此做拦截
+    // 可兑换状态：1.用户星星数≥所需 2.接口 canExchange 3.有库存（按此顺序判断）
     canExchange() {
-      return this.item.canExchange === true
+      const needStarCount = Number(this.item.needStarCount || this.item.starCost || 0)
+      const userTotalStars = Number(store.state.userTotalStars || 0)
+      // 1. 先判断用户星星数量与需要数量
+      if (userTotalStars < needStarCount) return false
+      // 2. 再判断接口是否可兑换
+      if (this.item.canExchange !== true) return false
+      // 3. 最后判断接口库存
+      if (this.isOutOfStock) return false
+      return true
     }
   },
   methods: {

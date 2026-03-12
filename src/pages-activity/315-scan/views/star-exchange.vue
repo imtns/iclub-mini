@@ -205,18 +205,17 @@ export default {
       if (!this.requireLogin()) return
       const needStars = item.needStarCount ?? item.starCost ?? 0
       const outOfStock = Number(item.remainCount) === 0
+      
       if (outOfStock) {
-        uni.showToast({ title: '该礼品库存不足', icon: 'none' })
+        uni.showToast({ title: '库存不足，无法兑换', icon: 'none' })
         return
       }
-      if (item.canExchange === false) {
-        uni.showToast({ title: '该礼品暂不可兑换', icon: 'none' })
-        return
-      }
+
       if (this.userTotalStars < needStars) {
         uni.showToast({ title: '星星数量不足，无法兑换', icon: 'none' })
         return
       }
+      
       store.commit('SET_EXCHANGE_GIFT_ITEM', item)
       uni.navigateTo({ url: '/pages/mine/address/list' })
     },
@@ -232,7 +231,8 @@ export default {
 
     /** 弹窗关闭时（含点击遮罩）同步 store，否则再次从地址页返回时 addressPopupVisible 仍为 true，watch 不触发，弹窗不出现 */
     onAddressPopupChange(e) {
-      if (e && e.show === false) {
+      // address-popup 在 change 时 emit 的是 false，需兼容 e === false 与 e.show === false
+      if (e === false || (e && e.show === false)) {
         store.commit('SET_ADDRESS_POPUP_VISIBLE', false)
         store.commit('RESET_ADDRESS_FORM')
       }
