@@ -1,6 +1,6 @@
 <template>
   <!-- 弹窗打开时禁止页面滚动，关闭时显式设置 overflow:auto 以恢复滚动（避免从分享链接进入关闭弹窗后无法滑动） -->
-    <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : 'overflow: auto;'" />
+  <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : 'overflow: auto;'" />
   <view class="container">
     <!-- 导航栏背景渐变蒙层（跟随滚动透明度 0→1，z-index 在导航栏之下） -->
     <view class="nav-bg-overlay" :style="{ opacity: navBgOpacity, height: navBarHeight ? navBarHeight + 'px' : '' }">
@@ -69,14 +69,13 @@
         <image class="list-entry__img" :src="getStaticImage('index-more.png')" mode="widthFix" />
       </view>
 
-      <!-- ── 溯源教程 ── -->
-      <view
-        class="tutorial-toggle"
-        :class="{ 'tutorial-toggle--expanded': tutorialExpanded }"
-        @tap="onTutorialToggle"
-      >
-        <image v-if="!tutorialExpanded" class="tutorial-toggle__more" :src="getStaticImage('index-look.png')" mode="widthFix" />
-        <image v-if="tutorialExpanded" class="tutorial-toggle__content" :src="getStaticImage('tutorial.png')" mode="widthFix" />
+      <!-- ── 溯源教程：仅点击顶部 tutorial-toggle__more 大小的区域触发展开/收起 ── -->
+      <view class="tutorial-toggle" :class="{ 'tutorial-toggle--expanded': tutorialExpanded }">
+        <view class="tutorial-toggle__trigger" @tap="onTutorialToggle" />
+        <image v-if="!tutorialExpanded" class="tutorial-toggle__more" :src="getStaticImage('index-look.png')"
+          mode="widthFix" />
+        <image v-if="tutorialExpanded" class="tutorial-toggle__content" :src="getStaticImage('tutorial.png')"
+          mode="widthFix"/>
         <image :class="['tutorial-toggle__arrow', { 'tutorial-toggle__arrow--expanded': tutorialExpanded }]"
           :src="getStaticImage('index-arrow.png')" mode="aspectFit" />
       </view>
@@ -135,14 +134,15 @@
             </button>
           </view>
         </view>
-        <!-- 转赠成功时隐藏关闭按钮，引导用户分享 -->
-        <image v-if="transferResultStatus !== 'success'" class="transfer-close-btn"
+        <!-- 转赠成功时先隐藏关闭按钮引导分享，点击分享后显示关闭按钮 -->
+        <image v-if="transferResultStatus !== 'success' || transferResultShareTapped" class="transfer-close-btn"
           :src="getStaticImage('close-btn.png')" mode="aspectFit" @tap="onTransferResultPopupClose" />
       </view>
     </uni-popup>
 
     <!-- 领取转赠星星结果弹窗：监听 change 以同步 store，确保关闭后页面可滚动 -->
-    <uni-popup ref="receiveStarsResultPop" type="center" background-color="transparent" @change="onReceiveStarsResultPopupChange">
+    <uni-popup ref="receiveStarsResultPop" type="center" background-color="transparent"
+      @change="onReceiveStarsResultPopupChange">
       <view class="receive-popup">
         <!-- 标题图：卡片外部上方 -->
         <image class="receive-popup-title"
@@ -216,7 +216,7 @@
       <view class="drawer-wrap">
         <image class="drawer-title-img" :src="getStaticImage('drawer-title.png')" mode="widthFix" />
         <!-- <view class="drawer-drag-bar" /> -->
-        <scroll-view class="gifts-list" scroll-y enhanced :show-scrollbar="false"
+        <scroll-view class="gifts-list" scroll-y enhanced :show-scrollbar="false" lower-threshold="100"
           @scrolltolower="onMyGiftsListReachBottom">
           <view v-if="myGiftsList.length === 0" class="gifts-empty">
             <x-empty>暂无礼品</x-empty>
@@ -238,14 +238,8 @@
     </uni-popup>
 
     <!-- 查看收货地址弹窗（展示模式） -->
-    <address-popup
-      ref="addressViewPop"
-      :visible="showAddressPopup"
-      :edit="false"
-      :form="viewAddressForm"
-      @close="onAddressViewClose"
-      @change="onAddressViewPopupChange"
-    />
+    <address-popup ref="addressViewPop" :visible="showAddressPopup" :edit="false" :form="viewAddressForm"
+      @close="onAddressViewClose" @change="onAddressViewPopupChange" />
   </view>
 </template>
 
@@ -373,7 +367,9 @@ export default {
       showAddressPopup: false,
       viewAddressForm: { receiverName: '', phone: '', detailAddress: '' },
       // 每次打开转赠弹窗时递增，用于 input 的 key，强制重新挂载以清空内部缓存
-      transferInputKey: 0
+      transferInputKey: 0,
+      // 转赠成功弹窗：用户点击分享后显示关闭按钮，避免流程卡住
+      transferResultShareTapped: false
     }
   },
 
@@ -433,7 +429,9 @@ export default {
     myGiftsTotalPage() { return store.state.myGiftsTotalPage },
     myGiftsLoadMoreStatus() {
       if (store.state.myGiftsLoading) return 'loading'
-      return this.myGiftsPage >= this.myGiftsTotalPage ? 'noMore' : 'more'
+      const page = Number(this.myGiftsPage) || 1
+      const total = Math.max(1, Number(this.myGiftsTotalPage) || 1)
+      return page >= total ? 'noMore' : 'more'
     },
     isTransferOverLimit() {
       const amount = Number(store.state.transferAmount)
@@ -489,12 +487,18 @@ export default {
     this.initPage(options)
   },
 
-  onShow() {
+  async onShow() {
     this._giftMoreTapLock = false
     this.report('首页pv', true)
     // 首次进入已在 initPage 中完成初始化，这里只负责后续回到首页时刷新数据
     if (this.hasRefreshedOnce) {
-      this.refreshPageData({ isRefresh: true })
+      await this.refreshPageData({ isRefresh: true })
+      // 登录返回后：若有暂存的领取参数，执行领取并弹窗
+      const pending = store.state.pendingReceiveStarParams
+      if (pending && this.$store && this.$store.state.isLogin) {
+        store.commit('CLEAR_PENDING_RECEIVE_STAR_PARAMS')
+        await store.dispatch('doReceiveStar', pending)
+      }
     } else {
       this.hasRefreshedOnce = true
     }
@@ -543,17 +547,17 @@ export default {
       }
 
       // 领取转赠星星：从链接 query 上带 transferCode / fromUserCode
-      if (options && options.transferCode && options.fromUserCode) {
-        await store.dispatch('doReceiveStar', {
-          transferCode: options.transferCode,
-          fromUserCode: options.fromUserCode
-        })
-      } else if (ENABLE_RECEIVE_TRANSFER_MOCK) {
-        // 未携带领取参数时，走 mock 固定参数，方便本地调试领取流程
-        await store.dispatch('doReceiveStar', {
-          transferCode: MOCK_TRANSFER_CODE,
-          fromUserCode: MOCK_FROM_USER_CODE
-        })
+      const receiveParams = (options && options.transferCode && options.fromUserCode)
+        ? { transferCode: options.transferCode, fromUserCode: options.fromUserCode }
+        : (ENABLE_RECEIVE_TRANSFER_MOCK ? { transferCode: MOCK_TRANSFER_CODE, fromUserCode: MOCK_FROM_USER_CODE } : null)
+      if (receiveParams) {
+        const isLogin = this.$store && this.$store.state.isLogin
+        if (!isLogin) {
+          store.commit('SET_PENDING_RECEIVE_STAR_PARAMS', receiveParams)
+          this.goLogin()
+          return
+        }
+        await store.dispatch('doReceiveStar', receiveParams)
       }
     },
 
@@ -596,7 +600,8 @@ export default {
       store.commit('SET_SHOW_TRANSFER_POPUP', true)
     },
     onTransferAmountInput(e) {
-      const val = e.detail.value.replace(/[^\d]/g, '')
+      let val = e.detail.value.replace(/[^\d]/g, '')
+      val = val.replace(/^0+/, '') || '' // 禁止以 0 开头
       store.commit('SET_TRANSFER_AMOUNT', val)
       return val
     },
@@ -619,6 +624,7 @@ export default {
       store.dispatch('doTransferStar', { starCount: amount })
     },
     onTransferResultPopupClose() {
+      this.transferResultShareTapped = false
       store.commit('SET_SHOW_TRANSFER_RESULT_POPUP', false)
       store.commit('SET_TRANSFER_AMOUNT', '')
       store.commit('CLEAR_TRANSFER_SHARE_PARAMS')
@@ -630,6 +636,7 @@ export default {
     },
     onTransferResultShareTap() {
       if (!this.requireLogin()) return
+      this.transferResultShareTapped = true
       this.report('转赠结果弹窗-分享给好友点击')
     },
 
@@ -687,16 +694,34 @@ export default {
     },
 
     onTutorialToggle() {
-      this.tutorialExpanded = !this.tutorialExpanded
+      this.tutorialExpanded = !this.tutorialExpanded;
+    },
+
+    onTutorialImageLoad() {
+      if (!this.tutorialScrollPending) return;
+      this.tutorialScrollPending = false;
+      // 延迟执行，等布局完全稳定；duration>0 可减轻微信小程序的回弹问题
+      this.$nextTick(() => this.$nextTick(() => {
+        const query = uni.createSelectorQuery().in(this);
+        query.selectViewport().scrollOffset();
+        query.exec((res) => {
+          const currentTop = (res && res[0] && res[0].scrollTop) || 0;
+          const targetScrollTop = uni.upx2px(530);
+          // 用户已手动向下滚动超过目标位置时，不再强制滚动，避免回弹
+          if (currentTop > targetScrollTop + 30) return;
+          uni.pageScrollTo({
+            scrollTop: targetScrollTop,
+            duration: 0
+          });
+        });
+      }));
     },
 
     onMyGiftTap() {
       if (!this.requireLogin()) return
       this.report('我的奖品入口点击')
       store.commit('SET_SHOW_MY_GIFTS_DRAWER', true)
-      if (store.state.myGiftsList.length === 0) {
-        store.dispatch('fetchMyPrizes', { page: 1 })
-      }
+      store.dispatch('fetchMyPrizes', { page: 1 })
     },
     onMyGiftsDrawerClose() { store.commit('SET_SHOW_MY_GIFTS_DRAWER', false) },
     onMyGiftsDrawerChange(e) {
@@ -721,7 +746,7 @@ export default {
         this.viewAddressForm = {
           receiverName: store.state.addressForm.receiverName || '',
           phone: store.state.addressForm.phone || '',
-          detailAddress: store.state.addressForm.detailAddress || ''
+          detailAddress: store.state.addressForm.detail || store.state.addressForm.detailAddress || ''
         }
         this.showAddressPopup = true
       })
@@ -1023,6 +1048,17 @@ export default {
     overflow: visible;
   }
 
+  /* 仅此区域可触发展开/收起，与 __more 同尺寸位置 */
+  .tutorial-toggle__trigger {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 686rpx;
+    height: 100rpx;
+    z-index: 2;
+  }
+
   .tutorial-toggle__more {
     width: 686rpx;
     height: 100rpx;
@@ -1134,7 +1170,7 @@ export default {
   width: 279rpx;
   margin-bottom: 26rpx;
 
-  &--result-success{
+  &--result-success {
     width: 437rpx;
   }
 }
@@ -1563,10 +1599,11 @@ export default {
   border-radius: 8rpx;
 }
 
+/* 高度小于 3 条（504rpx）+ uni-load-more，确保可滚动；同时 1~2 条时 load-more 仍在可视区内 */
 .gifts-list {
   position: relative;
   z-index: 1;
-  height: 572rpx;
+  height: 520rpx;
   margin-top: 140rpx;
 }
 
@@ -1580,7 +1617,7 @@ export default {
 .gift-item {
   display: flex;
   align-items: center;
-  width: 666rpx;
+  width: 662rpx;
   height: 168rpx;
   box-sizing: border-box;
   border-bottom: 2rpx solid #f3f3f3;

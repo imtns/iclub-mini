@@ -253,7 +253,7 @@ export default {
         provinceName: form.provinceName,
         cityName: form.cityName,
         areaName: form.areaName,
-        detailAddress: form.detailAddress,
+        detailAddress: form.detail || form.detailAddress,
         addressCode: form.addressCode
       })
     },

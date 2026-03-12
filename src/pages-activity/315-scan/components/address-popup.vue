@@ -13,7 +13,7 @@
         </view>
         <view class="address-field">
           <text class="field-label">详细地址</text>
-          <text class="field-text-readonly field-detail-readonly">{{ form.detailAddress || '-' }}</text>
+          <text class="field-text-readonly field-detail-readonly">{{ form.detail || form.detailAddress || '-' }}</text>
         </view>
       </view>
       <text class="address-popup-hint">{{ edit ? '奖励将在7个工作日内发货。请确保地址信息准确无误' : '奖励将在7个工作日内发货。' }}</text>

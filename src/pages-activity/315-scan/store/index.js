@@ -52,6 +52,8 @@ const store = new Vuex.Store({
     showReceiveStarsResultPopup: false,
     receiveStarsResultStatus: 'success',
     receiveStarsResultAmount: 0,
+    /** 未登录时暂存的领取参数，登录返回后执行 doReceiveStar */
+    pendingReceiveStarParams: null,
 
     /* ─── 点亮小卡弹窗 ─── */
     showLightCardPopup: false,
@@ -93,6 +95,8 @@ const store = new Vuex.Store({
       areaName: '',
       fullname: '',
       detailAddress: '',
+      /** 详情：接口 fullName + " " + detailAddress 的组合，用于展示与兑换提交 */
+      detail: '',
       defaultFlag: '',
       userCode: '',
       objectCode: '',
@@ -144,6 +148,8 @@ const store = new Vuex.Store({
       state.receiveStarsResultStatus = status
       state.receiveStarsResultAmount = amount || 0
     },
+    SET_PENDING_RECEIVE_STAR_PARAMS: (state, v) => { state.pendingReceiveStarParams = v },
+    CLEAR_PENDING_RECEIVE_STAR_PARAMS: (state) => { state.pendingReceiveStarParams = null },
 
     SET_SHOW_LIGHT_CARD_POPUP: (state, v) => { state.showLightCardPopup = v },
     SET_LIGHT_CARD_DATA: (state, { card, rewardStars }) => {
@@ -185,6 +191,7 @@ const store = new Vuex.Store({
         areaName: '',
         fullname: '',
         detailAddress: '',
+        detail: '',
         defaultFlag: '',
         userCode: '',
         objectCode: '',
@@ -353,10 +360,22 @@ const store = new Vuex.Store({
      * @param {{ page: number, isLoadMore: boolean }} payload
      */
     async fetchMyPrizes({ commit }, { page = 1, isLoadMore = false } = {}) {
+      const limit = 3
       commit('SET_MY_GIFTS_LOADING', true)
       try {
-        const res = await apiGetMyPrizes({ page, limit: 3, orderBy: 'exchangeTime', orderType: 'desc' })
-        const { list = [], totalPage = 1 } = res.data || {}
+        const res = await apiGetMyPrizes({ page, limit, orderBy: 'exchangeTime', orderType: 'desc' })
+        const data = res.data || {}
+        const list = data.list || []
+        // 兼容 totalPage / totalPages / total(totalCount 计算)
+        let totalPage = data.totalPage ?? data.totalPages ?? 1
+        if (totalPage === 1 && (data.total != null || data.totalCount != null)) {
+          const total = data.total ?? data.totalCount ?? 0
+          totalPage = Math.max(1, Math.ceil(Number(total) / limit))
+        }
+        // 本页条数不足 limit 时视为最后一页
+        if (list.length < limit) {
+          totalPage = page
+        }
         if (isLoadMore) {
           commit('APPEND_MY_GIFTS_LIST', list)
         } else {
@@ -428,6 +447,8 @@ const store = new Vuex.Store({
       if (!objectCode || !userCode) return
       try {
         const d = await apiGetReceiveAddressDetail({ objectCode, userCode }) || {}
+        const fullName = (d.fullName || d.fullname || '').trim()
+        const detailAddress = (d.detailAddress || '').trim()
         commit('SET_ADDRESS_FORM', {
           // 主键与编码
           objectCode: d.objectCode || '',
@@ -443,8 +464,10 @@ const store = new Vuex.Store({
           cityName: d.cityName || '',
           areaCode: d.areaCode || '',
           areaName: d.areaName || '',
-          fullname: d.fullname || '',
-          detailAddress: d.detailAddress || '',
+          fullname: fullName,
+          detailAddress,
+          // 详情：fullName + " " + detailAddress
+          detail: [fullName, detailAddress].filter(Boolean).join(' '),
           // 其它标识
           defaultFlag: d.defaultFlag || ''
         })
