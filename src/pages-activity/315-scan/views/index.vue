@@ -1,5 +1,6 @@
 <template>
-  <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : ''" />
+  <!-- 弹窗打开时禁止页面滚动，关闭时显式设置 overflow:auto 以恢复滚动（避免从分享链接进入关闭弹窗后无法滑动） -->
+    <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : 'overflow: auto;'" />
   <view class="container">
     <!-- 导航栏背景渐变蒙层（跟随滚动透明度 0→1，z-index 在导航栏之下） -->
     <view class="nav-bg-overlay" :style="{ opacity: navBgOpacity, height: navBarHeight ? navBarHeight + 'px' : '' }">
@@ -78,15 +79,15 @@
 
     <!-- ═══════════ 弹窗区 ═══════════ -->
 
-    <!-- 星星转赠弹窗 -->
-    <uni-popup ref="transferPop" type="center" background-color="transparent">
+    <!-- 星星转赠弹窗：监听 change 以同步 store，避免点击蒙版关闭后无法再次打开 -->
+    <uni-popup ref="transferPop" type="center" background-color="transparent" @change="onTransferPopupChange">
       <view class="transfer-popup">
         <image class="transfer-popup-bg" :src="getStaticImage('transfer-bg.png')" mode="widthFix" />
         <view class="transfer-popup-body">
           <image class="transfer-popup-title" :src="getStaticImage('transfer-title-0.png')" mode="widthFix" />
           <view class="transfer-amount-row">
-            <input class="transfer-amount-input" type="number" placeholder="请输入数量" :value="transferAmount"
-              @input="onTransferAmountInput" />
+            <input :key="'transfer-input-' + transferInputKey" class="transfer-amount-input" type="number"
+              placeholder="请输入数量" :value="transferAmount" @input="onTransferAmountInput" />
             <text class="transfer-amount-unit">颗</text>
           </view>
           <view class="transfer-meta">
@@ -132,8 +133,8 @@
       </view>
     </uni-popup>
 
-    <!-- 领取转赠星星结果弹窗 -->
-    <uni-popup ref="receiveStarsResultPop" type="center" background-color="transparent">
+    <!-- 领取转赠星星结果弹窗：监听 change 以同步 store，确保关闭后页面可滚动 -->
+    <uni-popup ref="receiveStarsResultPop" type="center" background-color="transparent" @change="onReceiveStarsResultPopupChange">
       <view class="receive-popup">
         <!-- 标题图：卡片外部上方 -->
         <image class="receive-popup-title"
@@ -361,7 +362,9 @@ export default {
       defaultSharePath,
       defaultShareTitle,
       showAddressPopup: false,
-      viewAddressForm: { receiverName: '', phone: '', detailAddress: '' }
+      viewAddressForm: { receiverName: '', phone: '', detailAddress: '' },
+      // 每次打开转赠弹窗时递增，用于 input 的 key，强制重新挂载以清空内部缓存
+      transferInputKey: 0
     }
   },
 
@@ -578,6 +581,9 @@ export default {
 
     onTransferTap() {
       if (!this.requireLogin()) return
+      // 打开前先清空输入并递增 key，避免上次未清空的数据残留、强制 input 重新挂载
+      store.commit('SET_TRANSFER_AMOUNT', '')
+      this.transferInputKey += 1
       store.commit('SET_SHOW_TRANSFER_POPUP', true)
     },
     onTransferAmountInput(e) {
@@ -588,6 +594,13 @@ export default {
     onTransferPopupClose() {
       store.commit('SET_SHOW_TRANSFER_POPUP', false)
       store.commit('SET_TRANSFER_AMOUNT', '')
+    },
+    /** uni-popup change：弹窗被关闭时（含点击蒙版）同步 store，避免状态不同步导致无法再次打开 */
+    onTransferPopupChange(e) {
+      if (e && e.show === false) {
+        store.commit('SET_SHOW_TRANSFER_POPUP', false)
+        store.commit('SET_TRANSFER_AMOUNT', '')
+      }
     },
     onTransferSubmit() {
       const amount = Number(store.state.transferAmount)
@@ -617,6 +630,12 @@ export default {
         store.dispatch('fetchActivityCardInfo', { showLoading: false })
       }
       store.commit('SET_SHOW_RECEIVE_STARS_RESULT_POPUP', false)
+    },
+    /** uni-popup change：领取结果弹窗被关闭时同步 store，确保 anyPopupOpen 正确、页面可恢复滚动 */
+    onReceiveStarsResultPopupChange(e) {
+      if (e && e.show === false) {
+        store.commit('SET_SHOW_RECEIVE_STARS_RESULT_POPUP', false)
+      }
     },
 
     onLightCardPopupClose() { store.commit('SET_SHOW_LIGHT_CARD_POPUP', false) },

@@ -305,12 +305,14 @@ const store = new Vuex.Store({
         const fromUserCode = data.fromUserCode || data.userCode || ''
         commit('SET_TRANSFER_LOADING', false)
         commit('SET_SHOW_TRANSFER_POPUP', false)
+        commit('SET_TRANSFER_AMOUNT', '')
         commit('SET_TRANSFER_RESULT', { status: 'success', amount, message: '' })
         commit('SET_USER_TOTAL_STARS', Math.max(0, state.userTotalStars - amount))
         commit('SET_TRANSFER_SHARE_PARAMS', { transferCode, fromUserCode })
       } catch (e) {
         commit('SET_TRANSFER_LOADING', false)
         commit('SET_SHOW_TRANSFER_POPUP', false)
+        commit('SET_TRANSFER_AMOUNT', '')
         commit('SET_TRANSFER_RESULT', { status: 'failure', amount, message: e.message || '网络不好请重试~' })
         commit('SET_TRANSFER_SHARE_PARAMS', { transferCode: '', fromUserCode: '' })
       } finally {
