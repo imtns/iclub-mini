@@ -11,6 +11,7 @@ const LOCAL_PREFIX = '/static/assets/315-scan'
 
 // CDN 图片需拼接 OSS 处理参数：缩放宽 800、转 webp；非 CDN 不拼接
 const CDN_IMAGE_SUFFIX = '?x-oss-process=image/resize,m_mfit,w_800/format,webp'
+// const CDN_IMAGE_SUFFIX = ''
 
 export function getStaticImage(filename) {
   if (!filename) return ''

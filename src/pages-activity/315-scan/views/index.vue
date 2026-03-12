@@ -70,8 +70,13 @@
       </view>
 
       <!-- ── 溯源教程 ── -->
-      <view class="tutorial-toggle" @tap="onTutorialToggle">
-        <image class="tutorial-toggle__more" :src="getStaticImage('index-look.png')" mode="widthFix" />
+      <view
+        class="tutorial-toggle"
+        :class="{ 'tutorial-toggle--expanded': tutorialExpanded }"
+        @tap="onTutorialToggle"
+      >
+        <image v-if="!tutorialExpanded" class="tutorial-toggle__more" :src="getStaticImage('index-look.png')" mode="widthFix" />
+        <image v-if="tutorialExpanded" class="tutorial-toggle__content" :src="getStaticImage('tutorial.png')" mode="widthFix" />
         <image :class="['tutorial-toggle__arrow', { 'tutorial-toggle__arrow--expanded': tutorialExpanded }]"
           :src="getStaticImage('index-arrow.png')" mode="aspectFit" />
       </view>
@@ -105,11 +110,13 @@
     </uni-popup>
 
     <!-- 星星转赠结果弹窗 -->
-    <uni-popup ref="transferResultPop" type="center" background-color="transparent">
+    <uni-popup ref="transferResultPop" type="center" background-color="transparent"
+      :is-mask-click="transferResultStatus !== 'success'">
       <view class="transfer-popup">
         <image class="transfer-popup-bg" :src="getStaticImage('transfer-bg.png')" mode="widthFix" />
         <view class="transfer-popup-body">
-          <image class="transfer-popup-title"
+          <image
+            :class="['transfer-popup-title', { 'transfer-popup-title--result-success': transferResultStatus === 'success' }]"
             :src="getStaticImage(transferResultStatus === 'success' ? 'transfer-title-1.png' : 'transfer-title-2.png')"
             mode="widthFix" />
           <view class="transfer-amount-row transfer-amount-row--result">
@@ -128,8 +135,9 @@
             </button>
           </view>
         </view>
-        <image class="transfer-close-btn" :src="getStaticImage('close-btn.png')" mode="aspectFit"
-          @tap="onTransferResultPopupClose" />
+        <!-- 转赠成功时隐藏关闭按钮，引导用户分享 -->
+        <image v-if="transferResultStatus !== 'success'" class="transfer-close-btn"
+          :src="getStaticImage('close-btn.png')" mode="aspectFit" @tap="onTransferResultPopupClose" />
       </view>
     </uni-popup>
 
@@ -166,8 +174,9 @@
             </view>
           </view>
         </view>
-        <image class="receive-close-btn" :src="getStaticImage('close-btn.png')" mode="aspectFit"
-          @tap="onReceiveStarsResultPopupConfirm" />
+        <view class="receive-close-btn" @tap="onReceiveStarsResultPopupConfirm">
+          <image :src="getStaticImage('close-btn.png')" mode="aspectFit" />
+        </view>
       </view>
     </uni-popup>
 
@@ -451,8 +460,8 @@ export default {
         if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {
           const base = '/pages-activity/315-scan/views/index'
           this.shareInfo.path = `${base}?transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
-          this.shareInfo.buttonTitle = `送你${this.transferResultAmount}颗星星，快来领取吧`
-          if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('btn-share.png')
+          this.shareInfo.buttonTitle = `好友送来专属星星，快来兑换好礼！`
+          if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('share.png')
           // 开发调试：查看当前编辑后的分享参数
           // console.log('[315-scan] transfer shareInfo 更新：', JSON.stringify(this.shareInfo))
         }
@@ -1004,16 +1013,29 @@ export default {
   position: relative;
   display: flex;
   justify-content: center;
+  height: 100rpx;
+  overflow: hidden;
+  transition: height 0.25s ease;
+
+  &--expanded {
+    height: 1600rpx;
+    overflow: visible;
+  }
 
   .tutorial-toggle__more {
     width: 686rpx;
     height: 100rpx;
   }
 
+  .tutorial-toggle__content {
+    width: 686rpx;
+    display: block;
+  }
+
   .tutorial-toggle__arrow {
     position: absolute;
     right: 52rpx;
-    top: 50%;
+    top: 50rpx;
     transform: translateY(-50%);
     width: 23rpx;
     height: 23rpx;
@@ -1110,6 +1132,10 @@ export default {
 .transfer-popup-title {
   width: 279rpx;
   margin-bottom: 26rpx;
+
+  &--result-success{
+    width: 437rpx;
+  }
 }
 
 .transfer-amount-row {
@@ -1142,6 +1168,7 @@ export default {
   color: #2b9de7;
   font-size: 38rpx;
   font-weight: bold;
+  text-align: center;
 }
 
 .transfer-amount-text {
@@ -1355,9 +1382,19 @@ export default {
 }
 
 .receive-close-btn {
+  position: relative;
+  z-index: 10;
   width: 64rpx;
   height: 64rpx;
   margin-top: -82rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  image {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .result-close-btn {

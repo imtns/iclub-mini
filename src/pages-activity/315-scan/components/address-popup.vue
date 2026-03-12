@@ -1,45 +1,19 @@
 <template>
   <uni-popup ref="popRef" type="center" background-color="transparent" :is-mask-click="false" @change="onPopupChange">
     <view class="address-popup">
-      <text class="address-popup-title">{{ edit ? '填写收货地址' : '收货地址' }}</text>
+      <text class="address-popup-title">{{ edit ? '确认收货地址' : '收货地址' }}</text>
       <view class="address-fields">
         <view class="address-field">
           <text class="field-label">收货人姓名</text>
-          <input
-            v-if="edit"
-            class="field-input"
-            :value="form.receiverName"
-            placeholder="请输入收货人姓名"
-            placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-            @input="onFormUpdate('receiverName', $event.detail.value)"
-          />
-          <text v-else class="field-text-readonly">{{ form.receiverName || '-' }}</text>
+          <text class="field-text-readonly">{{ form.receiverName || '-' }}</text>
         </view>
         <view class="address-field">
           <text class="field-label">联系电话</text>
-          <input
-            v-if="edit"
-            class="field-input"
-            :value="form.phone"
-            type="number"
-            maxlength="11"
-            placeholder="请输入收货人联系电话"
-            placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-            @input="onPhoneInput"
-          />
-          <text v-else class="field-text-readonly">{{ form.phone || '-' }}</text>
+          <text class="field-text-readonly">{{ form.phone || '-' }}</text>
         </view>
         <view class="address-field">
           <text class="field-label">详细地址</text>
-          <textarea
-            v-if="edit"
-            class="field-textarea"
-            :value="form.detailAddress"
-            placeholder="请输入详细收货地址"
-            placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-            @input="onFormUpdate('detailAddress', $event.detail.value)"
-          />
-          <text v-else class="field-text-readonly field-detail-readonly">{{ form.detailAddress || '-' }}</text>
+          <text class="field-text-readonly field-detail-readonly">{{ form.detailAddress || '-' }}</text>
         </view>
       </view>
       <text class="address-popup-hint">{{ edit ? '奖励将在7个工作日内发货。请确保地址信息准确无误' : '奖励将在7个工作日内发货。' }}</text>
@@ -93,13 +67,6 @@ export default {
     }
   },
   methods: {
-    onFormUpdate(field, value) {
-      this.$emit('update:form', { [field]: value })
-    },
-    onPhoneInput(e) {
-      const val = (e.detail.value || '').replace(/[^\d]/g, '').slice(0, 11)
-      this.$emit('update:form', { phone: val })
-    },
     onCancel() {
       this.$emit('cancel')
     },
@@ -167,31 +134,6 @@ export default {
   color: rgba(51, 51, 51, 0.82);
   line-height: 38rpx;
   margin-bottom: 12rpx;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.field-input {
-  width: 100%;
-  height: 84rpx;
-  line-height: 84rpx;
-  background: #f3f2f2;
-  border-radius: 64rpx;
-  padding: 0 30rpx 0 44rpx;
-  box-sizing: border-box;
-  font-size: 26rpx;
-  color: #333333;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.field-textarea {
-  width: 100%;
-  height: 301rpx;
-  background: #f3f2f2;
-  border-radius: 46rpx;
-  padding: 24rpx 30rpx 24rpx 44rpx;
-  box-sizing: border-box;
-  font-size: 26rpx;
-  color: #333333;
   font-family: 'SourceHanSans-Regular', sans-serif;
 }
 
