@@ -82,7 +82,7 @@ export default {
     getCardImage(card) {
       // 优先根据 cardCode 从 315-scan/cards/ 目录取本地图
       if (card && card.cardCode) {
-        return this.getStaticImage(`cards/${card.cardCode}.png`)
+        return this.getStaticImage(`cards/${card.cardCode}.jpg`)
       }
       // 兜底：兼容历史字段
       return (card && (card.imgUrl || card.cardImageUrl)) || ''

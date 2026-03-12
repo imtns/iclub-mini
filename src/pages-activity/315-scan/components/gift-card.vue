@@ -27,7 +27,7 @@
         </view>
         <image
           class="gift-card__status-img"
-          :src="item.canExchange && !isOutOfStock ? exchangeStatus1 : exchangeStatus0"
+          :src="canExchange && !isOutOfStock ? exchangeStatus1 : exchangeStatus0"
           mode="aspectFit"
         />
       </view>
@@ -44,10 +44,6 @@ export default {
     item: {
       type: Object,
       required: true
-    },
-    userStarCount: {
-      type: Number,
-      default: 0
     }
   },
   data() {
@@ -62,10 +58,9 @@ export default {
     isOutOfStock() {
       return Number(this.item.remainCount) === 0
     },
-    // 仅用于展示可兑换/不可兑换图标，不在此做拦截
+    // 仅用于展示可兑换/不可兑换图标，仅依据接口 canExchange 判断，不在此做拦截
     canExchange() {
-      return this.item.canExchange === true &&
-        (this.userStarCount >= (this.item.needStarCount || this.item.starCost || 0))
+      return this.item.canExchange === true
     }
   },
   methods: {

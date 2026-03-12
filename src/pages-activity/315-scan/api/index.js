@@ -4,20 +4,6 @@ const { request2 } = require('@/http/request2')
 const BASE = '/iclub-api/'
 const BASE2 = 'https://user-test.imeik.com/'
 
-/**
- * 将奖品列表请求参数拼到 URL query（与 draft2 OpenAPI 一致：parameters in query）
- * @param {Record<string, any>} data - page, limit, orderBy, orderType, needStarCount
- */
-function buildPrizeListQuery(data = {}) {
-  const pairs = []
-  if (data.page != null) pairs.push('page=' + encodeURIComponent(data.page))
-  if (data.limit != null) pairs.push('limit=' + encodeURIComponent(data.limit))
-  if (data.orderBy != null) pairs.push('orderBy=' + encodeURIComponent(data.orderBy))
-  if (data.orderType != null) pairs.push('orderType=' + encodeURIComponent(data.orderType))
-  if (data.needStarCount != null) pairs.push('needStarCount=' + encodeURIComponent(data.needStarCount))
-  return pairs.length ? '?' + pairs.join('&') : ''
-}
-
 module.exports = {
   /** 获取活动卡片信息（品牌卡片列表、用户已得卡、用户星星总数） */
   apiGetActivityCardInfo: () =>
@@ -30,11 +16,11 @@ module.exports = {
       isJson: true
     }),
 
-  /** 获取奖品列表（分页），参数走 query：page、limit、orderBy、orderType、needStarCount（可选） */
+  /** 获取奖品列表（分页），参数走 body：page、limit、orderBy、orderType、needStarCount（可选） */
   apiGetPrizeList: (data) =>
     request2({
-      url: `${BASE}openApi/activity/verify/318/prize/list${buildPrizeListQuery(data)}`,
-      data: {},
+      url: `${BASE}openApi/activity/verify/318/prize/list`,
+      data: data || {},
       method: 'POST',
       auth: false,
       encrypt: false,

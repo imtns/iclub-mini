@@ -43,7 +43,6 @@
           v-for="item in exchangeGiftList"
           :key="item.prizeCode"
           :item="item"
-          :user-star-count="userTotalStars"
           @exchange="onExchange"
         />
       </view>
@@ -57,50 +56,17 @@
     </scroll-view>
 
     <!-- 填写收货地址弹窗 -->
-    <uni-popup ref="addressPop" type="center" background-color="transparent">
-      <view class="address-popup">
-        <text class="address-popup-title">填写收货地址</text>
-        <view class="address-fields">
-          <view class="address-field">
-            <text class="field-label">收货人姓名</text>
-            <input
-              class="field-input"
-              :value="addressForm.receiverName"
-              placeholder="请输入收货人姓名"
-              placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-              @input="onAddressFormUpdate('receiverName', $event.detail.value)"
-            />
-          </view>
-          <view class="address-field">
-            <text class="field-label">联系电话</text>
-            <input
-              class="field-input"
-              :value="addressForm.phone"
-              type="number"
-              maxlength="11"
-              placeholder="请输入收货人联系电话"
-              placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-              @input="onPhoneInput"
-            />
-          </view>
-          <view class="address-field">
-            <text class="field-label">详细地址</text>
-            <textarea
-              class="field-textarea"
-              :value="addressForm.detailAddress"
-              placeholder="请输入详细收货地址"
-              placeholder-style="color:#D2D2D2;font-size:26rpx;font-family:'SourceHanSans-Regular',sans-serif;"
-              @input="onAddressFormUpdate('detailAddress', $event.detail.value)"
-            />
-          </view>
-        </view>
-        <text class="address-popup-hint">奖励将在7个工作日内发货。请确保地址信息准确无误</text>
-        <view class="address-popup-actions">
-          <button class="addr-btn addr-btn-cancel" @tap="onAddressPopupCancel">取消</button>
-          <button class="addr-btn addr-btn-submit" :loading="exchangeLoading" @tap="onAddressPopupSubmit">提交</button>
-        </view>
-      </view>
-    </uni-popup>
+    <address-popup
+      ref="addressPop"
+      :visible="addressPopupVisible"
+      :edit="true"
+      :form="addressForm"
+      :loading="exchangeLoading"
+      @update:form="onAddressFormUpdate"
+      @cancel="onAddressPopupCancel"
+      @submit="onAddressPopupSubmit"
+      @change="onAddressPopupChange"
+    />
   </view>
 </template>
 
@@ -108,6 +74,7 @@
 import store from '../store/index'
 import GiftCard from '../components/gift-card'
 import StarExchangeTabs from '../components/star-exchange-tabs'
+import AddressPopup from '../components/address-popup'
 import { getStaticImage } from '../utils/staticAssets'
 
 // 兑换列表本地 mock，数据结构与 apiGetPrizeList 的 list 一致，后端接入稳定后可整体删除
@@ -146,7 +113,7 @@ const TAB_OPTIONS = [
 ]
 
 export default {
-  components: { GiftCard, StarExchangeTabs },
+  components: { GiftCard, StarExchangeTabs, AddressPopup },
 
   data() {
     return {
@@ -184,13 +151,6 @@ export default {
     }
   },
 
-  watch: {
-    addressPopupVisible(val) {
-      this.$nextTick(() => {
-        this.$refs.addressPop && (val ? this.$refs.addressPop.open() : this.$refs.addressPop.close())
-      })
-    }
-  },
 
   onLoad() {
     this.loadList(1, false)
@@ -198,6 +158,8 @@ export default {
 
   onShow() {
     this.report('积分商城pv', true)
+    // 登录返回等场景：刷新用户星星数（参考 index.vue refreshPageData，静默刷新不打断页面）
+    store.dispatch('fetchActivityCardInfo', { showLoading: false })
     // 从主包地址列表选择返回：用主包 addressId(objectCode) + userCode 拉详情并打开填写弹窗
     const mainAddressId = (this.$store && this.$store.state.addressId) || ''
     // console.log('mainAddressId', mainAddressId)
@@ -259,18 +221,21 @@ export default {
       uni.navigateTo({ url: '/pages/mine/address/list' })
     },
 
-    onAddressFormUpdate(field, value) {
-      store.commit('SET_ADDRESS_FORM', { [field]: value })
-    },
-    onPhoneInput(e) {
-      const val = e.detail.value.replace(/[^\d]/g, '').slice(0, 11)
-      store.commit('SET_ADDRESS_FORM', { phone: val })
-      return val
+    onAddressFormUpdate(patch) {
+      store.commit('SET_ADDRESS_FORM', patch)
     },
 
     onAddressPopupCancel() {
       store.commit('SET_ADDRESS_POPUP_VISIBLE', false)
       store.commit('RESET_ADDRESS_FORM')
+    },
+
+    /** 弹窗关闭时（含点击遮罩）同步 store，否则再次从地址页返回时 addressPopupVisible 仍为 true，watch 不触发，弹窗不出现 */
+    onAddressPopupChange(e) {
+      if (e && e.show === false) {
+        store.commit('SET_ADDRESS_POPUP_VISIBLE', false)
+        store.commit('RESET_ADDRESS_FORM')
+      }
     },
 
     onScroll(e) {
@@ -393,117 +358,6 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100%;
-}
-
-/* ── 地址弹窗 ── */
-.address-popup {
-  width: 603rpx;
-  height: 1069rpx;
-  padding: 50rpx 61rpx 40rpx;
-  background: linear-gradient(180deg, #d8f0ff 0%, #ffffff 22%, #ffffff 86%, #d8f0ff 100%);
-  border-radius: 107rpx;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.address-popup-title {
-  display: block;
-  margin-bottom: 46rpx;
-  color: #333333;
-  font-weight: 700;
-  font-size: 36rpx;
-  text-align: center;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-/* 三个字段的外层列容器 */
-.address-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 22rpx;
-  margin-bottom: 16rpx;
-}
-
-/* 每个字段：label + 输入框列布局 */
-.address-field {
-  display: flex;
-  flex-direction: column;
-}
-
-.field-label {
-  font-size: 26rpx;
-  font-weight: 500;
-  color: rgba(51, 51, 51, 0.82);
-  line-height: 38rpx;
-  margin-bottom: 12rpx;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.field-input {
-  width: 100%;
-  height: 84rpx;
-  line-height: 84rpx;
-  background: #f3f2f2;
-  border-radius: 64rpx;
-  padding: 0 30rpx 0 44rpx;
-  box-sizing: border-box;
-  font-size: 26rpx;
-  color: #333333;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.field-textarea {
-  width: 100%;
-  height: 301rpx;
-  background: #f3f2f2;
-  border-radius: 46rpx;
-  padding: 24rpx 30rpx 24rpx 44rpx;
-  box-sizing: border-box;
-  font-size: 26rpx;
-  color: #333333;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.address-popup-hint {
-  display: block;
-  margin-bottom: 32rpx;
-  color: #ff6903;
-  font-size: 24rpx;
-  line-height: 1.48;
-  font-family: 'SourceHanSans-Regular', sans-serif;
-}
-
-.address-popup-actions {
-  display: flex;
-  gap: 13rpx;
-
-  .addr-btn {
-    flex: 1;
-    height: 92rpx;
-    line-height: 92rpx;
-    border-radius: 63rpx;
-    font-size: 32rpx;
-    font-family: 'SourceHanSans-Regular', sans-serif;
-    border: none;
-    padding: 0;
-    text-align: center;
-    box-sizing: border-box;
-  }
-
-  .addr-btn-cancel {
-    flex: 165;
-    background: #f3f2f2;
-    color: #999999;
-  }
-
-  .addr-btn-submit {
-    flex: 304;
-    background: #2b9de7;
-    color: #ffffff;
-    font-weight: 700;
-  }
 }
 </style>
 

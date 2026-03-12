@@ -104,7 +104,7 @@ export default {
   display: block;
   width: 194rpx;
   height: 70rpx;
-  vertical-align: top;
+  margin-top: -6rpx;
 }
 
 .tab-item-selected-text {

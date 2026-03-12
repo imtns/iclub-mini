@@ -194,9 +194,11 @@ const store = new Vuex.Store({
   },
 
   actions: {
-    /** 获取首页活动数据（品牌卡片 + 星星总数） */
-    async fetchActivityCardInfo({ commit }) {
-      commit('SET_PAGE_LOADING', true)
+    /** 获取首页活动数据（品牌卡片 + 星星总数）
+     * @param {{ showLoading?: boolean }} payload - showLoading 为 false 时不显示全屏 loading（用于从其他页面返回时的静默刷新）
+     */
+    async fetchActivityCardInfo({ commit }, { showLoading = true } = {}) {
+      if (showLoading) commit('SET_PAGE_LOADING', true)
       try {
         const res = await apiGetActivityCardInfo()
         const { cards = [], userCards = [], userTotalStars = 0 } = res.data || {}
@@ -227,7 +229,7 @@ const store = new Vuex.Store({
       } catch (e) {
         uni.showToast({ title: e.message || '加载失败，请重试', icon: 'none' })
       } finally {
-        commit('SET_PAGE_LOADING', false)
+        if (showLoading) commit('SET_PAGE_LOADING', false)
       }
     },
 

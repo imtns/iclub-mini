@@ -1,5 +1,5 @@
 <template>
-  <page-meta :page-style="anyPopupOpen ? 'overflow: hidden;' : ''" />
+  <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : ''" />
   <view class="container">
     <!-- 导航栏背景渐变蒙层（跟随滚动透明度 0→1，z-index 在导航栏之下） -->
     <view class="nav-bg-overlay" :style="{ opacity: navBgOpacity, height: navBarHeight ? navBarHeight + 'px' : '' }">
@@ -116,7 +116,7 @@
             <text class="transfer-amount-unit">颗</text>
           </view>
           <text class="transfer-result-msg">
-            {{ transferResultStatus === 'success' ? '转赠星星给好友' : (transferResultMessage || '网络不好请重试~') }}
+            {{ transferResultStatus === 'success' ? '赶快分享给好友吧~' : (transferResultMessage || '网络不好请重试~') }}
           </text>
           <!-- 转赠成功且接口返回分享参数时展示「分享给好友」，点击前已通过编辑分享链接设置 path（带 transferCode、fromUserCode） -->
           <view v-if="transferResultStatus === 'success' && transferShareCode && transferShareFromUserCode"
@@ -226,6 +226,16 @@
         </scroll-view>
       </view>
     </uni-popup>
+
+    <!-- 查看收货地址弹窗（展示模式） -->
+    <address-popup
+      ref="addressViewPop"
+      :visible="showAddressPopup"
+      :edit="false"
+      :form="viewAddressForm"
+      @close="onAddressViewClose"
+      @change="onAddressViewPopupChange"
+    />
   </view>
 </template>
 
@@ -236,6 +246,7 @@ import { getStaticImage } from '../utils/staticAssets'
 import BrandSwiper from '../components/brand-swiper'
 import HomeGiftCard from '../components/home-gift-card'
 import LightCard from '../components/light-card'
+import AddressPopup from '../components/address-popup'
 
 const ENABLE_BRAND_CARDS_MOCK = false
 const ENABLE_LIGHT_CARD_MOCK = false
@@ -257,10 +268,10 @@ const MOCK_USER_TOTAL_STARS = 1
 
 const ENABLE_PRIZE_LIST_HOME_MOCK = false
 const MOCK_PRIZE_LIST_HOME = [
-  { prizeCode: 'PH1', prizeName: '爱美客装', prizeImageUrl: getStaticImage('cards/CD001.png'), needStarCount: 1, totalCount: 100, remainCount: 50, canExchange: true, indexNum: 1 },
-  { prizeCode: 'PH2', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD002.png'), needStarCount: 5, totalCount: 80, remainCount: 30, canExchange: true, indexNum: 2 },
-  { prizeCode: 'PH3', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD003.png'), needStarCount: 9, totalCount: 60, remainCount: 20, canExchange: false, indexNum: 3 },
-  { prizeCode: 'PH4', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD004.png'), needStarCount: 9, totalCount: 40, remainCount: 0, canExchange: false, indexNum: 4 }
+  { prizeCode: 'PH1', prizeName: '爱美客装', prizeImageUrl: getStaticImage('cards/CD001.jpg'), needStarCount: 1, totalCount: 100, remainCount: 50, canExchange: true, indexNum: 1 },
+  { prizeCode: 'PH2', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD002.jpg'), needStarCount: 5, totalCount: 80, remainCount: 30, canExchange: true, indexNum: 2 },
+  { prizeCode: 'PH3', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD003.jpg'), needStarCount: 9, totalCount: 60, remainCount: 20, canExchange: false, indexNum: 3 },
+  { prizeCode: 'PH4', prizeName: '爱美客体验装', prizeImageUrl: getStaticImage('cards/CD004.jpg'), needStarCount: 9, totalCount: 40, remainCount: 0, canExchange: false, indexNum: 4 }
 ]
 
 const ENABLE_MY_GIFTS_MOCK = false
@@ -269,16 +280,19 @@ const MOCK_MY_GIFTS_LIST = [
     objectCode: 'MG001',
     prizeCode: 'PH1',
     prizeName: '嗨体体验装',
-    prizeImageUrl: getStaticImage('cards/CD001.png'),
+    prizeImageUrl: getStaticImage('cards/CD001.jpg'),
     prizeType: 'entity',
     exchangeTime: 1712200000000,
-    jumpUrl: '/pages-activity/315-scan/views/star-exchange'
+    jumpUrl: '/pages-activity/315-scan/views/star-exchange',
+    receiverName: '张三',
+    phone: '13800138000',
+    detailAddress: '北京市朝阳区某某街道某某小区1号楼101室'
   },
   {
     objectCode: 'MG002',
     prizeCode: 'PH2',
     prizeName: '爱美客周边礼包',
-    prizeImageUrl: getStaticImage('cards/CD002.png'),
+    prizeImageUrl: getStaticImage('cards/CD002.jpg'),
     prizeType: 'entity',
     exchangeTime: 1712300000000,
     jumpUrl: '/pages-activity/315-scan/views/star-exchange'
@@ -287,7 +301,7 @@ const MOCK_MY_GIFTS_LIST = [
     objectCode: 'MG003',
     prizeCode: 'CP001',
     prizeName: '到院抵扣券 100 元',
-    prizeImageUrl: getStaticImage('cards/CD003.png'),
+    prizeImageUrl: getStaticImage('cards/CD003.jpg'),
     prizeType: 'coupon',
     exchangeTime: 1712400000000,
     jumpUrl: '/pages-activity/315-scan/views/star-exchange'
@@ -296,7 +310,7 @@ const MOCK_MY_GIFTS_LIST = [
     objectCode: 'MG003',
     prizeCode: 'CP001',
     prizeName: '到院抵扣券 100 元',
-    prizeImageUrl: getStaticImage('cards/CD003.png'),
+    prizeImageUrl: getStaticImage('cards/CD003.jpg'),
     prizeType: 'coupon',
     exchangeTime: 1712400000000,
     jumpUrl: '/pages-activity/315-scan/views/star-exchange'
@@ -305,7 +319,7 @@ const MOCK_MY_GIFTS_LIST = [
     objectCode: 'MG003',
     prizeCode: 'CP001',
     prizeName: '到院抵扣券 100 元',
-    prizeImageUrl: getStaticImage('cards/CD003.png'),
+    prizeImageUrl: getStaticImage('cards/CD003.jpg'),
     prizeType: 'coupon',
     exchangeTime: 1712400000000,
     jumpUrl: '/pages-activity/315-scan/views/star-exchange'
@@ -314,7 +328,7 @@ const MOCK_MY_GIFTS_LIST = [
     objectCode: 'MG003',
     prizeCode: 'CP001',
     prizeName: '到院抵扣券 100 元',
-    prizeImageUrl: getStaticImage('cards/CD003.png'),
+    prizeImageUrl: getStaticImage('cards/CD003.jpg'),
     prizeType: 'coupon',
     exchangeTime: 1712400000000,
     jumpUrl: '/pages-activity/315-scan/views/star-exchange'
@@ -327,7 +341,7 @@ const MOCK_TRANSFER_CODE = '2031718021107081218'
 const MOCK_FROM_USER_CODE = '1972581621231980545'
 
 export default {
-  components: { BrandSwiper, HomeGiftCard, LightCard },
+  components: { BrandSwiper, HomeGiftCard, LightCard, AddressPopup },
 
   data() {
     const defaultSharePath = '/pages-activity/315-scan/views/index'
@@ -345,7 +359,9 @@ export default {
         title: defaultShareTitle
       },
       defaultSharePath,
-      defaultShareTitle
+      defaultShareTitle,
+      showAddressPopup: false,
+      viewAddressForm: { receiverName: '', phone: '', detailAddress: '' }
     }
   },
 
@@ -466,7 +482,7 @@ export default {
     this.report('首页pv', true)
     // 首次进入已在 initPage 中完成初始化，这里只负责后续回到首页时刷新数据
     if (this.hasRefreshedOnce) {
-      this.refreshPageData()
+      this.refreshPageData({ isRefresh: true })
     } else {
       this.hasRefreshedOnce = true
     }
@@ -488,8 +504,9 @@ export default {
     },
 
     // 首页数据刷新：onLoad 首次进入会执行一次，后续通过 onShow 进入时也复用该逻辑
-    async refreshPageData() {
-      await store.dispatch('fetchActivityCardInfo')
+    // isRefresh：从其他页面返回时为 true，不显示全屏 loading，避免页面闪烁
+    async refreshPageData({ isRefresh = false } = {}) {
+      await store.dispatch('fetchActivityCardInfo', { showLoading: !isRefresh })
       await store.dispatch('fetchPrizeListHome')
       if (this.$store && this.$store.state.isLogin) {
         await store.dispatch('fetchUserInfo')
@@ -549,7 +566,7 @@ export default {
     },
     onScanTap() {
       this.report('扫码验真入口点击')
-      uni.navigateTo({ url: '/pages/index' })
+      uni.navigateTo({ url: '/pages-activity/315-scan/scan/index' })
     },
     onGiftMoreTap() {
       // 防止事件冒泡或重复触发导致星星兑换页被打开两次
@@ -597,7 +614,7 @@ export default {
     onReceiveStarsResultPopupConfirm() {
       if (store.state.receiveStarsResultStatus === 'success') {
         this.report('星星领取次数')
-        store.dispatch('fetchActivityCardInfo')
+        store.dispatch('fetchActivityCardInfo', { showLoading: false })
       }
       store.commit('SET_SHOW_RECEIVE_STARS_RESULT_POPUP', false)
     },
@@ -638,7 +655,7 @@ export default {
     /** 根据 cardCode 返回卡片图片 */
     getLightCardImage(card) {
       if (!card || !card.cardCode) return ''
-      return getStaticImage(`cards/${card.cardCode}.png`)
+      return getStaticImage(`cards/${card.cardCode}.jpg`)
     },
 
     onTutorialToggle() {
@@ -665,7 +682,29 @@ export default {
       store.dispatch('fetchMyPrizes', { page: this.myGiftsPage + 1, isLoadMore: true })
     },
     onMyGiftItemBtnTap(gift) {
-      uni.navigateTo({ url: "/pages-activity/ai-poster/index", });
+      // 通过 addressCode 调用同一接口获取地址详情，再展示弹窗
+      const addressCode = gift.addressCode || ''
+      const userCode = (this.$store && this.$store.getters.userCode) || ''
+      if (!addressCode || !userCode) {
+        uni.showToast({ title: '暂无地址信息', icon: 'none' })
+        return
+      }
+      store.dispatch('fetchAddressDetail', { objectCode: addressCode, userCode }).then(() => {
+        this.viewAddressForm = {
+          receiverName: store.state.addressForm.receiverName || '',
+          phone: store.state.addressForm.phone || '',
+          detailAddress: store.state.addressForm.detailAddress || ''
+        }
+        this.showAddressPopup = true
+      })
+    },
+    onAddressViewClose() {
+      this.showAddressPopup = false
+    },
+    onAddressViewPopupChange(show) {
+      if (show === false) {
+        this.showAddressPopup = false
+      }
     },
 
     onShareBtnTap() {
@@ -1066,7 +1105,7 @@ export default {
 
   &--result {
     background: #f2f9fd;
-    margin-top: 50rpx;
+    // margin-top: 50rpx;
     align-items: baseline;
     padding-top: 16rpx;
 
@@ -1161,7 +1200,7 @@ export default {
 }
 
 .transfer-result-share-wrap {
-  margin-top: 24rpx;
+  margin-top: 32rpx;
   margin-bottom: 16rpx;
 }
 
@@ -1531,7 +1570,9 @@ export default {
     justify-content: center;
     width: 160rpx;
     height: 84rpx;
-    border: 1rpx solid #2b9de7;
+    /* 使用 box-shadow 模拟边框，避免 iOS 微信小程序顶部边框渲染缺失 */
+    border: none;
+    box-shadow: inset 0 0 0 1rpx #2b9de7;
     border-radius: 42rpx;
 
     .gift-item__btn-text {
