@@ -84,7 +84,7 @@
     <!-- ═══════════ 弹窗区 ═══════════ -->
 
     <!-- 星星转赠弹窗：监听 change 以同步 store，避免点击蒙版关闭后无法再次打开 -->
-    <uni-popup ref="transferPop" type="center" background-color="transparent" @change="onTransferPopupChange">
+    <uni-popup ref="transferPop" type="center" background-color="transparent" :is-mask-click="false" @change="onTransferPopupChange">
       <view class="transfer-popup">
         <image class="transfer-popup-bg" :src="getStaticImage('transfer-bg.png')" mode="widthFix" />
         <view class="transfer-popup-body">
@@ -110,7 +110,7 @@
 
     <!-- 星星转赠结果弹窗 -->
     <uni-popup ref="transferResultPop" type="center" background-color="transparent"
-      :is-mask-click="transferResultStatus !== 'success'">
+      :is-mask-click="false">
       <view class="transfer-popup">
         <image class="transfer-popup-bg" :src="getStaticImage('transfer-bg.png')" mode="widthFix" />
         <view class="transfer-popup-body">
@@ -142,7 +142,7 @@
 
     <!-- 领取转赠星星结果弹窗：监听 change 以同步 store，确保关闭后页面可滚动 -->
     <uni-popup ref="receiveStarsResultPop" type="center" background-color="transparent"
-      @change="onReceiveStarsResultPopupChange">
+      :is-mask-click="false" @change="onReceiveStarsResultPopupChange">
       <view class="receive-popup">
         <!-- 标题图：卡片外部上方 -->
         <image class="receive-popup-title"
@@ -181,7 +181,7 @@
     </uni-popup>
 
     <!-- 点亮小卡弹窗 -->
-    <uni-popup ref="lightCardPop" type="center" background-color="transparent">
+    <uni-popup ref="lightCardPop" type="center" background-color="transparent" :is-mask-click="false">
       <view class="light-card-popup">
         <!-- 标题图 -->
         <image class="light-card-title-img" :src="getStaticImage('light-title.png')" mode="widthFix" />
@@ -212,14 +212,16 @@
 
     <!-- 我的礼品抽屉 -->
     <uni-popup ref="myGiftsDrawer" type="bottom" background-color="transparent" :safe-area="false"
-      @change="onMyGiftsDrawerChange">
+      :is-mask-click="true" @change="onMyGiftsDrawerChange">
       <view class="drawer-wrap">
         <image class="drawer-title-img" :src="getStaticImage('drawer-title.png')" mode="widthFix" />
         <!-- <view class="drawer-drag-bar" /> -->
-        <scroll-view class="gifts-list" scroll-y enhanced :show-scrollbar="false" lower-threshold="100"
-          @scrolltolower="onMyGiftsListReachBottom">
+        <scroll-view :key="'gifts-' + myGiftsDrawerKey" ref="giftsListScroll" class="gifts-list" scroll-y enhanced :show-scrollbar="false" lower-threshold="100"
+          @scrolltolower="onMyGiftsListReachBottom"
+          @scroll="onMyGiftsScroll">
           <view v-if="myGiftsList.length === 0" class="gifts-empty">
-            <x-empty>暂无礼品</x-empty>
+            <ik-loading v-if="myGiftsLoading" />
+            <x-empty v-else>暂无礼品</x-empty>
           </view>
           <view v-for="gift in myGiftsList" :key="gift.objectCode" class="gift-item">
             <image class="gift-item__img" :src="gift.prizeImageUrl || ''" mode="aspectFill" />
@@ -232,7 +234,9 @@
               <text class="gift-item__btn-text">查看地址</text>
             </view>
           </view>
-          <uni-load-more v-if="myGiftsList.length > 0" :status="myGiftsLoadMoreStatus" />
+          <uni-load-more v-if="myGiftsList.length > 0" :status="myGiftsLoadMoreStatus" @clickLoadMore="onMyGiftsLoadMoreClick" />
+          <!-- 底部预留一点空白，避免 load-more 紧贴容器底部 -->
+          <view v-if="myGiftsList.length > 0" style="height: 32rpx;" />
         </scroll-view>
       </view>
     </uni-popup>
@@ -369,7 +373,11 @@ export default {
       // 每次打开转赠弹窗时递增，用于 input 的 key，强制重新挂载以清空内部缓存
       transferInputKey: 0,
       // 转赠成功弹窗：用户点击分享后显示关闭按钮，避免流程卡住
-      transferResultShareTapped: false
+      transferResultShareTapped: false,
+      // 每次打开我的礼品抽屉时递增，用于 scroll-view 的 key，强制重新挂载以修复关闭再打开后 scrolltolower 不触发
+      myGiftsDrawerKey: 0,
+      // 活动结束提示仅在进入首页时自动 toast 一次，其余通过点击入口再提示
+      activityEndedToastShown: false
     }
   },
 
@@ -392,6 +400,21 @@ export default {
       const list = store.state.brandCards || []
       if (ENABLE_BRAND_CARDS_MOCK) {
         return BRAND_CARDS_MOCK
+      }
+      // 活动结束且接口未返回品牌卡片时，兜底展示 CD001~CD010，全部 0 次，顺序 1~10
+      const status = store.state.activityStatus
+      if ((!list || list.length === 0) && status === 2) {
+        return Array.from({ length: 10 }).map((_, idx) => {
+          const index = idx + 1
+          return {
+            // 1~9 → CD001~CD009，10 → CD010
+            cardCode: `CD${String(index).padStart(3, '0')}`,
+            indexNum: index,
+            scanTimes: 0,
+            cardNum: 0,
+            isLit: false
+          }
+        })
       }
       return list
     },
@@ -427,6 +450,7 @@ export default {
     },
     myGiftsPage() { return store.state.myGiftsPage },
     myGiftsTotalPage() { return store.state.myGiftsTotalPage },
+    myGiftsLoading() { return store.state.myGiftsLoading },
     myGiftsLoadMoreStatus() {
       if (store.state.myGiftsLoading) return 'loading'
       const page = Number(this.myGiftsPage) || 1
@@ -493,11 +517,15 @@ export default {
     // 首次进入已在 initPage 中完成初始化，这里只负责后续回到首页时刷新数据
     if (this.hasRefreshedOnce) {
       await this.refreshPageData({ isRefresh: true })
-      // 登录返回后：若有暂存的领取参数，执行领取并弹窗
+      // 登录返回后：若有暂存的领取参数，执行领取并弹窗（活动结束时仅 toast 提示）
       const pending = store.state.pendingReceiveStarParams
       if (pending && this.$store && this.$store.state.isLogin) {
-        store.commit('CLEAR_PENDING_RECEIVE_STAR_PARAMS')
-        await store.dispatch('doReceiveStar', pending)
+        if (this.checkActivityEndedAndToast()) {
+          store.commit('CLEAR_PENDING_RECEIVE_STAR_PARAMS')
+        } else {
+          store.commit('CLEAR_PENDING_RECEIVE_STAR_PARAMS')
+          await store.dispatch('doReceiveStar', pending)
+        }
       }
     } else {
       this.hasRefreshedOnce = true
@@ -529,19 +557,24 @@ export default {
       } else {
         store.commit('SET_USER_INFO', null)
       }
+      await store.dispatch('fetchActivityStatus')
+      this.maybeShowActivityEndedToast()
     },
 
     // 处理从分享 / 转赠链接进入时带的参数（shine、transferCode 等），只在 initPage 首次调用
     async handleEntryOptions(options) {
       // 点亮小卡：从链接 query 上带 shine，对应 cardCode
       if (options && options.shine) {
-        const shineCode = options.shine
-        const codes = store.state.brandCardCodes || []
-        if (codes.includes(shineCode)) {
-          const card = (store.state.brandCards || []).find(c => c.cardCode === shineCode)
-          if (card) {
-            store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: (card.starCount != null ? card.starCount : card.scanTimes) || 1 })
-            store.commit('SET_SHOW_LIGHT_CARD_POPUP', true)
+        // 活动已结束时仅提示，不再弹出点亮小卡弹窗
+        if (!this.checkActivityEndedAndToast()) {
+          const shineCode = options.shine
+          const codes = store.state.brandCardCodes || []
+          if (codes.includes(shineCode)) {
+            const card = (store.state.brandCards || []).find(c => c.cardCode === shineCode)
+            if (card) {
+              store.commit('SET_LIGHT_CARD_DATA', { card, rewardStars: (card.starCount != null ? card.starCount : card.scanTimes) || 1 })
+              store.commit('SET_SHOW_LIGHT_CARD_POPUP', true)
+            }
           }
         }
       }
@@ -551,6 +584,10 @@ export default {
         ? { transferCode: options.transferCode, fromUserCode: options.fromUserCode }
         : (ENABLE_RECEIVE_TRANSFER_MOCK ? { transferCode: MOCK_TRANSFER_CODE, fromUserCode: MOCK_FROM_USER_CODE } : null)
       if (receiveParams) {
+        // 活动已结束时，仅提示活动状态文案，不再跳转登录或执行领取
+        if (this.checkActivityEndedAndToast()) {
+          return
+        }
         const isLogin = this.$store && this.$store.state.isLogin
         if (!isLogin) {
           store.commit('SET_PENDING_RECEIVE_STAR_PARAMS', receiveParams)
@@ -562,6 +599,27 @@ export default {
     },
 
     formatTime: formatTimestamp,
+
+    /** 进入首页后若活动已结束，仅自动 toast 一次活动状态文案 */
+    maybeShowActivityEndedToast() {
+      const status = store.state.activityStatus
+      if (status === 2 && !this.activityEndedToastShown) {
+        const desc = store.state.activityStatusDesc || '活动已结束'
+        this.activityEndedToastShown = true
+        uni.showToast({ title: desc, icon: 'none' })
+      }
+    },
+
+    /** 在点击功能入口前检查活动是否已结束，已结束则 toast 并阻断后续操作 */
+    checkActivityEndedAndToast() {
+      const status = store.state.activityStatus
+      if (status === 2) {
+        const desc = store.state.activityStatusDesc || '活动已结束'
+        uni.showToast({ title: desc, icon: 'none' })
+        return true
+      }
+      return false
+    },
 
     /** 登录校验：未登录则跳转登录页（参考主包 goLogin），返回 false；已登录返回 true */
     requireLogin() {
@@ -581,18 +639,21 @@ export default {
       uni.navigateTo({ url: '/pages-activity/315-scan/views/star-record' })
     },
     onScanTap() {
+      if (this.checkActivityEndedAndToast()) return
       this.report('扫码验真入口点击')
       uni.navigateTo({ url: '/pages-activity/315-scan/scan/index' })
     },
     onGiftMoreTap() {
       // 防止事件冒泡或重复触发导致星星兑换页被打开两次
       if (this._giftMoreTapLock) return
+      if (this.checkActivityEndedAndToast()) return
       this._giftMoreTapLock = true
       this.report('积分商城入口点击')
       uni.navigateTo({ url: '/pages-activity/315-scan/views/star-exchange' })
     },
 
     onTransferTap() {
+      if (this.checkActivityEndedAndToast()) return
       if (!this.requireLogin()) return
       // 打开前先清空输入并递增 key，避免上次未清空的数据残留、强制 input 重新挂载
       store.commit('SET_TRANSFER_AMOUNT', '')
@@ -697,29 +758,10 @@ export default {
       this.tutorialExpanded = !this.tutorialExpanded;
     },
 
-    onTutorialImageLoad() {
-      if (!this.tutorialScrollPending) return;
-      this.tutorialScrollPending = false;
-      // 延迟执行，等布局完全稳定；duration>0 可减轻微信小程序的回弹问题
-      this.$nextTick(() => this.$nextTick(() => {
-        const query = uni.createSelectorQuery().in(this);
-        query.selectViewport().scrollOffset();
-        query.exec((res) => {
-          const currentTop = (res && res[0] && res[0].scrollTop) || 0;
-          const targetScrollTop = uni.upx2px(530);
-          // 用户已手动向下滚动超过目标位置时，不再强制滚动，避免回弹
-          if (currentTop > targetScrollTop + 30) return;
-          uni.pageScrollTo({
-            scrollTop: targetScrollTop,
-            duration: 0
-          });
-        });
-      }));
-    },
-
     onMyGiftTap() {
       if (!this.requireLogin()) return
       this.report('我的奖品入口点击')
+      this.myGiftsDrawerKey += 1
       store.commit('SET_SHOW_MY_GIFTS_DRAWER', true)
       store.dispatch('fetchMyPrizes', { page: 1 })
     },
@@ -730,9 +772,38 @@ export default {
         store.commit('SET_SHOW_MY_GIFTS_DRAWER', false)
       }
     },
+    doMyGiftsLoadMore() {
+      const page = Number(this.myGiftsPage) || 1
+      const total = Math.max(1, Number(this.myGiftsTotalPage) || 1)
+      if (page >= total || store.state.myGiftsLoading) return
+      store.dispatch('fetchMyPrizes', { page: page + 1, isLoadMore: true })
+    },
     onMyGiftsListReachBottom() {
-      if (this.myGiftsPage >= this.myGiftsTotalPage || store.state.myGiftsLoading) return
-      store.dispatch('fetchMyPrizes', { page: this.myGiftsPage + 1, isLoadMore: true })
+      this.doMyGiftsLoadMore()
+    },
+    onMyGiftsLoadMoreClick() {
+      if (this.myGiftsLoadMoreStatus !== 'more') return
+      this.doMyGiftsLoadMore()
+    },
+    onMyGiftsScroll(e) {
+      if (this._myGiftsScrollThrottle || store.state.myGiftsLoading) return
+      const page = Number(this.myGiftsPage) || 1
+      const total = Math.max(1, Number(this.myGiftsTotalPage) || 1)
+      if (page >= total) return
+      const scrollTop = e.detail && e.detail.scrollTop != null ? e.detail.scrollTop : 0
+      const query = uni.createSelectorQuery().in(this)
+      query.select('.gifts-list').scrollOffset((res) => {
+        if (!res) return
+        const r = Array.isArray(res) ? res[0] : res
+        if (!r || r.scrollHeight == null) return
+        const viewportH = 260
+        const threshold = 100
+        if (scrollTop + viewportH >= r.scrollHeight - threshold) {
+          this._myGiftsScrollThrottle = true
+          this.doMyGiftsLoadMore()
+          setTimeout(() => { this._myGiftsScrollThrottle = false }, 800)
+        }
+      }).exec()
     },
     onMyGiftItemBtnTap(gift) {
       // 通过 addressCode 调用同一接口获取地址详情，再展示弹窗
@@ -1205,7 +1276,7 @@ export default {
   color: #2b9de7;
   font-size: 38rpx;
   font-weight: bold;
-  text-align: center;
+  text-align: left;
 }
 
 .transfer-amount-text {
@@ -1599,11 +1670,11 @@ export default {
   border-radius: 8rpx;
 }
 
-/* 高度小于 3 条（504rpx）+ uni-load-more，确保可滚动；同时 1~2 条时 load-more 仍在可视区内 */
 .gifts-list {
   position: relative;
   z-index: 1;
-  height: 520rpx;
+  /* 高度明显小于 3 条内容（3×168≈504rpx），确保只要有 3 条就可以滚动 */
+  height: 420rpx;
   margin-top: 140rpx;
 }
 
@@ -1666,7 +1737,7 @@ export default {
     height: 84rpx;
     /* 使用 box-shadow 模拟边框，避免 iOS 微信小程序顶部边框渲染缺失 */
     border: none;
-    box-shadow: inset 0 0 0 1rpx #2b9de7;
+    box-shadow: inset 0 0 0 1.5rpx #2b9de7;
     border-radius: 42rpx;
 
     .gift-item__btn-text {

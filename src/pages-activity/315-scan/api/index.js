@@ -68,4 +68,17 @@ module.exports = {
       encrypt: false,
       isJson: true
     }).then((res) => (res && res.data) || {})
+
+  ,
+
+  /** 获取活动状态（status/statusDesc/startTime/endTime），用于单独刷新活动状态或非首页场景 */
+  apiGetActivityStatus: () =>
+    request2({
+      url: `${BASE}openApi/activity/verify/318/getActivityStatus`,
+      data: {},
+      method: 'GET',
+      auth: false,
+      encrypt: false,
+      isJson: true
+    })
 }

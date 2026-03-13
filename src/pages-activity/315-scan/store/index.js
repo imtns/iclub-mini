@@ -9,7 +9,8 @@ import {
   apiGetStarFlows,
   apiExchangePrize,
   apiGetReceiveAddressDetail,
-  apiQueryUserInfo
+  apiQueryUserInfo,
+  apiGetActivityStatus
 } from '../api/index'
 import { validateAddress } from '../utils/validate'
 
@@ -33,6 +34,20 @@ const store = new Vuex.Store({
     brandCards: [],
     brandCardCodes: [],
     giftListHome: [],
+
+    /* ─── 活动状态 ─── */
+    // 活动状态：0-未开始，1-进行中，2-已结束
+    activityStatus: null,
+    // 活动状态描述文案
+    activityStatusDesc: '',
+    // 活动时间范围
+    activityTimeRange: {
+      startTime: '',
+      endTime: ''
+    },
+    // 活动状态 loading 与错误信息（目前仅用于内部控制，不影响 UI 渲染）
+    activityStatusLoading: false,
+    activityStatusError: '',
 
     /* ─── 转赠输入弹窗 ─── */
     showTransferPopup: false,
@@ -197,6 +212,28 @@ const store = new Vuex.Store({
         objectCode: '',
         addressCode: ''
       }
+    },
+
+    /* ─── 活动状态 ─── */
+    SET_ACTIVITY_STATUS: (state, payload) => {
+      const {
+        status = null,
+        statusDesc = '',
+        startTime = '',
+        endTime = ''
+      } = payload || {}
+      state.activityStatus = typeof status === 'number' ? status : (status != null ? Number(status) : null)
+      state.activityStatusDesc = statusDesc || ''
+      state.activityTimeRange = {
+        startTime: startTime || '',
+        endTime: endTime || ''
+      }
+    },
+    SET_ACTIVITY_STATUS_LOADING: (state, v) => {
+      state.activityStatusLoading = !!v
+    },
+    SET_ACTIVITY_STATUS_ERROR: (state, v) => {
+      state.activityStatusError = v || ''
     }
   },
 
@@ -265,6 +302,22 @@ const store = new Vuex.Store({
         commit('SET_GIFT_LIST_HOME', (res.data && res.data.list) || [])
       } catch (e) {
         uni.showToast({ title: e.message || '礼品加载失败', icon: 'none' })
+      }
+    },
+
+    /** 获取活动状态（status/statusDesc/startTime/endTime），供首页及其它页面复用 */
+    async fetchActivityStatus({ commit }) {
+      commit('SET_ACTIVITY_STATUS_LOADING', true)
+      commit('SET_ACTIVITY_STATUS_ERROR', '')
+      try {
+        const res = await apiGetActivityStatus()
+        const data = (res && res.data) || {}
+        const { status, statusDesc, startTime, endTime } = data || {}
+        commit('SET_ACTIVITY_STATUS', { status, statusDesc, startTime, endTime })
+      } catch (e) {
+        commit('SET_ACTIVITY_STATUS_ERROR', (e && e.message) || '获取活动状态失败')
+      } finally {
+        commit('SET_ACTIVITY_STATUS_LOADING', false)
       }
     },
 
@@ -365,15 +418,15 @@ const store = new Vuex.Store({
       try {
         const res = await apiGetMyPrizes({ page, limit, orderBy: 'exchangeTime', orderType: 'desc' })
         const data = res.data || {}
-        const list = data.list || []
+        const list = data.list || data.records || []
         // 兼容 totalPage / totalPages / total(totalCount 计算)
         let totalPage = data.totalPage ?? data.totalPages ?? 1
         if (totalPage === 1 && (data.total != null || data.totalCount != null)) {
           const total = data.total ?? data.totalCount ?? 0
           totalPage = Math.max(1, Math.ceil(Number(total) / limit))
         }
-        // 本页条数不足 limit 时视为最后一页
-        if (list.length < limit) {
+        // 加载更多时，本页条数不足 limit 则视为最后一页（首屏不足不覆盖，避免接口返回 totalPage>1 时误判）
+        if (list.length < limit && (isLoadMore || page > 1)) {
           totalPage = page
         }
         if (isLoadMore) {
