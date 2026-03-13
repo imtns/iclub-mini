@@ -180,6 +180,30 @@
       </view>
     </uni-popup>
 
+    <!-- 领取星星登录提示弹窗 -->
+    <uni-popup ref="receiveLoginPop" type="center" background-color="transparent" :is-mask-click="false">
+      <view class="login-receive-popup">
+        <!-- 标题图：卡片外部上方 -->
+        <image class="login-receive-title-img" :src="getStaticImage('receive-title-3.png')" mode="widthFix" />
+        <!-- 卡片主体 -->
+        <view class="login-receive-card">
+          <image class="login-receive-bg" :src="getStaticImage('receive-bg.png')" mode="widthFix" />
+          <view class="login-receive-content">
+            <text class="login-receive-primary">恭喜获赠星星</text>
+            <text class="login-receive-secondary">如需领取，请先登录</text>
+            <view class="login-receive-actions">
+              <button class="login-receive-btn login-receive-btn-cancel" @tap="onReceiveLoginCancel">取消</button>
+              <button class="login-receive-btn login-receive-btn-confirm" @tap="onReceiveLoginConfirm">去登录</button>
+            </view>
+          </view>
+        </view>
+        <!-- 底部关闭按钮：常驻显示 -->
+        <view class="login-receive-close" @tap="onReceiveLoginCancel">
+          <image :src="getStaticImage('close-btn.png')" mode="aspectFit" />
+        </view>
+      </view>
+    </uni-popup>
+
     <!-- 点亮小卡弹窗 -->
     <uni-popup ref="lightCardPop" type="center" background-color="transparent" :is-mask-click="false">
       <view class="light-card-popup">
@@ -377,7 +401,9 @@ export default {
       // 每次打开我的礼品抽屉时递增，用于 scroll-view 的 key，强制重新挂载以修复关闭再打开后 scrolltolower 不触发
       myGiftsDrawerKey: 0,
       // 活动结束提示仅在进入首页时自动 toast 一次，其余通过点击入口再提示
-      activityEndedToastShown: false
+      activityEndedToastShown: false,
+      // 领取星星登录提示弹窗
+      showReceiveLoginPopup: false
     }
   },
 
@@ -467,7 +493,8 @@ export default {
         this.showTransferResultPopup ||
         this.showReceiveStarsResultPopup ||
         this.showLightCardPopup ||
-        this.showMyGiftsDrawer
+        this.showMyGiftsDrawer ||
+        this.showReceiveLoginPopup
     }
   },
 
@@ -504,6 +531,9 @@ export default {
     },
     showMyGiftsDrawer(val) {
       this.$nextTick(() => { this.$refs.myGiftsDrawer && (val ? this.$refs.myGiftsDrawer.open() : this.$refs.myGiftsDrawer.close()) })
+    },
+    showReceiveLoginPopup(val) {
+      this.$nextTick(() => { this.$refs.receiveLoginPop && (val ? this.$refs.receiveLoginPop.open() : this.$refs.receiveLoginPop.close()) })
     }
   },
 
@@ -591,7 +621,8 @@ export default {
         const isLogin = this.$store && this.$store.state.isLogin
         if (!isLogin) {
           store.commit('SET_PENDING_RECEIVE_STAR_PARAMS', receiveParams)
-          this.goLogin()
+          // 不直接跳转登录，先弹出领取星星登录提示弹窗
+          this.openReceiveLoginPopup()
           return
         }
         await store.dispatch('doReceiveStar', receiveParams)
@@ -833,6 +864,29 @@ export default {
 
     onShareBtnTap() {
       this.report('首页分享按钮点击')
+    },
+
+    /** 打开 / 关闭领取星星登录提示弹窗，供外部调用 */
+    openReceiveLoginPopup() {
+      this.showReceiveLoginPopup = true
+      this.$nextTick(() => {
+        this.$refs.receiveLoginPop && this.$refs.receiveLoginPop.open()
+      })
+    },
+    closeReceiveLoginPopup() {
+      this.showReceiveLoginPopup = false
+      this.$nextTick(() => {
+        this.$refs.receiveLoginPop && this.$refs.receiveLoginPop.close()
+      })
+    },
+    onReceiveLoginCancel() {
+      this.closeReceiveLoginPopup()
+    },
+    onReceiveLoginConfirm() {
+      this.closeReceiveLoginPopup()
+      if (this.goLogin) {
+        this.goLogin()
+      }
     },
 
     $shareCallBack(type) {
@@ -1247,6 +1301,7 @@ export default {
 }
 
 .transfer-amount-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1254,7 +1309,7 @@ export default {
   height: 128rpx;
   border-radius: 64rpx;
   background: #f3f2f2;
-  padding: 0 50rpx;
+  padding: 0 80rpx 0 50rpx; // 右侧预留空间给“颗”
 
   &--result {
     background: #f2f9fd;
@@ -1263,6 +1318,10 @@ export default {
     padding-top: 16rpx;
 
     .transfer-amount-unit {
+      position: static;
+      right: auto;
+      top: auto;
+      transform: none;
       font-size: 36rpx;
       font-weight: 500;
       margin-left: 4rpx;
@@ -1272,11 +1331,12 @@ export default {
 }
 
 .transfer-amount-input {
-  flex: 1;
+  flex: none;
+  width: 260rpx;
   color: #2b9de7;
   font-size: 38rpx;
   font-weight: bold;
-  text-align: left;
+  text-align: center;
 }
 
 .transfer-amount-text {
@@ -1292,7 +1352,11 @@ export default {
   color: #2b9de7;
   font-size: 38rpx;
   font-weight: bold;
-  margin-left: 8rpx;
+  position: absolute;
+  right: 50rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
   line-height: 1;
 }
 
@@ -1536,6 +1600,103 @@ export default {
   }
 }
 
+/* ── 领取星星登录提示弹窗 ── */
+.login-receive-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 722rpx;
+}
+
+.login-receive-title-img {
+  position: relative;
+  z-index: 2;
+  width: 476rpx;
+  margin-bottom: -156rpx;
+}
+
+.login-receive-card {
+  position: relative;
+  width: 750rpx;
+}
+
+.login-receive-bg {
+  width: 722rpx;
+  display: block;
+  margin: 0 auto;
+}
+
+.login-receive-content {
+  position: absolute;
+  top: 424rpx;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 40rpx 56rpx;
+  gap: 20rpx;
+}
+
+.login-receive-primary {
+  color: #2b9de7;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.login-receive-secondary {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+.login-receive-actions {
+  margin-top: 40rpx;
+  display: flex;
+  justify-content: center;
+  gap: 24rpx;
+}
+
+.login-receive-btn {
+  width: 253rpx;
+  height: 126rpx;
+  line-height: 126rpx;
+  border-radius: 63rpx;
+  font-size: 36rpx;
+  font-family: 'SourceHanSans-Regular', sans-serif;
+  border: none;
+  padding: 0;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.login-receive-btn-cancel {
+  background: #f3f2f2;
+  color: #999999;
+}
+
+.login-receive-btn-confirm {
+  background: #2b9de7;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.login-receive-close {
+  position: relative;
+  z-index: 10;
+  width: 64rpx;
+  height: 64rpx;
+  margin-top: -82rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  image {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 /* ── 点亮小卡弹窗 ── */
 .light-card-popup {
   display: flex;
@@ -1735,10 +1896,22 @@ export default {
     justify-content: center;
     width: 160rpx;
     height: 84rpx;
-    /* 使用 box-shadow 模拟边框，避免 iOS 微信小程序顶部边框渲染缺失 */
+    position: relative;
     border: none;
-    box-shadow: inset 0 0 0 1.5rpx #2b9de7;
     border-radius: 42rpx;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border-radius: inherit;
+      box-sizing: border-box;
+      border: 2rpx solid #2b9de7;
+      pointer-events: none;
+    }
 
     .gift-item__btn-text {
       color: #2b9de7;
