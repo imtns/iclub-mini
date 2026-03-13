@@ -239,7 +239,7 @@ export default {
     },
 
     onScroll(e) {
-      this.navBgOpacity = Math.min(e.detail.scrollTop / 48, 1)
+      // this.navBgOpacity = Math.min(e.detail.scrollTop / 48, 1)
     },
 
     onAddressPopupSubmit() {
