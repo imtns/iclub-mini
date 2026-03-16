@@ -1445,7 +1445,7 @@ export default {
 
 .transfer-amount-inner .transfer-amount-unit {
   position: absolute;
-  right: -60rpx;
+  right: -64rpx;
   top: 50%;
   transform: translateY(-50%);
   margin-left: 0;
