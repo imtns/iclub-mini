@@ -11,7 +11,7 @@
       <swiper-item v-for="(card, idx) in safeCards" :key="idx">
         <view class="swiper-item-inner">
             <view class="card-container">
-              <view :class="['card-wrap', getCardClass(idx), { 'card-wrap--gray': isZeroTimes(card) }]">
+              <view :class="['card-wrap', getCardClass(idx)]">
               <image
                 v-if="getBorderImage(card)"
                 class="card-border"
@@ -58,6 +58,7 @@ export default {
       swiperMargin: '142rpx',
       // 不同次数对应的边框图片，后续可按需替换
       borderImgMap: {
+        0: getStaticImage('card-border-0.png'),
         1: getStaticImage('card-border-1.png'),
         3: getStaticImage('card-border-3.png'),
         5: getStaticImage('card-border-5.png')
@@ -104,11 +105,15 @@ export default {
     isZeroTimes(card) {
       return this.getCardTimes(card) === 0
     },
-    // 根据次数返回对应的边框图片，仅对 1 / 3 / 5 次生效
+    // 根据次数返回对应的边框图片
     getBorderImage(card) {
       const times = this.getCardTimes(card)
-      // 0 ~ 2 次：使用 1 次边框
-      if (times >= 0 && times <= 2) {
+      // 0 次：使用默认边框
+      if (times === 0) {
+        return this.borderImgMap[0]
+      }
+      // 1 ~ 2 次：使用 1 次边框
+      if (times >= 1 && times <= 2) {
         return this.borderImgMap[1]
       }
       // 3 ~ 4 次：使用 3 次边框
@@ -196,10 +201,6 @@ export default {
     opacity: 0.5;
     z-index: 0;
   }
-}
-
-.card-wrap--gray {
-  filter: grayscale(100%);
 }
 
 .card-img {

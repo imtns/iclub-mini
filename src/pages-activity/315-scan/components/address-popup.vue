@@ -16,7 +16,7 @@
           <text class="field-text-readonly field-detail-readonly">{{ form.detail || form.detailAddress || '-' }}</text>
         </view>
       </view>
-      <text class="address-popup-hint">{{ edit ? '奖励将在7个工作日内发货。请确保地址信息准确无误' : '奖励将在7个工作日内发货。' }}</text>
+      <text class="address-popup-hint">{{ edit ? '请确保地址信息准确无误' : '' }}</text>
       <!-- 填写模式：取消 + 提交 -->
       <view v-if="edit" class="address-popup-actions">
         <button class="addr-btn addr-btn-cancel" @tap="onCancel">取消</button>
@@ -194,7 +194,7 @@ export default {
 
   .addr-btn-submit {
     flex: 304;
-    background: #2b9de7;
+    background: #287CF0;
     color: #ffffff;
     font-weight: 700;
   }

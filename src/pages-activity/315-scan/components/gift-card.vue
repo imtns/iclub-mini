@@ -182,12 +182,12 @@ export default {
   .gift-card__stars-num {
     font-size: 38rpx;
     font-weight: bold;
-    color: #2B9DE7;
+    color: #287CF0;
   }
 
   .gift-card__stars-txt {
     font-size: 24rpx;
-    color: #2B9DE7;
+    color: #287CF0;
     margin-left: 2rpx;
   }
 

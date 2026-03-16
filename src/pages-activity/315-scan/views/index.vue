@@ -2,6 +2,7 @@
   <!-- 弹窗打开时禁止页面滚动，关闭时显式设置 overflow:auto 以恢复滚动（避免从分享链接进入关闭弹窗后无法滑动） -->
   <page-meta :page-style="anyPopupOpen || showAddressPopup ? 'overflow: hidden;' : 'overflow: auto;'" />
   <view class="container">
+    <image class="index-bg" :src="getStaticImage('index-bg.png')" mode="aspectFill" />
     <!-- 导航栏背景渐变蒙层（跟随滚动透明度 0→1，z-index 在导航栏之下） -->
     <view class="nav-bg-overlay" :style="{ opacity: navBgOpacity, height: navBarHeight ? navBarHeight + 'px' : '' }">
     </view>
@@ -14,7 +15,7 @@
       <ik-loading />
     </view>
 
-    <view v-else>
+    <view v-else class="page-content">
       <!-- ── 头部区域 ── -->
       <view class="header-area">
         <view v-if="isLogin" class="user-avatar-wrap">
@@ -45,7 +46,7 @@
         <!-- 产品溯源 -->
         <image class="func-btn__img scan-btn" :src="getStaticImage('btn-scan.png')" mode="aspectFit" @tap="onScanTap" />
         <!-- 星星转赠 -->
-        <image class="func-btn__img transfer-btn" :src="getStaticImage('btn-transfer.png')" mode="aspectFit"
+        <image class="transfer-btn" :src="getStaticImage('btn-transfer.png')" mode="aspectFit"
           @tap="onTransferTap" />
       </view>
 
@@ -69,15 +70,10 @@
         <image class="list-entry__img" :src="getStaticImage('index-more.png')" mode="widthFix" />
       </view>
 
-      <!-- ── 溯源教程：仅点击顶部 tutorial-toggle__more 大小的区域触发展开/收起 ── -->
-      <view class="tutorial-toggle" :class="{ 'tutorial-toggle--expanded': tutorialExpanded }">
-        <view class="tutorial-toggle__trigger" @tap="onTutorialToggle" />
-        <image v-if="!tutorialExpanded" class="tutorial-toggle__more" :src="getStaticImage('index-look.png')"
-          mode="widthFix" />
-        <image v-if="tutorialExpanded" class="tutorial-toggle__content" :src="getStaticImage('tutorial.png')"
-          mode="widthFix"/>
-        <image :class="['tutorial-toggle__arrow', { 'tutorial-toggle__arrow--expanded': tutorialExpanded }]"
-          :src="getStaticImage('index-arrow.png')" mode="aspectFit" />
+      <!-- ── 溯源教程入口：点击打开教程弹窗 ── -->
+      <view class="tutorial-toggle" @tap="onTutorialToggle">
+        <image class="tutorial-toggle__more" :src="getStaticImage('index-look.png')" mode="widthFix" />
+        <image class="tutorial-toggle__arrow" :src="getStaticImage('index-arrow.png')" mode="aspectFit" />
       </view>
     </view>
 
@@ -90,9 +86,12 @@
         <view class="transfer-popup-body">
           <image class="transfer-popup-title" :src="getStaticImage('transfer-title-0.png')" mode="widthFix" />
           <view class="transfer-amount-row">
-            <input :key="'transfer-input-' + transferInputKey" class="transfer-amount-input" type="number"
-              placeholder="请输入数量" :value="transferAmount" @input="onTransferAmountInput" />
-            <text class="transfer-amount-unit">颗</text>
+            <view class="transfer-amount-inner">
+              <input :key="'transfer-input-' + transferInputKey" class="transfer-amount-input" type="number"
+                placeholder="请输入数量" placeholder-style="text-align: center;"
+                :value="transferAmount" @input="onTransferAmountInput" />
+              <text class="transfer-amount-unit">颗</text>
+            </view>
           </view>
           <view class="transfer-meta">
             <text class="transfer-current">当前星星数量：<text class="transfer-current-num">{{ userTotalStars }}</text></text>
@@ -189,8 +188,8 @@
         <view class="login-receive-card">
           <image class="login-receive-bg" :src="getStaticImage('receive-bg.png')" mode="widthFix" />
           <view class="login-receive-content">
-            <text class="login-receive-primary">恭喜获赠星星</text>
-            <text class="login-receive-secondary">如需领取，请先登录</text>
+            <text class="login-receive-primary">好有星星转赠</text>
+            <text class="login-receive-secondary">请您登录后进行领取</text>
             <view class="login-receive-actions">
               <button class="login-receive-btn login-receive-btn-cancel" @tap="onReceiveLoginCancel">取消</button>
               <button class="login-receive-btn login-receive-btn-confirm" @tap="onReceiveLoginConfirm">去登录</button>
@@ -234,6 +233,23 @@
       </view>
     </uni-popup>
 
+    <!-- 溯源教程弹窗 -->
+    <uni-popup ref="tutorialPop" type="center" background-color="transparent" :is-mask-click="false" @change="onTutorialPopupChange">
+      <view class="tutorial-popup">
+        <view class="tutorial-popup-card">
+          <image class="tutorial-popup-bg" :src="getStaticImage('tutorial-bg.png')" mode="widthFix" />
+          <view class="tutorial-popup-inner">
+            <scroll-view class="tutorial-popup-scroll" scroll-y :show-scrollbar="false">
+              <image class="tutorial-popup-content" :src="getStaticImage('tutorial.png')" mode="widthFix" />
+            </scroll-view>
+          </view>
+        </view>
+        <view class="tutorial-popup-close" @tap="onTutorialPopupClose">
+          <image :src="getStaticImage('close-btn.png')" mode="aspectFit" />
+        </view>
+      </view>
+    </uni-popup>
+
     <!-- 我的礼品抽屉 -->
     <uni-popup ref="myGiftsDrawer" type="bottom" background-color="transparent" :safe-area="false"
       :is-mask-click="true" @change="onMyGiftsDrawerChange">
@@ -258,9 +274,10 @@
               <text class="gift-item__btn-text">查看地址</text>
             </view>
           </view>
-          <uni-load-more v-if="myGiftsList.length > 0" :status="myGiftsLoadMoreStatus" @clickLoadMore="onMyGiftsLoadMoreClick" />
-          <!-- 底部预留一点空白，避免 load-more 紧贴容器底部 -->
-          <view v-if="myGiftsList.length > 0" style="height: 32rpx;" />
+          <!-- 用原生 view 替代 uni-load-more，避免自定义组件在弹层内首次挂载时宽高为 0 的渲染问题 -->
+          <view v-if="myGiftsList.length > 0" class="gifts-load-more" @tap="onMyGiftsLoadMoreClick">
+            <text class="gifts-load-more__text">{{ myGiftsLoadMoreText }}</text>
+          </view>
         </scroll-view>
       </view>
     </uni-popup>
@@ -385,7 +402,7 @@ export default {
       navBgOpacity: 0,
       navBarHeight: 0,
       giftMoreText: '更多礼品 >',
-      tutorialExpanded: false,
+      showTutorialPopup: false,
       shareInfo: {
         path: defaultSharePath,
         title: defaultShareTitle
@@ -483,6 +500,12 @@ export default {
       const total = Math.max(1, Number(this.myGiftsTotalPage) || 1)
       return page >= total ? 'noMore' : 'more'
     },
+    myGiftsLoadMoreText() {
+      const s = this.myGiftsLoadMoreStatus
+      if (s === 'noMore') return '没有更多了'
+      if (s === 'loading') return '正在加载...'
+      return '点击加载更多'
+    },
     isTransferOverLimit() {
       const amount = Number(store.state.transferAmount)
       const total = this.userTotalStars
@@ -494,7 +517,8 @@ export default {
         this.showReceiveStarsResultPopup ||
         this.showLightCardPopup ||
         this.showMyGiftsDrawer ||
-        this.showReceiveLoginPopup
+        this.showReceiveLoginPopup ||
+        this.showTutorialPopup
     }
   },
 
@@ -786,7 +810,17 @@ export default {
     },
 
     onTutorialToggle() {
-      this.tutorialExpanded = !this.tutorialExpanded;
+      this.showTutorialPopup = true
+      this.$nextTick(() => { this.$refs.tutorialPop && this.$refs.tutorialPop.open() })
+    },
+
+    onTutorialPopupClose() {
+      this.showTutorialPopup = false
+      this.$refs.tutorialPop && this.$refs.tutorialPop.close()
+    },
+
+    onTutorialPopupChange(e) {
+      if (!e.show) this.showTutorialPopup = false
     },
 
     onMyGiftTap() {
@@ -912,7 +946,7 @@ export default {
   position: relative;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
-  background: linear-gradient(180deg, #b9dbfc 0%, #dfedff 100%);
+  // background: linear-gradient(180deg, #b9dbfc 0%, #dfedff 100%);
   background-blend-mode: lighten;
 
   /* 显式覆盖 text/input/button 等默认字体，确保思源黑体生效 */
@@ -924,8 +958,24 @@ export default {
   }
 }
 
+/* 整页背景：用 aspectFill 填满固定区域，避免 widthFix 在部分端上按比例撑高导致布局错乱 */
+.index-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 主内容区：保证在背景图之上，避免按钮等被遮挡 */
+.page-content {
+  position: relative;
+  z-index: 1;
+}
+
 /* 覆盖第三方组件内部文本 */
-::v-deep .uni-load-more__text,
 ::v-deep .x-button,
 ::v-deep .empty .text {
   font-family: 'SourceHanSans-Regular', sans-serif !important;
@@ -996,7 +1046,7 @@ export default {
 
   .rule-btn {
     position: absolute;
-    top: 170rpx;
+    top: 142rpx;
     left: 0;
     width: 60rpx;
     height: 143rpx;
@@ -1020,7 +1070,7 @@ export default {
 
   .share-btn {
     position: absolute;
-    top: 192rpx;
+    top: 172rpx;
     right: 6rpx;
     width: 94rpx;
     height: 94rpx;
@@ -1045,14 +1095,14 @@ export default {
 
 .func-btn {
   position: relative;
-  margin-left: -4rpx;
-  margin-bottom: -6rpx;
+  // margin-left: -4rpx;
+  // margin-bottom: -6rpx;
 }
 
 .func-btn__badge {
   position: absolute;
-  top: 14rpx;
-  right: 18rpx;
+  top: 8rpx;
+  right: 34rpx;
   z-index: 2;
   width: 48rpx;
   height: 48rpx;
@@ -1073,21 +1123,21 @@ export default {
 }
 
 .func-btn__img {
-  width: 164rpx;
-  height: 162rpx;
+  width: 170rpx;
+  height: 144rpx;
   margin-left: -6rpx;
 }
 
 .scan-btn {
   width: 398rpx;
-  height: 120rpx;
-  margin-bottom: 12rpx;
+  height: 126rpx;
+  margin-bottom: 1rpx;
 }
 
 .transfer-btn {
-  width: 162rpx;
-  height: 175rpx;
-  margin-bottom: 14rpx;
+  width: 170rpx;
+  height: 149rpx;
+  margin-bottom: 10rpx;
 }
 
 /* ── 礼品区 ── */
@@ -1119,7 +1169,7 @@ export default {
   margin-bottom: 36rpx;
 
   .gift-more {
-    color: #2b9de7;
+    color: #287CF0;
     font-size: 24rpx;
     margin-top: 14rpx;
     margin-right: 50rpx;
@@ -1159,52 +1209,83 @@ export default {
   }
 }
 
-/* ── 溯源教程 ── */
+/* ── 溯源教程入口 ── */
 .tutorial-toggle {
   position: relative;
   display: flex;
   justify-content: center;
   height: 100rpx;
-  overflow: hidden;
-  transition: height 0.25s ease;
-
-  &--expanded {
-    height: 1600rpx;
-    overflow: visible;
-  }
-
-  /* 仅此区域可触发展开/收起，与 __more 同尺寸位置 */
-  .tutorial-toggle__trigger {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 686rpx;
-    height: 100rpx;
-    z-index: 2;
-  }
 
   .tutorial-toggle__more {
     width: 686rpx;
     height: 100rpx;
   }
 
-  .tutorial-toggle__content {
-    width: 686rpx;
-    display: block;
-  }
-
   .tutorial-toggle__arrow {
     position: absolute;
     right: 52rpx;
-    top: 50rpx;
+    top: 50%;
     transform: translateY(-50%);
     width: 23rpx;
     height: 23rpx;
-    transition: transform 0.2s ease;
+  }
+}
 
-    &--expanded {
-      transform: translateY(-50%) rotate(180deg);
+/* ── 溯源教程弹窗 ── */
+.tutorial-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // width: 690rpx;
+
+  /* 卡片容器：bg 绝对定位为背景，scroll 覆盖整个卡片区域 */
+  &-card {
+    position: relative;
+    width: 750rpx;
+    height: 1293rpx;
+  }
+
+  &-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* 圆角裁剪容器：仅底部两角圆角，与背景图一致，避免内容图边角漏出 */
+  &-inner {
+    position: absolute;
+    top: 284rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 534.5rpx;
+    height: 1010rpx;
+    border-radius: 0 0 100rpx 100rpx;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  &-scroll {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  &-content {
+    width: 100%;
+    display: block;
+  }
+
+  &-close {
+    width: 64rpx;
+    height: 64rpx;
+    margin-top: 48rpx;
+
+    image {
+      width: 100%;
+      height: 100%;
     }
   }
 }
@@ -1301,7 +1382,6 @@ export default {
 }
 
 .transfer-amount-row {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1309,7 +1389,7 @@ export default {
   height: 128rpx;
   border-radius: 64rpx;
   background: #f3f2f2;
-  padding: 0 80rpx 0 50rpx; // 右侧预留空间给“颗”
+  padding: 0 50rpx;
 
   &--result {
     background: #f2f9fd;
@@ -1331,17 +1411,24 @@ export default {
 }
 
 .transfer-amount-input {
-  flex: none;
-  width: 260rpx;
-  color: #2b9de7;
+  flex: 1;
+  color: #287CF0;
   font-size: 38rpx;
   font-weight: bold;
   text-align: center;
 }
 
+.transfer-amount-inner {
+  position: relative;
+  width: 260rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .transfer-amount-text {
   flex: none;
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 89rpx;
   font-weight: bold;
   text-align: center;
@@ -1349,15 +1436,19 @@ export default {
 }
 
 .transfer-amount-unit {
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 38rpx;
   font-weight: bold;
+  margin-left: 8rpx;
+  line-height: 1;
+}
+
+.transfer-amount-inner .transfer-amount-unit {
   position: absolute;
-  right: 50rpx;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   margin-left: 0;
-  line-height: 1;
 }
 
 .transfer-meta {
@@ -1506,21 +1597,21 @@ export default {
 }
 
 .receive-primary-label {
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 36rpx;
   font-weight: bold;
   line-height: 1;
 }
 
 .receive-primary-num {
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 64rpx;
   font-weight: bold;
   line-height: 1;
 }
 
 .receive-primary-single {
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 36rpx;
   font-weight: bold;
   text-align: center;
@@ -1640,7 +1731,7 @@ export default {
 }
 
 .login-receive-primary {
-  color: #2b9de7;
+  color: #287CF0;
   font-size: 36rpx;
   font-weight: bold;
 }
@@ -1676,7 +1767,7 @@ export default {
 }
 
 .login-receive-btn-confirm {
-  background: #2b9de7;
+  background: #287CF0;
   color: #ffffff;
   font-weight: 700;
 }
@@ -1846,6 +1937,19 @@ export default {
   height: 300rpx;
 }
 
+.gifts-load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+
+  &__text {
+    color: #999;
+    font-size: 26rpx;
+    font-family: 'SourceHanSans-Regular', sans-serif;
+  }
+}
+
 .gift-item {
   display: flex;
   align-items: center;
@@ -1909,12 +2013,12 @@ export default {
       left: 0;
       border-radius: inherit;
       box-sizing: border-box;
-      border: 2rpx solid #2b9de7;
+      border: 2rpx solid #2B9DE7;
       pointer-events: none;
     }
 
     .gift-item__btn-text {
-      color: #2b9de7;
+      color: #287CF0;
       font-size: 28rpx;
       font-weight: bold;
     }

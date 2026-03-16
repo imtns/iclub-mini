@@ -52,7 +52,10 @@
         <x-empty>暂无该档位礼品</x-empty>
       </view>
 
-      <uni-load-more v-if="exchangeGiftList.length > 0" :status="loadMoreStatus" />
+      <!-- 用原生 view 替代 uni-load-more，避免自定义组件在部分场景下宽高为 0 的渲染问题 -->
+      <view v-if="exchangeGiftList.length > 0" class="load-more" @tap="onLoadMoreClick">
+        <text class="load-more__text">{{ loadMoreText }}</text>
+      </view>
     </scroll-view>
 
     <!-- 填写收货地址弹窗 -->
@@ -148,6 +151,12 @@ export default {
     loadMoreStatus() {
       if (store.state.exchangeLoading) return 'loading'
       return store.state.exchangePage >= store.state.exchangeTotalPage ? 'noMore' : 'more'
+    },
+    loadMoreText() {
+      const s = this.loadMoreStatus
+      if (s === 'noMore') return '没有更多了'
+      if (s === 'loading') return '正在加载...'
+      return '点击加载更多'
     }
   },
 
@@ -189,6 +198,10 @@ export default {
     onLoadMore() {
       if (this.exchangePage >= this.exchangeTotalPage || store.state.exchangeLoading) return
       this.loadList(this.exchangePage + 1, true)
+    },
+    onLoadMoreClick() {
+      if (this.loadMoreStatus !== 'more') return
+      this.onLoadMore()
     },
 
     /** 登录校验：未登录则跳转登录页（参考 index.vue requireLogin），返回 false；已登录返回 true */
@@ -303,10 +316,6 @@ export default {
 }
 
 /* 覆盖第三方组件内部文本 */
-::v-deep .uni-load-more__text {
-  font-family: 'SourceHanSans-Regular', sans-serif !important;
-  margin-left: 0px !important;
-}
 ::v-deep .x-button,
 ::v-deep .ik-form-item .label-text,
 ::v-deep .ik-form-item input,
@@ -345,6 +354,19 @@ export default {
   align-items: center;
   justify-content: center;
   height: 400rpx;
+}
+
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+
+  &__text {
+    color: #999;
+    font-size: 26rpx;
+    font-family: 'SourceHanSans-Regular', sans-serif;
+  }
 }
 
 .gift-grid {
