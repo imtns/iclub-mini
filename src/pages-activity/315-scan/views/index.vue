@@ -530,8 +530,8 @@ export default {
     showTransferResultPopup(val) {
       if (val) {
         // 参考主包首页：转赠成功时编辑分享链接，设置带 transferCode、fromUserCode 的 path，好友打开即可领取
-        if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {          
-          this.shareInfo.path += `?inviteSource=19&transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
+        if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {
+          this.shareInfo.path = this.defaultSharePath + `?inviteSource=19&transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
           this.shareInfo.buttonTitle = `好友送来专属星星，快来兑换好礼！`
           if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('share.png')
           // 开发调试：查看当前编辑后的分享参数
