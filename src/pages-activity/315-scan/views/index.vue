@@ -1185,7 +1185,7 @@ export default {
 .gift-header {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 36rpx;
+  // margin-bottom: 36rpx;
 
   .gift-more {
     color: #287CF0;
@@ -1198,6 +1198,7 @@ export default {
 
 .gift-scroll {
   width: 100%;
+  margin-top: 26rpx;
 }
 
 .gift-scroll-inner {

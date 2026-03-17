@@ -35,7 +35,7 @@ export default {
   flex-direction: column;
   align-items: center;
   width: 130rpx;
-  height: 146rpx;
+  height: 160rpx;
   overflow: hidden;
   background: #ECF6FF;
   border-radius: 15rpx;  
@@ -48,7 +48,7 @@ export default {
   width: 90rpx;
   height: 84rpx;
   flex-shrink: 0;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
 }
 
 .home-gift-card__img {
@@ -62,7 +62,9 @@ export default {
   align-items: center;
   justify-content: center;
   min-height: 0;
-  padding: 0 6rpx 0;
+  padding: 4rpx 6rpx 0;
+  /* iOS 上避免首行文字顶部被截断 */
+  box-sizing: border-box;
 }
 
 .home-gift-card__name {
@@ -70,7 +72,8 @@ export default {
   overflow: hidden;
   max-width: 118rpx;
   font-size: 22rpx;
-  line-height: 100%;
+  /* iOS 上 100% 行高会导致首行顶部被裁剪，改用略大的行高 */
+  line-height: 1.35;
   text-align: center;
   color: #B1C0CE;
   -webkit-box-orient: vertical;
