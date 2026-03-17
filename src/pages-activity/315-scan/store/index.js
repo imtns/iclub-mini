@@ -34,6 +34,8 @@ const store = new Vuex.Store({
     brandCards: [],
     brandCardCodes: [],
     giftListHome: [],
+    /** 卡片轮播初始下标：userCards 为空时定位到"嗨体"所在位置，否则为 0 */
+    initialCardIndex: 0,
 
     /* ─── 活动状态 ─── */
     // 活动状态：0-未开始，1-进行中，2-已结束
@@ -136,6 +138,7 @@ const store = new Vuex.Store({
     SET_BRAND_CARDS: (state, v) => { state.brandCards = v },
     SET_BRAND_CARD_CODES: (state, v) => { state.brandCardCodes = v },
     SET_GIFT_LIST_HOME: (state, v) => { state.giftListHome = v },
+    SET_INITIAL_CARD_INDEX: (state, v) => { state.initialCardIndex = v },
 
     SET_SHOW_TRANSFER_POPUP: (state, v) => { state.showTransferPopup = v },
     SET_TRANSFER_AMOUNT: (state, v) => { state.transferAmount = v },
@@ -270,6 +273,13 @@ const store = new Vuex.Store({
         commit('SET_BRAND_CARDS', mergedCards)
         commit('SET_BRAND_CARD_CODES', mergedCards.map((c) => c.cardCode).filter(Boolean))
         commit('SET_USER_TOTAL_STARS', userTotalStars)
+        // userCards 为空时，默认将轮播定位到"嗨体"所在下标
+        if (!userCards || userCards.length === 0) {
+          const haitiIdx = mergedCards.findIndex((c) => c.cardName && c.cardName.includes('嗨体'))
+          commit('SET_INITIAL_CARD_INDEX', haitiIdx >= 0 ? haitiIdx : 0)
+        } else {
+          commit('SET_INITIAL_CARD_INDEX', 0)
+        }
       } catch (e) {
         uni.showToast({ title: e.message || '加载失败，请重试', icon: 'none' })
       } finally {

@@ -32,7 +32,7 @@
       </view>
 
       <!-- ── 品牌卡片轮播 ── -->
-      <brand-swiper :cards="brandCards" :current="currentCardIndex" @change="onCardChange" />
+      <brand-swiper :cards="brandCards" :current="currentCardIndex" :duration="swiperDuration" @change="onCardChange" />
 
       <!-- ── 功能入口区 ── -->
       <view class="func-entry-area">
@@ -393,8 +393,8 @@ export default {
   components: { BrandSwiper, HomeGiftCard, LightCard, AddressPopup },
 
   data() {
-    const defaultSharePath = '/pages-activity/315-scan/views/index'
-    const defaultShareTitle = '医美人有自己的小卡'
+    const defaultSharePath = '/pages-activity/315-scan/views/index?inviteSource=19'
+    const defaultShareTitle = '快来点亮专属小卡吧！'
     return {
       // 首次进入已通过 initPage 拉取完成，后续通过 onShow 做刷新
       hasRefreshedOnce: false,
@@ -405,7 +405,8 @@ export default {
       showTutorialPopup: false,
       shareInfo: {
         path: defaultSharePath,
-        title: defaultShareTitle
+        title: defaultShareTitle,
+        imageUrl: getStaticImage('share2.png')
       },
       defaultSharePath,
       defaultShareTitle,
@@ -420,7 +421,9 @@ export default {
       // 活动结束提示仅在进入首页时自动 toast 一次，其余通过点击入口再提示
       activityEndedToastShown: false,
       // 领取星星登录提示弹窗
-      showReceiveLoginPopup: false
+      showReceiveLoginPopup: false,
+      // 轮播动画时长：初始定位时设为 0 跳过动画，之后恢复默认
+      swiperDuration: 500
     }
   },
 
@@ -530,9 +533,8 @@ export default {
     showTransferResultPopup(val) {
       if (val) {
         // 参考主包首页：转赠成功时编辑分享链接，设置带 transferCode、fromUserCode 的 path，好友打开即可领取
-        if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {
-          const base = '/pages-activity/315-scan/views/index'
-          this.shareInfo.path = `${base}?transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
+        if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {          
+          this.shareInfo.path += `&transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
           this.shareInfo.buttonTitle = `好友送来专属星星，快来兑换好礼！`
           if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('share.png')
           // 开发调试：查看当前编辑后的分享参数
@@ -589,6 +591,20 @@ export default {
     }
   },
 
+  onHide() {
+    // 退到后台时重置所有弹窗状态：
+    // 微信会重置 uni-popup 的视觉渲染，但 store/data 里的布尔值仍为 true，
+    // 导致 page-meta overflow:hidden 无法解除，回到前台后页面无法拖动。
+    store.commit('SET_SHOW_TRANSFER_POPUP', false)
+    store.commit('SET_SHOW_TRANSFER_RESULT_POPUP', false)
+    store.commit('SET_SHOW_RECEIVE_STARS_RESULT_POPUP', false)
+    store.commit('SET_SHOW_LIGHT_CARD_POPUP', false)
+    store.commit('SET_SHOW_MY_GIFTS_DRAWER', false)
+    this.showTutorialPopup = false
+    this.showReceiveLoginPopup = false
+    this.showAddressPopup = false
+  },
+
   onPageScroll(e) {
     this.navBgOpacity = Math.min(e.scrollTop / 48, 1)
   },
@@ -605,6 +621,9 @@ export default {
     // isRefresh：从其他页面返回时为 true，不显示全屏 loading，避免页面闪烁
     async refreshPageData({ isRefresh = false } = {}) {
       await store.dispatch('fetchActivityCardInfo', { showLoading: !isRefresh })
+      this.swiperDuration = 0
+      this.currentCardIndex = store.state.initialCardIndex
+      this.$nextTick(() => { this.swiperDuration = 500 })
       await store.dispatch('fetchPrizeListHome')
       if (this.$store && this.$store.state.isLogin) {
         await store.dispatch('fetchUserInfo')

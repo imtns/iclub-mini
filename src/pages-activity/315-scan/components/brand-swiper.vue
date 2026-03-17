@@ -3,6 +3,7 @@
     <swiper
       class="swiper"
       :current="innerCurrent"
+      :duration="duration"
       :previous-margin="swiperMargin"
       :next-margin="swiperMargin"
       circular
@@ -50,6 +51,10 @@ export default {
     current: {
       type: Number,
       default: 0
+    },
+    duration: {
+      type: Number,
+      default: 500
     }
   },
   data() {
