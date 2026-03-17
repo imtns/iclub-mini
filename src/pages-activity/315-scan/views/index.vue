@@ -393,7 +393,7 @@ export default {
   components: { BrandSwiper, HomeGiftCard, LightCard, AddressPopup },
 
   data() {
-    const defaultSharePath = '/pages-activity/315-scan/views/index?inviteSource=19'
+    const defaultSharePath = '/pages-activity/315-scan/views/index'
     const defaultShareTitle = '快来点亮专属小卡吧！'
     return {
       // 首次进入已通过 initPage 拉取完成，后续通过 onShow 做刷新
@@ -534,7 +534,7 @@ export default {
       if (val) {
         // 参考主包首页：转赠成功时编辑分享链接，设置带 transferCode、fromUserCode 的 path，好友打开即可领取
         if (this.transferResultStatus === 'success' && this.transferShareCode && this.transferShareFromUserCode) {          
-          this.shareInfo.path += `&transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
+          this.shareInfo.path += `?inviteSource=19&transferCode=${encodeURIComponent(this.transferShareCode)}&fromUserCode=${encodeURIComponent(this.transferShareFromUserCode)}`
           this.shareInfo.buttonTitle = `好友送来专属星星，快来兑换好礼！`
           if (this.getStaticImage) this.shareInfo.buttonImage = this.getStaticImage('share.png')
           // 开发调试：查看当前编辑后的分享参数
