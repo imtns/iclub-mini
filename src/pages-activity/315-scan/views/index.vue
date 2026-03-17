@@ -188,7 +188,7 @@
         <view class="login-receive-card">
           <image class="login-receive-bg" :src="getStaticImage('receive-bg.png')" mode="widthFix" />
           <view class="login-receive-content">
-            <text class="login-receive-primary">好有星星转赠</text>
+            <text class="login-receive-primary">好友星星转赠</text>
             <text class="login-receive-secondary">请您登录后进行领取</text>
             <view class="login-receive-actions">
               <button class="login-receive-btn login-receive-btn-cancel" @tap="onReceiveLoginCancel">取消</button>
@@ -296,6 +296,7 @@ import BrandSwiper from '../components/brand-swiper'
 import HomeGiftCard from '../components/home-gift-card'
 import LightCard from '../components/light-card'
 import AddressPopup from '../components/address-popup'
+import globalShareMixin from '@/pages-activity/315-scan/mixin/share'
 
 const ENABLE_BRAND_CARDS_MOCK = false
 const ENABLE_LIGHT_CARD_MOCK = false
@@ -391,6 +392,7 @@ const MOCK_FROM_USER_CODE = '1972581621231980545'
 
 export default {
   components: { BrandSwiper, HomeGiftCard, LightCard, AddressPopup },
+  mixins: [globalShareMixin],
 
   data() {
     const defaultSharePath = '/pages-activity/315-scan/views/index'
@@ -403,11 +405,6 @@ export default {
       navBarHeight: 0,
       giftMoreText: '更多礼品 >',
       showTutorialPopup: false,
-      shareInfo: {
-        path: defaultSharePath,
-        title: defaultShareTitle,
-        imageUrl: getStaticImage('share2.png')
-      },
       defaultSharePath,
       defaultShareTitle,
       showAddressPopup: false,

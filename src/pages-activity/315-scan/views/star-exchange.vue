@@ -79,6 +79,7 @@ import GiftCard from '../components/gift-card'
 import StarExchangeTabs from '../components/star-exchange-tabs'
 import AddressPopup from '../components/address-popup'
 import { getStaticImage } from '../utils/staticAssets'
+import globalShareMixin from '@/pages-activity/315-scan/mixin/share'
 
 // 兑换列表本地 mock，数据结构与 apiGetPrizeList 的 list 一致，后端接入稳定后可整体删除
 const ENABLE_EXCHANGE_MOCK = false
@@ -117,17 +118,14 @@ const TAB_OPTIONS = [
 
 export default {
   components: { GiftCard, StarExchangeTabs, AddressPopup },
+  mixins: [globalShareMixin],
 
   data() {
     return {
       tabLevel: 1,
       tabOptions: TAB_OPTIONS,
       navBgOpacity: 0,
-      navBarHeight: 0,
-      shareInfo: {
-        path: '/pages-activity/315-scan/views/star-exchange',
-        title: '医美人有自己的小卡'
-      }
+      navBarHeight: 0
     }
   },
 

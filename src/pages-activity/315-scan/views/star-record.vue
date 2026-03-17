@@ -83,6 +83,7 @@
 import store from '../store/index'
 import { formatTimestamp, formatStarAmount } from '../utils/format'
 import { getStaticImage } from '../utils/staticAssets'
+import globalShareMixin from '@/pages-activity/315-scan/mixin/share'
 
 const ENABLE_RECORD_MOCK = false
 
@@ -105,14 +106,12 @@ const MOCK_RECORD_LIST = [
 ]
 
 export default {
+  mixins: [globalShareMixin],
+
   data() {
     return {
       navBgOpacity: 0,
-      navBarHeight: 0,
-      shareInfo: {
-        path: '/pages-activity/315-scan/views/star-record',
-        title: '医美人有自己的小卡'
-      }
+      navBarHeight: 0
     }
   },
 

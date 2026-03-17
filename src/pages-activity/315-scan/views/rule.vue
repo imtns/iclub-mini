@@ -23,16 +23,15 @@
 
 <script>
 import { getStaticImage } from '../utils/staticAssets'
+import globalShareMixin from '@/pages-activity/315-scan/mixin/share'
 
 export default {
+  mixins: [globalShareMixin],
+
   data() {
     return {
       navBgOpacity: 0,
-      navBarHeight: 0,
-      shareInfo: {
-        path: '/pages-activity/315-scan/views/rule',
-        title: '医美人有自己的小卡'
-      }
+      navBarHeight: 0
     }
   },
 
