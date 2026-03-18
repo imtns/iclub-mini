@@ -18,7 +18,7 @@
       </view>
       <text class="address-popup-hint">{{ edit ? `重要提示：
 奖品兑换遵循 “先到先得” 原则。
-星星扣除将发生在您提交地址后，若此时奖品库存已空，兑换将自动失败，星星原路退回，不产生任何扣除。` : '' }}</text>
+星星扣除将发生在您提交地址后，若此时奖品库存已空，兑换将自动失败，不产生任何扣除。` : '' }}</text>
       <!-- 填写模式：取消 + 提交 -->
       <view v-if="edit" class="address-popup-actions">
         <button class="addr-btn addr-btn-cancel" @tap="onCancel">取消</button>
