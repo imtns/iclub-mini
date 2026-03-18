@@ -1024,7 +1024,7 @@ export default {
 .header-area {
   position: relative;
   width: 750rpx;
-  height: 386rpx;
+  height: 352rpx;
 
   .user-avatar-wrap {
     position: absolute;
@@ -1058,7 +1058,7 @@ export default {
     position: absolute;
     width: 541rpx;
     height: 77rpx;
-    top: 312rpx;
+    top: 278rpx;
     left: 50%;
     transform: translateX(-50%);
   }
@@ -1148,9 +1148,10 @@ export default {
 }
 
 .scan-btn {
-  width: 398rpx;
-  height: 126rpx;
-  margin-bottom: 1rpx;
+  width: 374rpx;
+  height: 118rpx;
+  margin-left: 3rpx;
+  margin-bottom: 7rpx;
 }
 
 .transfer-btn {
