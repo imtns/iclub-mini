@@ -887,21 +887,24 @@ export default {
       }).exec()
     },
     onMyGiftItemBtnTap(gift) {
-      // 通过 addressCode 调用同一接口获取地址详情，再展示弹窗
-      const addressCode = gift.addressCode || ''
-      const userCode = (this.$store && this.$store.getters.userCode) || ''
-      if (!addressCode || !userCode) {
+      // 地址已由 myPrizes 列表接口返回，直接展示弹窗（不再请求地址详情接口）
+      const receiverName = (gift.receiver || gift.receiverName || '').trim()
+      const phone = (gift.phone || '').trim()
+      let detailAddress = (gift.detailAddress || '').trim()
+      if (!detailAddress) {
+        detailAddress = [gift.provinceName, gift.cityName, gift.areaName].filter(Boolean).join('')
+      }
+      const hasAddr = !!(receiverName || phone || detailAddress)
+      if (!hasAddr) {
         uni.showToast({ title: '暂无地址信息', icon: 'none' })
         return
       }
-      store.dispatch('fetchAddressDetail', { objectCode: addressCode, userCode }).then(() => {
-        this.viewAddressForm = {
-          receiverName: store.state.addressForm.receiverName || '',
-          phone: store.state.addressForm.phone || '',
-          detailAddress: store.state.addressForm.detail || store.state.addressForm.detailAddress || ''
-        }
-        this.showAddressPopup = true
-      })
+      this.viewAddressForm = {
+        receiverName,
+        phone,
+        detailAddress
+      }
+      this.showAddressPopup = true
     },
     onAddressViewClose() {
       this.showAddressPopup = false
