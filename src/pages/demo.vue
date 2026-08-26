@@ -137,7 +137,21 @@
         <view class="route-card__arrow">›</view>
       </view>
     </view>
+    <view class="section">
+      <view class="section__header">
+        <view>
+          <view class="section__title">埋点示例</view>
+        </view>
+      </view>
 
+      <view class="route-card" @click="handleReport">
+        <view class="route-card__content">
+          <view class="route-card__title">点击记录埋点</view>
+        </view>
+
+        <view class="route-card__arrow">›</view>
+      </view>
+    </view>
     <!-- 底部提示 -->
     <view class="footer-tip">
       <view class="footer-tip__line"></view>
@@ -205,6 +219,11 @@ export default {
           }
         },
       });
+    },
+    handleReport() {
+      // 埋点接口调用全局方法report, 未来所有页面加载，点击操作，均可调用该方法上报埋点数据
+      // eg: this.report('mbti页面加载');
+      this.report("点击记录埋点");
     },
   },
 };
