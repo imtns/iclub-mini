@@ -1,4 +1,7 @@
 import { ls, lsGet, lsDel } from '@/utils/util'
+import report from '@/utils/report/report'
+import { getCurrentAppId } from '@/utils'
+import { wxGetOpenId } from '@/http/wx'
 
 export default {
   methods: {
@@ -128,6 +131,41 @@ export default {
      * storage获取 - 可以区分环境
      */
     lsGet,
-    lsDel
+    lsDel,
+    getOpenId() {
+      return new Promise((resolve) => {
+        // 已获取过则不再获取
+        if (lsGet('openId') && lsGet('unionId')) {
+          this.$store.dispatch('setOpenId', { openid: lsGet('openId'), unionid: lsGet('unionId') })
+          resolve()
+          return
+        }
+        const that = this
+        uni.login({
+          success(data) {
+            if (data.errMsg === 'login:ok') {
+              console.log('wx.login了', data)
+              wxGetOpenId({
+                appId: getCurrentAppId(),
+                code: data.code
+              })
+                .then((res) => {
+                  that.$store.dispatch('setOpenId', { openid: res.openId, unionid: res.unionId })
+                  ls('openId', res.openId || '')
+                  ls('unionId', res.unionId || '')
+                  resolve()
+                })
+                .catch(() => {
+                  resolve()
+                })
+            }
+          },
+          fail(err) {
+            console.log('登录获取openid失败', err)
+            resolve()
+          }
+        })
+      })
+    }
   }
 }

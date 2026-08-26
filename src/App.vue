@@ -1,38 +1,44 @@
 <script>
 import "./utils/init";
 import "./utils/request"; // 初始化云函数
-import { mapMutations, mapActions } from "vuex";
-import { reportBury } from "@/utils/report/report";
-import { TASK_DICT } from "@/dict";
+import report, { reportBury } from "@/utils/report/report";
+import { PARADISE_TASK_DICT } from "@/dict";
+import { getSceneData } from "@/http/common";
+import { getCurrentAppId } from "@/utils";
+import { wxGetOpenId } from "@/http/wx";
 import { getScene, ls, lsGet, refreshCurrentPage } from "./utils/util";
-import store from "./store";
 export default {
   data() {
     return {
       loaded: false,
     };
   },
-  onLaunch(options) {
+  async onLaunch(options) {
     console.error("小程序onLaunch====", options);
+
+    await this.$store.dispatch("getConfig"); // 获取oss配置
+    await this.loadCustomFont();
+
+    this.setInviteAndQuDaoCode(options);
     // wx.cloud.init({
     //   env: 'cloud1-5gkxpioe4b34a94b', // 替换为你的云环境 ID
     //   traceUser: true
     // })
+    await this.$store.dispatch("getConfig"); // 获取oss配置
     this.$store.commit("setDefaultAvatar");
-
+    await this.getOpenId();
     this.getUserInfo();
-    this.getDictionaryData();
     uni.hideTabBar();
     wx.setStorageSync("home-loaded", 1);
+    wx.removeStorageSync("home-scan"); // 扫码三重礼页面标识,小程序启动时去除
     uni.$on("getUserInfo", this.refreshUserInfo);
     this.initReportParams(); // 初始化上报需要的参数
-    this.sendEnterEvent(); // 进入小程序发送活力值
     this.checkUpdate(); // 升级检测
     // 用户没用登录的时候需要设置随机默认头像
     uni.removeStorageSync("home-index");
-    this.$store.dispatch("getConfig"); // 获取oss配置
-    this.$store.dispatch("getCityTree"); // 获取选择地址数据
 
+    this.$store.dispatch("getCityTree"); // 获取选择地址数据
+    this.$store.dispatch("getHomeBrandList"); // 获取首页品牌列表
     wx.getSystemInfo({
       success: (res) => {
         wx.setStorageSync("sysInfo", res);
@@ -44,23 +50,23 @@ export default {
     wx.setBackgroundColor({
       backgroundColor: "#f9f9f9", // 窗口的背景色为白色
     });
+    var _this$calcLogoPos = this.globalData.calcLogoPos();
+    var menuButtonCenter = _this$calcLogoPos.menuButtonCenter;
+    var MenuButtonBottom = _this$calcLogoPos.MenuButtonBottom;
+    this.globalData.menuButtonCenter = menuButtonCenter;
+    this.globalData.MenuButtonBottom = MenuButtonBottom;
   },
   onShow(options) {
     // 保存邀请码和渠道码 - 需要放在onShow里面，因为热启动时onLaunch不会触发
+    console.error("-----------APP-ONSHOW------------", options);
     this.setInviteAndQuDaoCode(options);
-    this.$store.commit("setHihiInvitedEntry", false);
     if (this.loaded) {
       this.getUserInfo();
     }
   },
-  onHide() {
-    // this.$store.commit('clearData')
-    console.log("1-------======22222111", store.state);
-  },
+
   globalData: {
-    hihiPageStart: false,
-    // 数据字典
-    dictionaryTree: {},
+    sc: null,
     // 选择的课程一级分类 - 首页快捷入口跳到分类tab
     selectedCourseCategory: "",
     // 选择的课程排序方式 - 首页快捷入口跳到分类tab
@@ -89,14 +95,43 @@ export default {
     tempBuryPointList: [],
 
     redirectPath: "",
-  },
-  methods: {
-    ...mapActions(["setIntegral"]),
-    ...mapMutations(["setDictionaryTree"]),
+    ceceData: {},
+    faceMaps: {},
+    menuButtonCenter: 0,
 
+    MenuButtonBottom: 0,
+    uid: undefined,
+    faceMaps: {},
+    hasShowTakephotoTip: false,
+    hasAgree: false,
+    capcha: "",
+    isRedirecting: false,
+    calcLogoPos: function calcLogoPos() {
+      // 获取胶囊信息
+      var _wx$getMenuButtonBoun = uni.getMenuButtonBoundingClientRect();
+      var height = _wx$getMenuButtonBoun.height;
+      var top = _wx$getMenuButtonBoun.top;
+      var bottom = _wx$getMenuButtonBoun.bottom;
+      return {
+        menuButtonCenter: top + height / 2,
+        MenuButtonBottom: bottom + 6,
+      };
+    },
+  },
+
+  methods: {
     // 设置渠道码和邀请码
-    setInviteAndQuDaoCode(options) {
+    async setInviteAndQuDaoCode(options) {
       console.error("setInviteAndQuDaoCode", options);
+      // 将小程序启动options保存埋点
+      if (options) {
+        const data = {
+          pageSession: Math.random().toString(16).substring(2) + new Date().getTime(),
+          activityName: "小程序启动参数",
+          activityContent: JSON.stringify(options),
+        };
+        report({ eventId: "element_expose", pageUrl: options.path, referrerUrl: "", dataKeys: data });
+      }
       let inviteCode = ""; // 邀请码
       let inviteSource = ""; // 皱纹活动道具来源
       let shareLinkTime = ""; // 皱纹活动分享时间
@@ -125,7 +160,9 @@ export default {
       if (options.query && options.query.scene) {
         const sc = getScene(options.query.scene);
         console.log("---------parsedScene----------", sc);
-
+        if (sc) {
+          this.globalData.sc = sc;
+        }
         // 渠道码
         if (sc && sc.qudaoCode) {
           this.globalData.userSource = sc.qudaoCode;
@@ -143,32 +180,58 @@ export default {
           inviteCode = sc.inviteCode;
           // 记录被邀请人和邀请人的信息
         }
+        // 如果有shareId，获取映射数据，设置全局分享数据
+        if (sc && sc.shareId) {
+          try {
+            const res = await getSceneData({ shareId: sc.shareId });
+
+            console.log("getSceneData", res);
+
+            inviteCode = res.inviteCode || "";
+            inviteSource = res.inviteSourceCode || "";
+            shareLinkTime = res.shareLinkTime || "";
+            this.$store.commit("setInviteInfo", {
+              inviteCode,
+              inviteSource,
+              shareLinkTime,
+            });
+            if (res.redirectPath && typeof res.redirectPath === "string") {
+              wx.redirectTo({
+                url: res.redirectPath,
+              });
+            } else {
+              console.warn("非法跳转链接:", res.redirectPath);
+            }
+          } catch (error) {
+            console.error("Error in getSceneData:", error);
+          }
+        }
       }
       this.$store.commit("setOpenIdSetted", false);
 
-      // this.globalData.hihiPageStart = true
-
       // 存储邀请码
-      this.globalData.shareLink = shareLink;
-      this.globalData.inviteOpenId = inviteOpenId;
-      this.globalData.inviteCode = inviteCode;
-      this.globalData.inviteSource = inviteSource;
-      this.globalData.shareLinkTime = shareLinkTime;
-    },
-
-    // 进入小程序加活力值
-    sendEnterEvent() {
-      if (uni.hasLogin()) {
-        // DENG_LU活力值:'2'
-        this.setIntegral({ changeSource: TASK_DICT.DENG_LU, objectCode: this.globalData.userInfo.objectCode });
+      if (shareLink) {
+        this.globalData.shareLink = shareLink;
       }
-    },
-
-    // 获取数据字典
-    async getDictionaryData() {
-      const dictTree = await this.$store.dispatch("getDictTree");
-      this.$store.dispatch("getSpecialEventInfo");
-      this.globalData.dictionaryTree = dictTree;
+      if (inviteOpenId) {
+        this.globalData.inviteOpenId = inviteOpenId;
+      }
+      if (inviteCode) {
+        this.globalData.inviteCode = inviteCode;
+      }
+      if (inviteSource) {
+        this.globalData.inviteSource = inviteSource;
+      }
+      if (shareLinkTime) {
+        this.globalData.shareLinkTime = shareLinkTime;
+      }
+      if (inviteCode || inviteSource || shareLinkTime) {
+        this.$store.commit("setInviteInfo", {
+          inviteCode,
+          inviteSource,
+          shareLinkTime,
+        });
+      }
     },
 
     // 初始化用户信息
@@ -295,6 +358,42 @@ export default {
         console.log("fail", res);
       });
     },
+    loadCustomFont() {
+      const fonts = [
+        {
+          family: "BEBAS",
+          source: 'url("https://udstatic.imeik.com/iclub/font/BEBAS-1.ttf")',
+        },
+        {
+          family: "iclub-loading",
+          source: 'url("https://udstatic.imeik.com/iclub/font/iclub-loading.ttf?5")',
+        },
+        {
+          family: "D-DIN",
+          source: 'url("https://udstatic.imeik.com/iclub/font/D-DIN-Bold-v2.ttf")',
+        },
+      ];
+
+      const loadFont = ({ family, source }) => {
+        return new Promise((resolve) => {
+          wx.loadFontFace({
+            family,
+            source,
+            global: true,
+            success: () => {
+              console.log(`${family} 字体加载成功`);
+              resolve(true);
+            },
+            fail: (err) => {
+              console.warn(`${family} 字体加载失败`, err);
+              resolve(false);
+            },
+          });
+        });
+      };
+
+      return Promise.all(fonts.map(loadFont));
+    },
   },
 };
 </script>
@@ -302,6 +401,7 @@ export default {
 <style lang="scss">
 @import "./uni.scss";
 @import "./static/font/iplus/iconfont.css";
+@import "./styles/common.scss";
 // @import './static/font/Gilroy-Bold/index.css';
 page {
   min-height: 100vh !important;
@@ -315,31 +415,6 @@ page {
 // 去掉烦人的边框
 button::after {
   border: 0; // 或者 border: none;
-}
-
-@font-face {
-  font-weight: bold;
-  font-family: Gilroy;
-  font-style: normal;
-  src: url("https://udstatic.imeik.com/pcUploads/1726634114509/Gilroy-Bold.woff2") format("woff2"),
-    url("https://udstatic.imeik.com/pcUploads/1726634111844/Gilroy-Bold.woff") format("woff"),
-    url("https://udstatic.imeik.com/pcUploads/1726634109135/Gilroy-Bold.ttf") format("truetype");
-  font-display: swap;
-}
-
-@font-face {
-  font-family: Gilroy-bold; /* 指定字体名称 */
-  src: url("https://udstatic.imeik.com/pcUploads/1704872978082/gilroy-bold-4.otf");
-}
-
-@font-face {
-  font-family: AlimamaShuHeiTi; /* 指定字体名称 */
-  src: url("https://udstatic.imeik.com/iclub/font/AlimamaShuHeiTi.otf");
-}
-
-@font-face {
-  font-family: ShuHeiTi-Bold; /* 指定字体名称 */
-  src: url("https://udstatic.imeik.com/pcUploads/1729840157020/%E9%98%BF%E9%87%8C%E5%A6%88%E5%A6%88%E6%95%B0%E9%BB%91%E4%BD%93AlimamaShuHeiTi-Bold.ttf");
 }
 
 wx-swiper .wx-swiper-dot {

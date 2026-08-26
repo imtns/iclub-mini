@@ -1,0 +1,39 @@
+.colors {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.colors .item {
+  flex: 1;
+}
+
+.colors .item:first-child .color {
+  overflow: hidden;
+  border-radius: 26rpx 0 0 26rpx;
+}
+
+.colors .item:last-child .color {
+  border-radius: 0 26rpx 26rpx 0;
+}
+
+.colors .item .color {
+  height: 26px;
+  margin-bottom: 8rpx;
+}
+
+.colors .item .text {
+  color: #a4a4aa;
+  font-size: 20rpx;
+  line-height: 28rpx;
+  text-align: center;
+}
+
+.colors .active .color {
+  border: 4rpx solid;
+}
+
+.colors .active .text {
+  color: #356ad3;
+}

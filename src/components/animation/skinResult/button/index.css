@@ -1,0 +1,13 @@
+.button {
+  display: inline-block;
+  box-sizing: border-box;
+  height: 48rpx;
+  margin: 16rpx auto;
+  padding: 0 24rpx;
+  color: #356ad3;
+  font-size: 20rpx;
+  line-height: 44rpx;
+  background-color: rgba(255, 104, 144, 5%);
+  border: 1px solid #356ad3;
+  border-radius: 24rpx;
+}

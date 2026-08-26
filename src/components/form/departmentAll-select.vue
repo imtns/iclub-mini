@@ -106,7 +106,7 @@ export default {
       console.log('selectedDepartment')
       // 这里只能监听一次，不然会导致多个机构选择的时候互相混
       uni.$once('selectDepartment', this.onDepChoose)
-      uni.navigateTo({
+      this.go({
         url: '/pages/choose/departmentAll'
       })
     },

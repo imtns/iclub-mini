@@ -30,7 +30,7 @@
             @columnchange="regionChangeCol"
           >
             <slot></slot>
-            <view class="itemName" :class="address ? '' : 'placeholder'">{{ address || '请选择' }}</view>
+            <view class="itemName" :class="address ? '' : 'placeholder'" :style="{ fontSize: address && address.length > 10 ? '24rpx' : '30grpx' }">{{ address || '请选择' }}</view>
           </picker>
         </uni-forms-item>
       </view>
@@ -76,7 +76,9 @@ export default {
     }
   },
   computed: {
-    ...mapState(['cityTree']),
+    ...mapState({
+      cityTree: state => state.location.cityTree
+    }),
     // 层级，默认为2，只到省市
     depth() {
       return (this.field.props && this.field.props.depth) || 2

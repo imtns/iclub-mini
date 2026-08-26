@@ -1,3 +1,4 @@
+import { mapState } from 'vuex'
 export default {
   data() {
     return {
@@ -27,6 +28,11 @@ export default {
       immediate: true
     }
   },
+  computed: {
+    ...mapState({
+      commonConfig: state => state.config.commonConfig
+    })
+  },
   methods: {
     async initializeLists() {
       this.loading = true
@@ -47,7 +53,8 @@ export default {
       //     return { ...item, coverImageHeight: newHeight }
       //   })
       // )
-      this.newList = list
+      // 审核状态时隐藏视频，有的时候有视频会拒绝审核通过
+      this.newList = list.filter((item) => (this.commonConfig.isShenHe && item.contentType !== '2') || !this.commonConfig.isShenHe)
       console.log('🚀 ~ initializeLists ~!!!! newList:', this.newList)
       setTimeout(() => {
         this.loading = false

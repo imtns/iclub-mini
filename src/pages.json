@@ -1,9 +1,10 @@
 {
   "pages": [
     {
-      "path": "pages/index",
+      "path": "pages/demo",
       "style": {
-        "navigationBarTitleText": "首页"
+        "navigationStyle": "custom",
+        "backgroundColor": "#f9f9f9"
       }
     }
   ],
@@ -14,61 +15,45 @@
         {
           "path": "login/index",
           "style": {
-            "navigationBarTitleText": "登录",
+            "navigationStyle": "custom",
             "mp-weixin": {
               "usingComponents": {
                 "loginform": "plugin://myPlugin/loginform"
               }
             }
           }
-        },
-        {
-          "path": "ai-ceyan/index",
-          "style": {
-            "navigationBarTitleText": "AI测颈纹",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "ai-ceyan/home",
-          "style": {
-            "navigationBarTitleText": "首页"
-          }
-        },
-        {
-          "path": "ai-ceyan/uploaded",
-          "style": {
-            "navigationBarTitleText": "上传成功海报",
-            "navigationStyle": "custom"
-          }
         }
       ],
       "plugins": {
         "myPlugin": {
-          "version": "1.0.25",
+          "version": "1.0.40",
           "provider": "wx49ba8c2e81bce02f"
         }
       }
     },
     {
-      "root": "pages/mine",
+      "root": "pages-mbti",
       "pages": [
         {
-          "path": "address/list",
+          "path": "index",
           "style": {
-            "navigationBarTitleText": "我的地址"
-          }
-        },
-        {
-          "path": "address/manage",
-          "style": {
-            "navigationBarTitleText": "编辑地址"
+            "navigationStyle": "custom"
           }
         }
       ]
     }
   ],
   "sitemapLocation": "sitemap.json",
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^ik-(.*)": "@/components/common/$1.vue",
+      "^form-(.*)": "@/components/form/$1.vue",
+      "^global-(.*)": "@/components/global/$1.vue",
+      "^x-(.*)": "@/components/x/$1.vue",
+      "^z-(.*)": "@/components/datepicker/$1.vue"
+    }
+  },
   "globalStyle": {
     "pageOrientation": "portrait",
     "backgroundTextStyle": "light",
@@ -85,12 +70,7 @@
       "captcha": "<global-captcha ref='captcha'></global-captcha>",
       "privacyPopup": "<global-privacy-popup ref='privacyComponent'></global-privacy-popup>"
     },
-    "label": [
-      "login",
-      "captcha",
-      "privacyPopup",
-      "toast"
-    ],
+    "label": ["login", "captcha", "privacyPopup", "toast"],
     "rootEle": ".*"
   }
 }

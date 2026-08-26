@@ -1,0 +1,129 @@
+.preview {
+  padding: 12rpx 32rpx 32rpx;
+  background-color: #fff;
+  border-bottom: 8rpx solid #f7f8f9;
+}
+
+.preview .previewImageWrap {
+  position: relative;
+  width: 80vw;
+  height: 80vw;
+  margin: auto;
+  text-align: center;
+}
+
+.preview .previewImageWrap .previewImage {
+  width: 100%;
+  height: 100%;
+  margin: auto auto 32rpx;
+}
+
+.preview .previewImageWrap .info {
+  position: absolute;
+}
+
+.preview .previewImageWrap .info .text {
+  color: #666;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
+.preview .previewImageWrap .info .score {
+  position: absolute;
+  position: relative;
+  width: 60rpx;
+  height: 10rpx;
+  margin-top: 4rpx;
+  overflow: hidden;
+  background: rgba(255, 122, 151, 10%);
+  border-radius: 12rpx;
+}
+
+.preview .previewImageWrap .info .score .strong {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  background: #356ad3;
+  border-radius: 12rpx;
+}
+
+.preview .previewImageWrap .head {
+  top: 106rpx;
+  left: 0;
+}
+
+.preview .previewImageWrap .nose {
+  top: 322rpx;
+}
+
+.preview .previewImageWrap .eyes {
+  top: 88rpx;
+  right: 0;
+}
+
+.preview .previewImageWrap .face {
+  top: 346rpx;
+  right: 0;
+}
+
+.preview .previewImageWrap .lips {
+  bottom: 32rpx;
+  left: 268rpx;
+}
+
+.preview .dataPanel {
+  margin-bottom: 32rpx;
+}
+
+.preview .dataPanel,
+.preview .dataPanel .item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.preview .dataPanel .item {
+  flex: 1;
+  height: 128rpx;
+  overflow: hidden;
+  border: 2rpx solid #ff6890;
+  border-radius: 12rpx;
+}
+
+.preview .dataPanel .item:first-child {
+  margin-right: 16rpx;
+}
+
+.preview .dataPanel .item .content {
+  padding: 24rpx 0 32rpx 24rpx;
+}
+
+.preview .dataPanel .item .content .title {
+  margin-bottom: 6rpx;
+  color: #a4a4aa;
+  font-size: 24rpx;
+}
+
+.preview .dataPanel .item .content .value {
+  color: #2a2a2a;
+  font-size: 28rpx;
+}
+
+.preview .dataPanel .item .pic {
+  width: 124rpx;
+  height: 100%;
+}
+
+.preview .sumaryTitle {
+  margin: 32rpx 0 16rpx;
+  color: #2a2a2a;
+  font-weight: 700;
+  font-size: 28rpx;
+}
+
+.preview .sumaryDesc {
+  color: #a4a4aa;
+  font-size: 24rpx;
+  line-height: 32rpx;
+}

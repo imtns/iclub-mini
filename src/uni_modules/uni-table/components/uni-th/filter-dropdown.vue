@@ -51,9 +51,7 @@
 			</view>
 			<!-- date -->
 			<view v-if="isDate">
-				<uni-datetime-picker ref="datetimepicker" :value="dateRange" type="datetimerange" return-type="timestamp" @change="datetimechange" @maskClick="timepickerclose">
-					<view></view>
-				</uni-datetime-picker>
+				<x-datepicker ref="datetimepicker" range :value="dateRange" @confirm="datetimechange" @show="timepickerToggle" />
 			</view>
 		</view>
 	</view>
@@ -61,6 +59,7 @@
 
 <script>
 	import checkBox from '../uni-tr/table-checkbox.vue'
+	import XDatepicker from '@/components/x/datepicker.vue'
 
 	const resource = {
 		"reset": "重置",
@@ -84,7 +83,8 @@
 		name: 'FilterDropdown',
 		emits:['change'],
 		components: {
-			checkBox
+			checkBox,
+			XDatepicker
 		},
 		options: {
 			virtualHost: true
@@ -185,7 +185,7 @@
 						if (!this.dateRange.length) {
 							this.resetDate()
 						}
-						this.$refs.datetimepicker.show()
+						this.$refs.datetimepicker.open()
 					})
 				}
 			},
@@ -198,7 +198,7 @@
 			resetDate() {
 				let date = new Date()
 				let dateText = date.toISOString().split('T')[0]
-				this.dateRange = [dateText + ' 0:00:00', dateText + ' 23:59:59']
+				this.dateRange = [dateText, dateText]
 			},
 			onDropdown(e) {
 				this.openPopup()
@@ -222,16 +222,17 @@
 				this.checkedValues = checkvalues
 			},
 			datetimechange(e) {
+				const value = [new Date(`${e[0]}T00:00:00`).getTime(), new Date(`${e[1]}T23:59:59`).getTime()]
 				this.closePopup()
 				this.dateRange = e
-				this.dateSelect = e
+				this.dateSelect = value
 				this.$emit('change', {
 					filterType: this.filterType,
-					filter: e
+					filter: value
 				})
 			},
-			timepickerclose(e) {
-				this.closePopup()
+			timepickerToggle(visible) {
+				if (!visible) this.closePopup()
 			},
 			handleSelectSubmit() {
 				this.closePopup()

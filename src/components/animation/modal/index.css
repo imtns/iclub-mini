@@ -1,0 +1,47 @@
+.mask {
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 30%);
+}
+
+.mask,
+.modal {
+  position: fixed;
+  right: 0;
+  left: 0;
+}
+
+.modal {
+  top: 50%;
+  z-index: 1001;
+  box-sizing: border-box;
+  width: 91.5vw;
+  margin: auto;
+  background: #fff;
+  border-radius: 32rpx;
+  transform: translateY(-50%);
+}
+
+.modal .title {
+  position: relative;
+  padding: 48rpx 48rpx 16rpx;
+  color: #323233;
+  font-weight: 700;
+  font-size: 32rpx;
+  text-align: center;
+}
+
+.modal .title .close {
+  position: absolute;
+  top: 56rpx;
+  right: 56rpx;
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.modal .body {
+  display: flex;
+  flex-direction: column;
+  padding: 0 48rpx;
+}

@@ -4,26 +4,26 @@
       <view class="scroll">
         <div class="bg" />
         <div class="wrapper">
-          <image class="title" src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709262942988/rule-title.png" />
+          <image class="title" src="https://udstatic.imeik.com/pcUploads/1709262942988/rule-title.png" />
           <view class="content" :style="{ height: '56vh' }">
             <slot />
             <div class="block">
               <div class="text">
-                <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709263974154/1%402x.png" />
+                <image src="https://udstatic.imeik.com/pcUploads/1709263974154/1%402x.png" />
                 参与时间
               </div>
-              <div class="desc">{{ moment(eventInfo.startTime).format('yyyy年MM月DD日hh:mm') + '-' + moment(eventInfo.endTime).format('yyyy年MM月DD日hh:mm') }}</div>
+              <div class="desc">{{ moment(eventInfo.startTime).format('YYYY年MM月DD日hh:mm') + '-' + moment(eventInfo.endTime).format('YYYY年MM月DD日hh:mm') }}</div>
             </div>
             <div class="block">
               <div class="text">
-                <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709264047404/1%402x%20(1).png" />
+                <image src="https://udstatic.imeik.com/pcUploads/1709264047404/1%402x%20(1).png" />
                 参与平台
               </div>
               <div class="desc">爱+小程序</div>
             </div>
             <div class="block">
               <div class="text">
-                <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709264057231/1%402x%20(2).png" />
+                <image src="https://udstatic.imeik.com/pcUploads/1709264057231/1%402x%20(2).png" />
                 活动规则
               </div>
               <div class="desc">
@@ -42,11 +42,11 @@
                 <div class="t" style="margin-bottom: 10rpx">【活动二：赚活力值赢大奖】</div>
                 <div class="d" style="margin-bottom: 16rpx">
                   <div class="line">
-                    <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709264239718/circle%402x.png" />
+                    <image src="https://udstatic.imeik.com/pcUploads/1709264239718/circle%402x.png" />
                     赚活力值：活动期间，用户登录爱+小程序通过「活力值任务」进行每日签到、转评赞等任务，获取活力值。
                   </div>
                   <div class="line">
-                    <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709264239718/circle%402x.png" />
+                    <image src="https://udstatic.imeik.com/pcUploads/1709264239718/circle%402x.png" />
                     赢大奖：根据所得活力值，在兑换时间内(具体时间以积分商城提示为准)兑换奖品。
                   </div>
                 </div>
@@ -61,7 +61,7 @@
           </view>
         </div>
       </view>
-      <image v-if="showClose" src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1699867879319/icon_guanbi%402x.png" class="close" @click="() => (show = false)" />
+      <image v-if="showClose" src="https://udstatic.imeik.com/pcUploads/1699867879319/icon_guanbi%402x.png" class="close" @click="() => (show = false)" />
     </div>
   </uni-popup>
 </template>
@@ -118,7 +118,7 @@ export default {
       right: 0;
       width: 640rpx;
       height: 300rpx;
-      background: url('https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709263547037/rule-bg.png') no-repeat;
+      background: url('https://udstatic.imeik.com/pcUploads/1709263547037/rule-bg.png') no-repeat;
       background-size: 100% 100%;
       content: '';
     }
@@ -128,7 +128,7 @@ export default {
       left: 0;
       width: 640rpx;
       height: 40rpx;
-      background: url('https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1709281900053/%E7%9F%A9%E5%BD%A2%402x%20(1).png') no-repeat;
+      background: url('https://udstatic.imeik.com/pcUploads/1709281900053/%E7%9F%A9%E5%BD%A2%402x%20(1).png') no-repeat;
       background-size: 100% 100%;
       content: '';
     }

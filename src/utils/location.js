@@ -2,74 +2,132 @@
 
 import { getLocationByCoords, saveUserLocation } from '@/http/wx'
 import { lsGet, ls } from '@/utils/util'
+import coordsUtils from '@/utils/coords'
+
+// 缓存有效期：1分钟
+const LOCATION_CACHE_DURATION = 1 * 60 * 1000
+
 export default {
   /**
-   *
-   * @param {*} openSetting 拒绝授权后是否弹出再次获取弹窗
-   * @returns 百度地理位置信息
+   * 获取定位
+   * @param {Boolean} openSetting 是否弹出授权设置
+   * @param {String} remark 备注
+   * @param {String} rejectDesc 提示语
+   * @param {Boolean} useCache 是否使用缓存
    */
-  authorization(openSetting = true, isResolve, remark) {
-    const locationFlag = wx.getStorageSync('locationFlag')
+  authorization(openSetting = true, remark = '', rejectDesc = '', useCache = true) {
+    const cachedLocation = lsGet('location')
+    const cachedTime = lsGet('locationCacheTime')
+    const now = Date.now()
+
+    // 使用缓存
+    if (cachedLocation && cachedTime && now - cachedTime < LOCATION_CACHE_DURATION && useCache) {
+      console.log('使用缓存位置信息', cachedLocation)
+
+      const openId = lsGet('openId')
+      if (openId) {
+        saveUserLocation({
+          lat: cachedLocation.lat,
+          lng: cachedLocation.lng,
+          openId,
+          remark,
+          userCode: lsGet('userInfo')?.objectCode
+        })
+      }
+
+      return Promise.resolve(cachedLocation)
+    }
+
     return new Promise((resolve, reject) => {
+      console.log('请求定位授权[openSetting: %s, remark: %s, rejectDesc: %s]', openSetting, remark, rejectDesc)
       wx.authorize({
         scope: 'scope.userLocation',
+
         success: () => {
-          console.log('获取授权成功')
+          console.log('定位授权成功')
+
           uni.showLoading({
             title: '定位中...'
           })
-          wx.getLocation({
-            success: async (res) => {
-              console.log('获取当前初始位置成功', res)
-              uni.hideLoading()
-              try {
-                saveUserLocation({
-                  lat: res.latitude,
-                  lng: res.longitude,
-                  openId: lsGet('openId'),
-                  remark,
-                  userCode: lsGet('userInfo')?.objectCode
-                })
 
+          wx.getLocation({
+            type: 'gcj02',
+            isHighAccuracy: true,
+
+            success: async (res) => {
+              uni.hideLoading()
+
+              try {
+                const openId = lsGet('openId')
+
+                // if (!openId) {
+                //   throw new Error('未获取到openId')
+                // }
+                if (openId) {
+                  saveUserLocation({
+                    lat: res.latitude,
+                    lng: res.longitude,
+                    openId,
+                    remark,
+                    userCode: lsGet('userInfo')?.objectCode
+                  })
+                }
                 const info = await this.loadCity(res)
-                ls('location', {
+
+                const locationData = {
                   lat: res.latitude,
                   lng: res.longitude,
+                  ...res,
                   ...info
-                })
-                isResolve?.(info) || resolve(info)
+                }
+
+                // 缓存
+                ls('location', locationData)
+                ls('locationCacheTime', Date.now())
+
+                resolve(locationData)
               } catch (e) {
-                reject()
+                console.error('定位失败：', e)
+                reject(e)
               }
             },
+
             fail: (err) => {
-              console.log('获取当前初始位置失败', err)
               uni.hideLoading()
-              reject()
+              console.error('wx.getLocation失败', err)
+              reject(err)
             }
           })
         },
-        fail: (err) => {
-          console.log('获取授权失败', err)
-          wx.setStorageSync('locationFlag', 1)
-          if (openSetting && +locationFlag === 1) {
-            this.handleOpenSetting(resolve)
+
+        fail: () => {
+          console.log('未授权定位')
+
+          if (openSetting) {
+            this.handleOpenSetting(remark, rejectDesc).then(resolve).catch(reject)
           } else {
-            reject()
+            reject(new Error('用户拒绝定位授权'))
           }
         }
       })
     })
   },
+
   async loadCity({ longitude, latitude }) {
     return new Promise((resolve) => {
-      getLocationByCoords({ lng: longitude, lat: latitude })
+      getLocationByCoords({
+        lng: longitude,
+        lat: latitude
+      })
         .then((result) => {
           const cityName = result.data.cityName.replace('城区', '市')
-          resolve(Object.assign(result.data, { cityName }))
+          resolve({
+            ...result.data,
+            cityName
+          })
         })
         .catch(() => {
-          reject({
+          resolve({
             provinceCode: 110000,
             cityCode: 110100,
             areaCode: 110101,
@@ -80,28 +138,124 @@ export default {
         })
     })
   },
-  // 用户授权定位
-  handleOpenSetting(callback) {
-    uni.showModal({
-      title: '温馨提示',
-      content: '获取权限失败，需要获取您的地理位置才能为您提供更好的服务！是否授权获取地理位置？',
-      success: (res) => {
-        if (res.confirm) {
+
+  /**
+   * 打开授权设置
+   */
+  handleOpenSetting(remark = '', rejectDesc = '') {
+    return new Promise((resolve, reject) => {
+      uni.showModal({
+        title: '温馨提示',
+        content: `获取权限失败，需要获取您的地理位置才能为您提供${rejectDesc || '更好的服务'}！是否授权获取地理位置？`,
+
+        success: (res) => {
+          if (!res.confirm) {
+            reject(new Error('用户取消授权'))
+            return
+          }
+
           wx.openSetting({
-            success: (res) => {
-              if (res.authSetting['scope.userLocation']) {
-                // 用户同意授权
-                console.log('用户同意授权')
-                this.authorization(false, callback)
+            success: (settingRes) => {
+              if (settingRes.authSetting['scope.userLocation']) {
+                console.log('重新授权成功')
+
+                this.authorization(false, remark, rejectDesc, false).then(resolve).catch(reject)
               } else {
-                callback()
+                reject(new Error('用户未开启定位权限'))
               }
+            },
+
+            fail: (err) => {
+              reject(err)
             }
           })
-        } else {
-          callback()
         }
-      }
+      })
     })
+  },
+
+  /**
+   * 经纬度转地址
+   */
+  getAddressByLocation(latitude, longitude) {
+    const convertResult = coordsUtils.transformFromWGSToGCJ(latitude, longitude)
+
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: 'https://api.map.baidu.com/reverse_geocoding/v3/',
+        method: 'GET',
+
+        data: {
+          ak: 'KHlEdI8gQK1EOVwRmTlmnbx96tc4r2uA',
+          output: 'json',
+          coordtype: 'gcj02ll',
+          location: `${convertResult.latitude},${convertResult.longitude}`
+        },
+
+        success(res) {
+          if (res.data.status === 0) {
+            const result = res.data.result
+
+            resolve({
+              address: result.formatted_address,
+              province: result.addressComponent.province,
+              city: result.addressComponent.city,
+              district: result.addressComponent.district,
+              street: result.addressComponent.street,
+              streetNumber: result.addressComponent.street_number,
+              pois: result.pois || []
+            })
+          } else {
+            reject(new Error(res.data.message))
+          }
+        },
+
+        fail: reject
+      })
+    })
+  },
+
+  /**
+   * 地址转坐标
+   */
+  getLocationByAddress(address) {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: 'https://api.map.baidu.com/geocoding/v3/',
+        method: 'GET',
+
+        data: {
+          ak: 'KHlEdI8gQK1EOVwRmTlmnbx96tc4r2uA',
+          output: 'json',
+          address
+        },
+
+        success(res) {
+          if (res.data.status === 0) {
+            const location = res.data.result.location
+
+            const converted = coordsUtils.transformFromBaiduToGCJ(location.lat, location.lng)
+
+            resolve({
+              latitude: converted.latitude,
+              longitude: converted.longitude,
+              bdLatitude: location.lat,
+              bdLongitude: location.lng,
+              confidence: res.data.result.confidence,
+              level: res.data.result.level
+            })
+          } else {
+            reject(new Error(res.data.message))
+          }
+        },
+
+        fail: reject
+      })
+    })
+  },
+
+  clearLocationCache() {
+    ls('location', null)
+    ls('locationCacheTime', null)
   }
 }

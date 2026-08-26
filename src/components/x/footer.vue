@@ -39,7 +39,23 @@ export default {
         .exec()
     }, 200)
   },
-  created() {}
+  created() {},
+  methods: {
+    getFooterHeight() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const query = uni.createSelectorQuery().in(this)
+          query
+            .select('#footer')
+            .boundingClientRect((data) => {
+              console.log('🚀 ~ getFooterHeight ~ data:', data)
+              resolve(data?.height)
+            })
+            .exec()
+        }, 200)
+      })
+    }
+  }
 }
 </script>
 <style lang="scss" scoped>
@@ -48,7 +64,7 @@ export default {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 50;
+  z-index: 102;
   display: block;
   box-sizing: border-box;
   width: 100%;

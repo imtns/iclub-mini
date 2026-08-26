@@ -1,8 +1,8 @@
 <template>
   <button
     class="x-button"
-    :class="[type, disabled ? 'disabled' : '']"
-    :style="{ width, background, borderRadius: radius, height, lineHeight: height, fontSize, border, color }"
+    :class="[type]"
+    :style="{ padding, width, background, borderRadius: radius, height, lineHeight: height, fontSize, border, color, opacity: disabled ? '0.55' : '1' }"
     :loading="loading"
     :disabled="disabled"
     @click.stop="onClick"
@@ -19,6 +19,10 @@ export default {
     width: {
       type: String,
       default: '100%'
+    },
+    padding: {
+      type: String,
+      default: ''
     },
     border: {
       type: String,
@@ -71,16 +75,13 @@ export default {
   font-size: 28rpx;
   &.primary {
     color: white;
-    background: #3285f6;
+    background: #366bd5;
   }
   &.default {
-    color: #3285f6;
+    color: #366bd5;
     background: white;
   }
 
   @include flex-center;
-  &.disabled {
-    opacity: 0.55;
-  }
 }
 </style>

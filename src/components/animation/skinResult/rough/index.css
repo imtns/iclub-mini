@@ -1,0 +1,43 @@
+.blackhead,
+.blackhead .item,
+.pores,
+.pores .item {
+  display: flex;
+  justify-content: center;
+}
+
+.blackhead .item,
+.pores .item {
+  flex-direction: column;
+  align-items: center;
+}
+
+.blackhead .item:first-child,
+.pores .item:first-child {
+  margin-right: 168rpx;
+}
+
+.blackhead .item .image,
+.pores .item .image {
+  width: 124rpx;
+  height: 124rpx;
+  margin-bottom: 16rpx;
+}
+
+.blackhead .item .title,
+.pores .item .title {
+  color: #2a2a2a;
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+
+.blackhead .item .desc,
+.pores .item .desc {
+  color: #666;
+  font-size: 24rpx;
+  line-height: 24rpx;
+}
+
+.button-wrap {
+  text-align: center;
+}

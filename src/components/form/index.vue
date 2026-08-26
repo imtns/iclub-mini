@@ -107,7 +107,7 @@
           :model.sync="formModel"
           @updateRules="updateRules"
         />
-        <form-departmentAll-select
+        <!-- <form-departmentAll-select
           v-else-if="field.type === 'form-departmentAll-select'"
           :key="index"
           :class="[itemClass(index, field)]"
@@ -115,7 +115,7 @@
           :field="field"
           :model.sync="formModel"
           @updateRules="updateRules"
-        />
+        /> -->
 
         <slot name="tips" :field="field"></slot>
       </template>

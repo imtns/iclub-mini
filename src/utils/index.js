@@ -1,5 +1,6 @@
 // 获取当前小程序版本号(只线上能获取，开发版和预览版获取不到该参数)
 import { lsGet } from '@/utils/util'
+import moment from 'dayjs'
 export function getCurrentAppVersion() {
   const accountInfo = uni.getAccountInfoSync()
 
@@ -26,7 +27,28 @@ export function cropShareImage(url) {
   // 加上阿里云oss图片裁剪参数(先resize缩放成高200，然后crop裁剪成宽250高200 - 5:4的图片)
   return `${url}${url.includes('?') ? '&' : '?'}x-oss-process=image/resize,m_fixed,h_200,image/crop,g_center,w_250,h_200`
 }
+function getParamsWithoutQuestionMark(url) {
+  const queryIndex = url.indexOf('?')
+  // 找到问号后，返回问号后面的部分；如果没有问号则返回空字符串
+  return queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
+}
+export function addUserIdWhenShareWithoutLink(link) {
+  const user = lsGet('userInfo')
+  const openid = lsGet('openId')
+  console.log('1')
+  let query = getParamsWithoutQuestionMark(link)
 
+  query += `${query ? '&' : ''}shareLink=${encodeURIComponent(link)}&shareLinkTime=${moment().format('YYYY-MM-DD')}`
+
+  if (openid) {
+    query += `&openid=${openid}`
+  }
+
+  if (user && user.objectCode) {
+    query += `&inviteCode=${user.objectCode}`
+  }
+  return query
+}
 // 分享出去的链接，默认带上用户的objectCode
 export function addUserIdWhenShare(link) {
   const user = lsGet('userInfo')
@@ -38,7 +60,7 @@ export function addUserIdWhenShare(link) {
     link += `${link.includes('?') ? '&' : '?'}openid=${openid}`
   }
   if (!link.includes('shareLinkTime=')) {
-    link += `${link.includes('?') ? '&' : '?'}shareLinkTime=${new Date().getTime()}`
+    link += `${link.includes('?') ? '&' : '?'}shareLinkTime=${moment().format('YYYY-MM-DD')}`
   }
   if (user && !link.includes('inviteCode=')) {
     link += `${link.includes('?') ? '&' : '?'}inviteCode=${user.objectCode}`
@@ -104,4 +126,60 @@ export function base6ImageToTempPath(data, opt) {
       // uni.saveImageToPhotosAlbum()
     }
   })
+}
+
+export function goToVipMall(path, query) {
+  const user = lsGet('userInfo')
+  uni.navigateToMiniProgram({
+    appId: 'wxc79b15f37484aa70',
+    path: path,
+    extraData: {
+      token: lsGet('iclubUserToken3'),
+      appId: getCurrentAppId(),
+      avatar: user.headUrl,
+      nickName: user.nickName,
+      registerPage: query?.registerPage || '自主注册'
+    }
+  })
+}
+
+export function formatCount(num) {
+  // 数字为空、不是数字 → 直接返回
+  if (num == null || isNaN(num)) return '0'
+
+  // 小于 10000 → 原样展示
+  if (num < 10000) {
+    return num.toString()
+  }
+
+  // 大于等于 10000 → 展示 w，保留2位小数，去掉末尾0
+  const w = (num / 10000)
+    .toFixed(2)
+    .replace(/\.00$/, '') // 去掉 .00
+    .replace(/(\.\d)0$/, '$1') // 去掉末尾的0 如 1.00 → 1，1.09 → 1.09
+
+  return w + 'w'
+}
+
+export function formatTime(time) {
+  const now = moment()
+  const target = moment(time)
+  const diffSeconds = now.diff(target, 'second')
+  const diffMinutes = now.diff(target, 'minute')
+  const diffHours = now.diff(target, 'hour')
+  const diffDays = now.diff(target, 'day')
+
+  if (diffSeconds < 60) {
+    return `${diffSeconds}秒前`
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes}分钟前`
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`
+  } else if (diffDays <= 3) {
+    return `${diffDays}天前`
+  } else if (target.year() === now.year()) {
+    return target.format('MM-DD')
+  } else {
+    return target.format('YYYY-MM-DD HH:mm')
+  }
 }

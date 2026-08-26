@@ -137,7 +137,7 @@ export default {
       uni.$once('chooseDepartment', this.onDepChoose)
       // 当没有搜索到机构时，是否展示输入框（目前仅医生注册的时候展示）
       const showCustom = this.field.props && this.field.props.showCustom || false
-      uni.navigateTo({
+      this.go({
         url: `/pages/choose/department?name=${this.searchName || ''}&code=${this.code || ''}&showCustom=${showCustom ? 1 : 0}`
       })
     },

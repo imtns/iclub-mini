@@ -6,7 +6,7 @@
       "defaultDisplayBlock": true
     }
   },
-  "name": "qxcollege",
+  "name": "爱+iclub",
   "appid": "__UNI__54D91B4",
   "description": "",
   "versionName": "1.0.0",
@@ -64,14 +64,25 @@
     "permission": {
       "scope.userLocation": {
         "desc": "你的位置信息将用于小程序位置接口的效果展示"
+      },
+      "scope.camera": {
+        "desc": "你的相机将用于小程序内的拍照和扫码"
+      },
+      "scope.record": {
+        "desc": "你的麦克风将用于小程序内的语音识别"
       }
     },
     "lazyCodeLoading": "requiredComponents",
     "plugins": {
       "captcha": {
-        "version": "2.1.2",
+        "version": "2.1.5",
         //请选择小程序插件最新版本
         "provider": "wx1fe8d9a3cb067a75"
+      },
+      // 视频插件
+      "video-plugin": {
+        "version": "1.0.13",
+        "provider": "wx8d04ad0492dab24d"
       }
     },
     "requiredPrivateInfos": ["getLocation"]
@@ -99,6 +110,6 @@
     "devServer": {
       "https": false
     },
-    "title": "全轩课程"
+    "title": "爱+iclub"
   }
 }

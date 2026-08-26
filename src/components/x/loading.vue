@@ -1,18 +1,15 @@
 <template>
-  <div class="x-loading" :style="{ background, top }" :class="[theme]">
-    <div class="la-ball-spin">
-      <x-spin :text="text" :text-color="theme === 'dark' ? 'white' : '#7d7d7d'" />
-      <!-- <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div> -->
-    </div>
-    <!-- <image src="https://imeik-ibt.oss-cn-beijing.aliyuncs.com/iplus/img/loading.gif" /> -->
-  </div>
+  <view class="iclub-mask" :style="{ position }">
+    <view class="iclub-loader" :style="{ top }">
+      <view class="letter-wrapper">
+        <view v-for="(char, index) in letters" :key="index" class="char-box" :style="{ '--delay': index * 0.1 + 's' }">
+          <text class="char">{{ char }}</text>
+        </view>
+      </view>
+
+      <text class="loading-text">{{ text }}</text>
+    </view>
+  </view>
 </template>
 
 <script>
@@ -20,218 +17,134 @@ export default {
   props: {
     top: {
       type: String,
-      default: '50%'
+      default: '44%'
+    },
+    position: {
+      type: String,
+      default: 'fixed'
     },
     text: {
       type: String,
       default: '正在加载...'
-    },
-    background: {
-      type: String,
-      default: 'transparent'
-    },
-    theme: {
-      type: String,
-      default: 'white'
     }
   },
   data() {
-    return {}
+    return {
+      // 英文小写'i'配合大写，更有设计感
+      letters: ['I', 'C', 'L', 'U', 'B']
+    }
   },
-  computed: {},
-  watch: {},
   mounted() {},
-  created() {}
+  methods: {}
 }
 </script>
+
 <style lang="scss" scoped>
-.x-loading {
+.iclub-mask {
   position: fixed;
-  left: 50%;
-  z-index: 800;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* width: 150rpx;
-  height: 150rpx;
-  padding: 16px; */
-  width: 224rpx;
-  height: 224rpx;
-  /* background: #fff; */
-  border-radius: 32rpx;
-  /* background: rgba(0, 0, 0, 60%); */
-  /* border-radius: 12px; */
-  transform: translate(-50%, -50%);
-  transform: translate3d(-50%, -50%, 0);
-  &.dark {
-    /* background: black; */
+  // 磨砂玻璃遮罩
+  /* background-color: rgba(255, 255, 255, 40%);
+  backdrop-filter: blur(6px); */
+}
+
+.iclub-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 190rpx;
+  height: 190rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  // 柔和的卡片阴影
+  box-shadow: 0 24rpx 70rpx rgba(0, 18, 38, 10%);
+  @include position-center;
+}
+
+.letter-wrapper {
+  display: flex;
+  align-items: flex-end;
+  height: 60rpx; // 留出足够的跳跃高度
+  margin-bottom: 24rpx;
+}
+
+.char-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 4rpx;
+}
+
+.char {
+  /* ──────────────────────────────────────────────────
+     核心样式：实现图片中 Hollow（无填充、描边）的效果
+     ────────────────────────────────────────────────── */
+  color: transparent; // 文字本身设为透明
+  font-weight: 600; // 使用较粗的字体，描边效果更好看
+  font-size: 34rpx;
+  // Arial Black 或 Impact 这种粗体非常适合做描边
+  font-family: iclub-loading;
+  text-transform: uppercase;
+  opacity: 0.5; // 稍微降低整体不透明度，让描边更柔和
+
+  /* 物理跳跃动画 + 描边发光 */
+  animation: bounce-glow 1.2s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-delay: var(--delay);
+
+  // 使用 -webkit-text-stroke 实现精确的描边控制
+  // 注意：在 uni-app 小程序端，描边粗细建议使用 rpx 以适配不同屏幕
+  // 如果必须用 0.5px，请确保父元素没有缩放
+  -webkit-text-stroke: 0.5rpx #001226; // 颜色使用你指定的 #001226
+}
+
+// 物理投影，随跳动缩放
+/* .char-shadow {
+  width: 20rpx;
+  height: 5rpx;
+  margin-top: -8rpx;
+  background: rgba(0, 18, 38, 20%); // 使用 #001226 的半透明
+  border-radius: 50%;
+  filter: blur(2rpx);
+  animation: shadow-pulse 0.6s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-delay: var(--delay);
+} */
+
+.loading-text {
+  // 底部文字使用 #001226，保持视觉统一
+  color: #333;
+  font-size: 22rpx;
+  opacity: 0.8;
+}
+
+// ── 动画定义 ──
+
+@keyframes bounce-glow {
+  0%,
+  100% {
+    transform: translateY(0); // 落地挤压
   }
-  image {
-    width: 100%;
-    height: 100%;
+  50% {
+    transform: translateY(-22rpx); // 弹起拉伸
   }
-  .la-ball-spin,
-  .la-ball-spin > div {
-    position: relative;
-    box-sizing: border-box;
+}
+
+@keyframes shadow-pulse {
+  0%,
+  100% {
+    transform: scale(1.5); // 落地，影子变大
+    opacity: 0.2;
   }
-  .la-ball-spin {
-    display: block;
-    color: #fff;
-    font-size: 0;
-  }
-  .la-ball-spin.la-dark {
-    color: #333;
-  }
-  .la-ball-spin > div {
-    display: inline-block;
-    float: none;
-    background-color: currentcolor;
-    border: 0 solid currentcolor;
-  }
-  .la-ball-spin {
-    width: 32px;
-    height: 32px;
-  }
-  .la-ball-spin > div {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 8px;
-    height: 8px;
-    margin-top: -4px;
-    margin-left: -4px;
-    border-radius: 100%;
-    animation: ball-spin 1s infinite ease-in-out;
-  }
-  .la-ball-spin > div:nth-child(1) {
-    top: 5%;
-    left: 50%;
-    animation-delay: -1.125s;
-  }
-  .la-ball-spin > div:nth-child(2) {
-    top: 18%;
-    left: 81%;
-    animation-delay: -1.25s;
-  }
-  .la-ball-spin > div:nth-child(3) {
-    top: 50%;
-    left: 95%;
-    animation-delay: -1.375s;
-  }
-  .la-ball-spin > div:nth-child(4) {
-    top: 81%;
-    left: 81%;
-    animation-delay: -1.5s;
-  }
-  .la-ball-spin > div:nth-child(5) {
-    top: 94%;
-    left: 50%;
-    animation-delay: -1.625s;
-  }
-  .la-ball-spin > div:nth-child(6) {
-    top: 81%;
-    left: 18%;
-    animation-delay: -1.75s;
-  }
-  .la-ball-spin > div:nth-child(7) {
-    top: 49%;
-    left: 5%;
-    animation-delay: -1.875s;
-  }
-  .la-ball-spin > div:nth-child(8) {
-    top: 18%;
-    left: 18%;
-    animation-delay: -2s;
-  }
-  .la-ball-spin.la-sm {
-    width: 16px;
-    height: 16px;
-  }
-  .la-ball-spin.la-sm > div {
-    width: 4px;
-    height: 4px;
-    margin-top: -2px;
-    margin-left: -2px;
-  }
-  .la-ball-spin.la-2x {
-    width: 64px;
-    height: 64px;
-  }
-  .la-ball-spin.la-2x > div {
-    width: 16px;
-    height: 16px;
-    margin-top: -8px;
-    margin-left: -8px;
-  }
-  .la-ball-spin.la-3x {
-    width: 96px;
-    height: 96px;
-  }
-  .la-ball-spin.la-3x > div {
-    width: 24px;
-    height: 24px;
-    margin-top: -12px;
-    margin-left: -12px;
-  }
-  /*
-     * Animation
-     */
-  @keyframes ball-spin {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    20% {
-      opacity: 1;
-    }
-    80% {
-      transform: scale(0);
-      opacity: 0;
-    }
-  }
-  @keyframes ball-spin {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    20% {
-      opacity: 1;
-    }
-    80% {
-      transform: scale(0);
-      opacity: 0;
-    }
-  }
-  @keyframes ball-spin {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    20% {
-      opacity: 1;
-    }
-    80% {
-      transform: scale(0);
-      opacity: 0;
-    }
-  }
-  @keyframes ball-spin {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    20% {
-      opacity: 1;
-    }
-    80% {
-      transform: scale(0);
-      opacity: 0;
-    }
+  50% {
+    transform: scale(0.6); // 跳起，影子变小
+    opacity: 0.05;
   }
 }
 </style>

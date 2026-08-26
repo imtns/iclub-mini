@@ -103,3 +103,34 @@ image {
 ::-webkit-scrollbar {
   display: none;
 }
+.wx-slider-thumb {
+  display: none;
+}
+.comment-input {
+  .is-input-border {
+    border: none;
+  }
+  .uni-easyinput__content-textarea {
+    flex: auto !important;
+    min-height: 72rpx !important;
+    max-height: 396rpx !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 30rpx;
+    background: #f9f9f9 !important;
+  }
+}
+.publish-component {
+  position: relative;
+  top: -18rpx;
+}
+.load-status {
+  display: flex;
+  justify-content: center;
+  padding: 10rpx 0 40rpx;
+}
+
+.load-text {
+  color: #bbb;
+  font-size: 24rpx;
+}

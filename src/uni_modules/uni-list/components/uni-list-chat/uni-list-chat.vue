@@ -57,7 +57,7 @@
 	 * @property {String}  	badgePositon = [left|right]		角标位置，默认为 right
 	 * @property {String} 	link = [false｜navigateTo|redirectTo|reLaunch|switchTab] 是否展示右侧箭头并开启点击反馈，默认为false
 	 *  @value false	 	不开启
-	 *  @value navigateTo 	同 uni.navigateTo()
+	 *  @value navigateTo 	同 this.go()
 	 * 	@value redirectTo 	同 uni.redirectTo()
 	 * 	@value reLaunch   	同 uni.reLaunch()
 	 * 	@value switchTab  	同 uni.switchTab()

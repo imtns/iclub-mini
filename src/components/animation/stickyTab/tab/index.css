@@ -1,0 +1,37 @@
+.i-tabs-tab {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 12rpx;
+  text-align: center;
+}
+
+.i-tabs-tab-bar {
+  position: absolute;
+  bottom: 7rpx;
+  left: 50%;
+  display: block;
+  width: 32rpx;
+  height: 4rpx;
+  background: linear-gradient(1turn, #ff6890, #ff6eb2);
+  border-radius: 6rpx;
+  transform: translateX(-50%);
+}
+
+.i-tabs-tab-title {
+  box-sizing: border-box;
+  color: #fff;
+  font-size: 32rpx;
+  text-align: center;
+}
+
+.i-tabs-tab-title-current {
+  font-weight: 700;
+}
+
+.i-tabs-tab-scroll {
+  box-sizing: initial;
+}

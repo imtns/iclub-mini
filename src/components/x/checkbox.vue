@@ -1,7 +1,7 @@
 <template>
   <view class="x-checkbox" @click.prevent.stop="$emit('click')">
-    <image v-if="!value" src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1695190447815/icon_xuanze%402x.png" />
-    <image v-else src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1695190529419/icon_xuanze%402x%20(1).png" />
+    <image v-if="!value" src="https://udstatic.imeik.com/pcUploads/1695190447815/icon_xuanze%402x.png" />
+    <image v-else src="https://udstatic.imeik.com/pcUploads/1695190529419/icon_xuanze%402x%20(1).png" />
     <view v-if="$slots.default" class="text">
       <slot />
     </view>

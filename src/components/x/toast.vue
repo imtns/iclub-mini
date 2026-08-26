@@ -2,14 +2,22 @@
 <template>
   <view class="u-toast">
     <x-overlay :show="isShow">
-      <view class="u-toast__content"
-        :class="['u-type-' + tmpConfig.type, tmpConfig.type === 'loading' || tmpConfig.loading ? 'u-toast__content--loading' : '', tmpConfig.type !== '' ? 't' : '']">
-        <image v-if="tmpConfig.type === 'success'"
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAMAAADypuvZAAAAdVBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////li2ZAAAAAJnRSTlMA+xAOUszKxsjWVDb4BohDCeWcXhnx6uDSu6lqSx6Pint3PiknF9f12iYAAADUSURBVEjH7dLZDoIwEIVhKiCyln1R3HXe/xENQpyE0tRzS/jvv0zSHmtrjfVNJlFzF0TRCyLpkYYCxJzdr3FTwDzq0ewAc4pgE+cEm7eHm7DBTRHh5kqw2XWT2f9vnj5u+go3N8EGGKjOlKVmoK3eFEIk6YKRtd6Ew8/5oTpQoRhufFKRxMpA2ShlNDQ7Vno/c7AtNUcQzY+F2bLhgknxsSJSjEbxsQvNjEGR78jOZFhxRsMKNPyGqkGVx8agAMMKMKwQw4oNoNggajRYsq1y29paRx+yIDjkDRHLHwAAAABJRU5ErkJggg==" />
-        <image v-if="tmpConfig.type === 'warning'"
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAMAAADypuvZAAAAflBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////vroaSAAAAKXRSTlMA6Rr2zrz88MexppqJcVg+BOTe2NPCtquglI6DfnhgQy4pIxMKZ1BLNOBsApkAAADZSURBVEjH5dZHFoIwFEZhgoVmV3oVsbD/DXr4s4LLYaR3/k2SnPfi/E/rcco8ENqOqkNoZdEdIc+iHiFjkYvQeQ66WMRO72rRgNDNohO8XOWgfJktQ7HQiqGNkMdQImQYCoTODKVCF4ZCoStDmdCNoUhozVAu5DNUCMUM7YQ2DJVCCUOVUMBQLZQytBcK56CMoadQxFAjlDN0ECrmoB1DL6GSobdQxVArVDN0FNoz5Jpp7B2d3+rTtCdIhmAaRu4CM4Jsd/754PvJsKPovGl7HhxWH/nhsq/oC02OKNkGjJ8UAAAAAElFTkSuQmCC" />
-        <text class="u-toast__content__text" :class="['u-toast__content__text--' + tmpConfig.type]">{{ tmpConfig.message
-          }}</text>
+      <view
+        :style="{
+          marginTop: `${tmpConfig.offsetTop}`
+        }"
+        class="u-toast__content"
+        :class="['u-type-' + tmpConfig.type, tmpConfig.type === 'loading' || tmpConfig.loading ? 'u-toast__content--loading' : '', tmpConfig.type !== '' ? 't' : '']"
+      >
+        <image
+          v-if="tmpConfig.type === 'success'"
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAMAAADypuvZAAAAdVBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////li2ZAAAAAJnRSTlMA+xAOUszKxsjWVDb4BohDCeWcXhnx6uDSu6lqSx6Pint3PiknF9f12iYAAADUSURBVEjH7dLZDoIwEIVhKiCyln1R3HXe/xENQpyE0tRzS/jvv0zSHmtrjfVNJlFzF0TRCyLpkYYCxJzdr3FTwDzq0ewAc4pgE+cEm7eHm7DBTRHh5kqw2XWT2f9vnj5u+go3N8EGGKjOlKVmoK3eFEIk6YKRtd6Ew8/5oTpQoRhufFKRxMpA2ShlNDQ7Vno/c7AtNUcQzY+F2bLhgknxsSJSjEbxsQvNjEGR78jOZFhxRsMKNPyGqkGVx8agAMMKMKwQw4oNoNggajRYsq1y29paRx+yIDjkDRHLHwAAAABJRU5ErkJggg=="
+        />
+        <image
+          v-if="tmpConfig.type === 'warning'"
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAMAAADypuvZAAAAflBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////vroaSAAAAKXRSTlMA6Rr2zrz88MexppqJcVg+BOTe2NPCtquglI6DfnhgQy4pIxMKZ1BLNOBsApkAAADZSURBVEjH5dZHFoIwFEZhgoVmV3oVsbD/DXr4s4LLYaR3/k2SnPfi/E/rcco8ENqOqkNoZdEdIc+iHiFjkYvQeQ66WMRO72rRgNDNohO8XOWgfJktQ7HQiqGNkMdQImQYCoTODKVCF4ZCoStDmdCNoUhozVAu5DNUCMUM7YQ2DJVCCUOVUMBQLZQytBcK56CMoadQxFAjlDN0ECrmoB1DL6GSobdQxVArVDN0FNoz5Jpp7B2d3+rTtCdIhmAaRu4CM4Jsd/754PvJsKPovGl7HhxWH/nhsq/oC02OKNkGjJ8UAAAAAElFTkSuQmCC"
+        />
+        <text class="u-toast__content__text" :class="['u-toast__content__text--' + tmpConfig.type]">{{ tmpConfig.message }}</text>
       </view>
     </x-overlay>
   </view>
@@ -18,11 +26,12 @@
 <script>
 export default {
   name: 'x-toast',
-  data () {
+  data() {
     return {
       isShow: false,
       timer: null, // 定时器
       config: {
+        offsetTop: '0rpx',
         message: '', // 显示文本
         type: '', // 主题类型，primary，success，error，warning，black
         duration: 2000, // 显示的时间，毫秒
@@ -35,7 +44,7 @@ export default {
     }
   },
   computed: {
-    overlayStyle () {
+    overlayStyle() {
       const style = {
         justifyContent: 'center',
         alignItems: 'center',
@@ -46,10 +55,10 @@ export default {
       return style
     }
   },
-  onShow () {
+  onShow() {
     console.error('toast-show')
   },
-  created () {
+  created() {
     // 通过主题的形式调用toast，批量生成方法函数
     ;['primary', 'success', 'error', 'warning', 'default', 'loading'].forEach((item) => {
       this[item] = (message) =>
@@ -59,14 +68,16 @@ export default {
         })
     })
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this.clearTimer()
   },
   methods: {
     // 显示toast组件，由父组件通过this.$refs.xxx.show(options)形式调用
-    show (options) {
+    show(options) {
       // 不将结果合并到this.config变量，避免多次调用u-toast，前后的配置造成混乱
       this.tmpConfig = Object.assign(this.config, options)
+      if (!this.tmpConfig?.message) return
+      if (this.tmpConfig.message?.includes('captcha')) return
       //   console.log('this.tmpConfig', this.tmpConfig)
       // 清除定时器
       this.clearTimer()
@@ -79,10 +90,10 @@ export default {
       }, this.tmpConfig.duration)
     },
     // 隐藏toast组件，由父组件通过this.$refs.xxx.hide()形式调用
-    hide () {
+    hide() {
       this.clearTimer()
     },
-    clearTimer () {
+    clearTimer() {
       this.isShow = false
       // 清除定时器
       clearTimeout(this.timer)
@@ -96,7 +107,7 @@ export default {
 /* @import '../../libs/css/components.scss'; */
 
 $u-toast-color: #fff;
-$u-toast-border-radius: 16px;
+$u-toast-border-radius: 8px;
 $u-toast-border-background-color: rgba(0, 0, 0, 80%);
 $u-toast-border-font-size: 14px;
 $u-toast-border-padding: 10px 12px;
@@ -126,10 +137,8 @@ $u-toast-u-type-default-background-color: #585858;
 .u-toast {
   position: fixed;
   z-index: 99999;
-
   &__content {
     @include flex-center;
-
     &.t {
       display: flex;
       flex-direction: column;
@@ -138,7 +147,6 @@ $u-toast-u-type-default-background-color: #585858;
       font-size: 25rpx !important;
       background: rgba(0, 0, 0, 70%);
       border-radius: 20rpx;
-
       image {
         width: 52rpx;
         height: 52rpx;
@@ -149,7 +157,7 @@ $u-toast-u-type-default-background-color: #585858;
     position: relative;
     align-items: center;
     min-width: 230rpx;
-    max-width: 490rpx;
+    /* max-width: 490rpx; */
     padding: $u-toast-border-padding;
     color: $u-toast-color;
     text-align: center;

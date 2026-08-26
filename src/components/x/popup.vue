@@ -4,11 +4,11 @@
       <view class="header" :class="{ confirm: headerConfirm }">
         <template v-if="headerConfirm">
           <text style="color: rgba(150, 151, 153, 100%); font-weight: normal" @click="show = false">取消</text>
-          <text>{{ title }}</text>
+          <text class="title">{{ title }}</text>
           <text style="color: rgba(87, 107, 149, 100%); font-weight: normal" @click="show = false && $emit('confirm')">确认</text>
         </template>
         <template v-else>
-          <text>{{ title }}</text>
+          <text class="title">{{ title }}</text>
           <text class="iplus icon-close" @click="show = false" />
         </template>
       </view>
@@ -87,8 +87,17 @@ export default {
     }
   }
   .footer {
+    position: relative;
     width: 100%;
     margin-top: 46rpx;
+    &::before {
+      top: 0;
+      width: 750rpx;
+      height: 1rpx;
+      background: rgba(0, 0, 0, 10%);
+      content: '';
+      @include position-center-x;
+    }
     @include flex-center-y;
   }
 }

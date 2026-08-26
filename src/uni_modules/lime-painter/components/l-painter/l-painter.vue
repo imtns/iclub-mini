@@ -234,7 +234,7 @@ export default {
       const { width, height } = await this.painter.source(JSON.parse(JSON.stringify(args)))
       this.boundary.height = this.canvasHeight = height
       this.boundary.width = this.canvasWidth = width
-      await sleep(this.sleep)
+      // await sleep(this.sleep)
       // 可能会因为尺寸改变影响绘制上下文
       this.painter.setContext(this.ctx)
       await this.painter.render()
@@ -249,12 +249,15 @@ export default {
 
       this.$emit('done')
       this.done = true
+      console.log('this.isCanvasToTempFilePath', this.isCanvasToTempFilePath)
       if (this.isCanvasToTempFilePath) {
         this.canvasToTempFilePath()
           .then((res) => {
+            console.log('res', res)
             this.$emit('success', res.tempFilePath)
           })
           .catch((err) => {
+            console.log('err', err)
             this.$emit('fail', new Error(JSON.stringify(err)))
           })
       }

@@ -1,0 +1,15 @@
+/**
+ * HXM_CONTACT_SERVICE("1", "嗨小美-联系客服"),
+   MY_JOIN_COMMUNITY("2", "我的-加入社群"),
+   CONTACT_US_WECHAT_SERVICE("3", "联系我们-企微客服"),
+   ATTACHMENT_CONTACT_SERVICE("5", "附件页面-联系客服"),
+   ORDER_USE_CONTACT_SERVICE("6", "核销页面-联系客服核销"),
+ */
+
+export const QR = {
+  HXM_CONTACT_SERVICE: '1',
+  MY_JOIN_COMMUNITY: '2',
+  CONTACT_US_WECHAT_SERVICE: '3',
+  ATTACHMENT_CONTACT_SERVICE: '5',
+  ORDER_USE_CONTACT_SERVICE: '6'
+}

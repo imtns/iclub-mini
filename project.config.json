@@ -48,7 +48,7 @@
   "projectname": "iclub",
   "condition": {},
   "compileType": "miniprogram",
-  "libVersion": "2.24.7",
+  "libVersion": "3.4.10",
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2

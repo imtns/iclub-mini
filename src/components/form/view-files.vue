@@ -46,7 +46,7 @@ export default {
 
       const arr = typeof val === 'string' ? val.split(',') : val
 
-      this.fileList = arr.filter(i => {
+      this.fileList = arr.filter((i) => {
         return this.isImage(i) || this.isVideo(i)
       })
     },
@@ -70,7 +70,7 @@ export default {
 
     // 是否包含视频
     hasVideo() {
-      return this.fileList.filter(i => this.isVideo(i)).length !== 0
+      return this.fileList.filter((i) => this.isVideo(i)).length !== 0
     },
 
     // 预览
@@ -105,21 +105,22 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .view-files {
-    .file-item {
-      width: 160rpx;
-      height: 160rpx;
-      margin-top: 24rpx;
+.view-files {
+  .file-item {
+    width: 160rpx;
+    height: 160rpx;
+    margin-top: 24rpx;
 
-      &:not(:last-child) {
-        margin-right: 24rpx;
-      }
+    &:not(:last-child) {
+      margin-right: 24rpx;
+    }
 
-      image, video {
-        width: 100%;
-        height: 100%;
-        border-radius: 32rpx;
-      }
+    image,
+    video {
+      width: 100%;
+      height: 100%;
+      border-radius: 12rpx;
     }
   }
+}
 </style>

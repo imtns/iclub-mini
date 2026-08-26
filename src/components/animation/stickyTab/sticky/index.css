@@ -1,0 +1,36 @@
+.i-sticky {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.header {
+  position: sticky;
+  top: 37vw;
+  left: 0;
+  z-index: 999;
+  width: 100%;
+  background-color: #fff;
+  border-top-left-radius: 24rpx;
+  border-top-right-radius: 24rpx;
+  box-shadow: 0rpx -10rpx 8rpx 2rpx #f3e7e9;
+}
+
+.custom-sticky-tabs .first {
+  padding-left: 32rpx;
+}
+
+.custom-sticky-tabs .end {
+  padding-right: 32rpx;
+}
+
+.custom-sticky-tab {
+  height: 80rpx !important;
+}
+
+.custom-sticky-tab-title {
+  color: #2a2a2a !important;
+}
+
+.custom-sticky-tab-bar {
+  bottom: 0 !important;
+}

@@ -23,7 +23,7 @@
 
   .extraClass {
     margin: 16rpx 0;
-    color: #8E9296;
+    color: #8e9296;
     font-size: 24rpx;
     line-height: 34rpx;
     // display: none;
@@ -43,13 +43,15 @@
       line-height: unset;
     }
     .uni-forms-item__label {
-      height: auto !important;
+      height: 36px;
       padding: 0 !important;
       .label-text {
-        color: #29323D;
+        position: relative;
+        color: #29323d;
         font-weight: 400;
         font-size: 30rpx;
-        line-height: 60rpx;
+        line-height: 36px;
+
         // line-height: 42rpx;
       }
     }
@@ -59,7 +61,10 @@
       bottom: -30rpx !important;
       padding-left: 0 !important;
     }
-    input, picker, .uni-rate__icon-on, .uni-rate__icon {
+    input,
+    picker,
+    .uni-rate__icon-on,
+    .uni-rate__icon {
       height: 36px;
       line-height: 36px;
     }
@@ -82,7 +87,7 @@
       width: auto;
       height: 168rpx;
       padding: 24rpx;
-      border: 2rpx solid #EEE;
+      border: 2rpx solid #eee;
       border-radius: 16rpx;
     }
 
@@ -93,7 +98,7 @@
       margin-right: 0;
       padding: 24rpx;
       line-height: 44rpx;
-      border: 2rpx solid #F9F9F9;
+      border: 2rpx solid #f9f9f9;
       border-radius: 16rpx;
 
       &.is-checked {
@@ -102,12 +107,13 @@
       }
 
       .checklist-content .checklist-text {
-        color: #5A6067;
+        color: #5a6067;
         font-size: 28rpx;
         line-height: 40rpx;
       }
 
-      .checkbox__inner, .radio__inner {
+      .checkbox__inner,
+      .radio__inner {
         margin-top: 2px;
       }
     }

@@ -1,5 +1,12 @@
 <template>
-  <view v-if="showPopup" class="uni-popup" :class="[popupstyle, isDesktop ? 'fixforpc-z-index' : '']">
+  <view
+    v-if="showPopup"
+    class="uni-popup"
+    :class="[popupstyle, isDesktop ? 'fixforpc-z-index' : '']"
+    :style="{
+      zIndex: `${zIndex} !important`
+    }"
+  >
     <view @touchstart="touchstart">
       <uni-transition key="1" v-if="maskShow" name="mask" mode-class="fade" :styles="maskClass" :duration="duration" :show="showTrans" @click="onTap" />
       <uni-transition key="2" :mode-class="ani" name="content" :styles="transClass" :duration="duration" :show="showTrans" @click="onTap">
@@ -83,6 +90,10 @@ export default {
     maskBackgroundColor: {
       type: String,
       default: 'rgba(0, 0, 0, 0.6)'
+    },
+    zIndex: {
+      type: Number,
+      default: 2000
     }
   },
 
@@ -338,7 +349,7 @@ export default {
         left: 0,
         right: 0,
         bottom: 0,
-        'border-radius': '32rpx 32rpx 0rpx 0rpx',
+        'border-radius': '24rpx 24rpx 0rpx 0rpx',
         paddingBottom: this.safeAreaInsets + 'px',
         backgroundColor: this.bg
       }
@@ -416,7 +427,7 @@ export default {
 .uni-popup {
   position: fixed;
   /* #ifndef APP-NVUE */
-  z-index: 99;
+  z-index: 999;
 
   /* #endif */
   &.top,

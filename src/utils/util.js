@@ -10,7 +10,14 @@ const formatTime = (date) => {
   const second = date.getSeconds()
   return `${[year, month, day].map(formatNumber).join('/')} ${[hour, minute, second].map(formatNumber).join(':')}`
 }
-
+function isEmptyObject(obj) {
+  // 第一步：先校验是不是纯对象（排除数组、null、函数等）
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    return false
+  }
+  // 第二步：判断自有可枚举属性的数量
+  return Object.keys(obj).length === 0
+}
 const getQueryParam = (key) => {
   const reg = new RegExp('(^|&)' + key + '=([^&]*)(&|$)', 'i')
   const r = window.location.search.substr(1).match(reg)
@@ -68,7 +75,7 @@ const pad = (str, length = 2) => {
   return str.slice(-length)
 }
 const parser = {
-  yyyy: (dateObj) => {
+  YYYY: (dateObj) => {
     return pad(dateObj.year, 4)
   },
   yy: (dateObj) => {
@@ -111,7 +118,7 @@ const parser = {
     return dateObj.millisecond
   }
 }
-const formatDate = (date, format = 'yyyy-MM-dd') => {
+const formatDate = (date, format = 'YYYY-MM-dd') => {
   if (!date && date !== 0) {
     return ''
   }
@@ -125,7 +132,7 @@ const formatDate = (date, format = 'yyyy-MM-dd') => {
     second: date.getSeconds(),
     millisecond: date.getMilliseconds()
   }
-  const tokenRegExp = /yyyy|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/
+  const tokenRegExp = /YYYY|yy|MM|M|dd|d|hh|h|mm|m|ss|s|SSS|SS|S/
   let flag = true
   let result = format
   while (flag) {
@@ -226,7 +233,7 @@ const isLogin = () => {
 // 获取微信二维码进来的参数
 const getScene = (scene) => {
   // 当重新获取用户信息第一次进的时候,得到的%3D会变成%253D, 这里兼容一下
-  const newScene = scene.replace('%253D', '%3D')
+  const newScene = (scene || '').replace('%253D', '%3D')
   const str = decodeURIComponent(newScene).replace('?', '')
   const strArr = str.split('&').filter((item) => item)
   const result = {}
@@ -277,5 +284,6 @@ module.exports = {
   formatTime,
   formatDate,
   numberFormat,
-  getQueryParam
+  getQueryParam,
+  isEmptyObject
 }

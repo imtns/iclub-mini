@@ -1,6 +1,6 @@
 <template>
   <view class="x-picker">
-    <view v-if="readonly">
+    <view v-if="readonly" @click="$emit('click')">
       <uni-easyinput v-if="!$slots.default" :styles="styles" readonly disabled placeholder-style="font-size:30rpx" :placeholder="placeholder" :value="inputLabel" />
     </view>
     <view v-else-if="!isPicker" @click="$emit('click')">

@@ -85,7 +85,7 @@ export const EVENT_ID_ELEMENT_CLICK = 'element_click'
 
 // 上报配置
 export const trackConfig = {
-  'pages/home/home': {
+  'pages/home/index': {
     exposure: [
       {
         dataKeys: {}

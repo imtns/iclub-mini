@@ -1,7 +1,30 @@
-export function getOssSrc(src, width) {
+import { SM4Util } from '@/utils/sm4'
+import moment from 'dayjs'
+function splitOssImageUrl(src) {
+  if (!src || !src.includes('?x-oss-process=')) {
+    return {
+      baseUrl: src,
+      processStr: ''
+    }
+  }
+  const [baseUrl, processStr] = src.split('?x-oss-process=')
+  return { baseUrl, processStr }
+}
+export function getOssSrc(src, width = 400, defaultFormat = 'png') {
   if (!src) return src
-  let format = 'png'
-  const parts = src.split('.')
+  const CONSTANTS = {
+    DOMAIN_MAP: {
+      old: 'imeikud.oss-cn-beijing.aliyuncs.com',
+      new: 'udstatic.imeik.com'
+    }
+  }
+  let _src = splitOssImageUrl(src).baseUrl
+
+  if (_src.includes('aliyuncs')) {
+    _src = _src.replace('http://', 'https://').replace(CONSTANTS.DOMAIN_MAP.old, CONSTANTS.DOMAIN_MAP.new)
+  }
+  let format = defaultFormat
+  const parts = _src.split('.')
   const fileExtension = parts[parts.length - 1].toLowerCase()
 
   if (['jpg', 'jpeg'].includes(fileExtension)) {
@@ -10,8 +33,8 @@ export function getOssSrc(src, width) {
   if (uni.$detectWebp) {
     format = 'webp'
   }
-
-  return src + `?x-oss-process=image/resize,m_mfit,w_${width}/format,${format}`
+  // console.log('🚀 ~ getOssSrc ~ _src:', _src)
+  return _src + `?x-oss-process=image/resize,m_mfit,w_${width}/format,${format}`
 }
 export function addParametersToImageSrc(htmlContent, width = 1500) {
   if (!htmlContent) return ''
@@ -222,4 +245,81 @@ export const deepClone = (obj) => {
     }
   }
   return newObj
+}
+
+export function isInvalid(value) {
+  // 统一将值转换为字符串后检查，方便处理 'undefined' 等字符串情况
+  if (value === null || value === undefined) {
+    return true
+  }
+  // 检查空字符串、纯空白字符串、'undefined'、'null'
+  if (typeof value === 'string') {
+    return value.trim() === '' || value === 'undefined' || value === 'null'
+  }
+  // 其他情况（如数字、布尔值、布尔值等）暂时不视为无效，视需求可扩展
+  return false
+}
+
+export const getSecurityToken = ({ data, encryptIV, encryptKey }) => {
+  return new SM4Util().encryptCustom_CBC(
+    JSON.stringify({
+      uniqueFlag: getUniqID(),
+      callTime: Date.now(),
+      paramter: sortObjectKeys(data)
+    }),
+    encryptIV,
+    encryptKey
+  )
+}
+
+export const formatCommentTime = (time) => {
+  const now = moment()
+  const target = moment(time)
+  const diffSeconds = now.diff(target, 'second')
+  const diffMinutes = now.diff(target, 'minute')
+  const diffHours = now.diff(target, 'hour')
+  const diffDays = now.diff(target, 'day')
+
+  if (diffSeconds < 60) return '刚刚'
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
+  if (diffHours < 24) return `${diffHours}小时前`
+  if (diffDays <= 3) return `${diffDays}天前`
+
+  if (target.isSame(now, 'year')) {
+    return target.format('MM-DD HH:mm')
+  } else {
+    return target.format('YYYY-MM-DD HH:mm')
+  }
+}
+
+export function compareVersion(_v1, _v2) {
+  if (typeof _v1 !== 'string' || typeof _v2 !== 'string') return 0
+
+  const v1 = _v1.split('.')
+  const v2 = _v2.split('.')
+  const len = Math.max(v1.length, v2.length)
+
+  while (v1.length < len) {
+    v1.push('0')
+  }
+  while (v2.length < len) {
+    v2.push('0')
+  }
+
+  for (let i = 0; i < len; i++) {
+    const num1 = parseInt(v1[i], 10)
+    const num2 = parseInt(v2[i], 10)
+
+    if (num1 > num2) {
+      return 1
+    } else if (num1 < num2) {
+      return -1
+    }
+  }
+
+  return 0
+}
+
+export function getUID() {
+  return new Date().getTime().toString(36) + Math.random().toString(36).substr(2)
 }

@@ -1,5 +1,5 @@
 import { lsGet, lsDel } from './util'
-import store from '@/store/store'
+import store from '@/store/index'
 // 是否登录
 uni.hasLogin = () => {
   return !!lsGet('iclubUserToken3')

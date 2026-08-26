@@ -45,7 +45,7 @@ export default {
   methods: {
     goAddress() {
       if (this.submit) {
-        uni.navigateTo({
+        this.go({
           url: '/pages/mine/address/list'
         })
       }

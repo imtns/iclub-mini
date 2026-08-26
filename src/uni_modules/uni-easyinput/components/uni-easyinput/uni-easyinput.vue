@@ -8,6 +8,7 @@
         :class="{ 'input-padding': inputBorder }"
         :name="name"
         :value="val"
+        :confirmType="confirmType"
         :placeholder="placeholder"
         :placeholderStyle="placeholderStyle"
         :disabled="disabled"
@@ -16,6 +17,7 @@
         :focus="focused"
         :autoHeight="autoHeight"
         :cursor-spacing="cursorSpacing"
+        :adjust-position="adjustPosition"
         @input="onInput"
         @blur="_Blur"
         @focus="_Focus"
@@ -59,7 +61,7 @@
         ></uni-icons>
       </template>
       <template v-else-if="suffixIcon">
-        <!-- <image v-if="suffixIcon" src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1706600426835/icon-clear.png" /> -->
+        <!-- <image v-if="suffixIcon" src="https://udstatic.imeik.com/pcUploads/1706600426835/icon-clear.png" /> -->
         <uni-icons v-if="suffixIcon" class="content-clear-icon" :type="suffixIcon" color="#c0c4cc" @click="onClickIcon('suffix')" size="22"></uni-icons>
       </template>
       <template v-else>
@@ -69,11 +71,7 @@
           :class="{ 'is-textarea-icon': type === 'textarea' }"
           style="width: 24rpx; height: 24rpx"
           v-if="clearable && isVal && !disabled && type !== 'textarea' && focusShow"
-          :src="
-            theme === 'dark'
-              ? 'https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1706600426835/icon-clear.png'
-              : 'https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1706605413089/icon_guanbi%20%402x.png'
-          "
+          :src="theme === 'dark' ? 'https://udstatic.imeik.com/pcUploads/1706600426835/icon-clear.png' : 'https://udstatic.imeik.com/pcUploads/1706605413089/icon_guanbi%20%402x.png'"
         />
         <!-- <uni-icons
           v-if="clearable && isVal && !disabled && type !== 'textarea' && focusShow"

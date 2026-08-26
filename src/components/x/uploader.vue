@@ -25,7 +25,7 @@
         </view>
         <view v-if="deletable && item.deletable" data-index="index" class="x-uploader__preview-delete" @click.stop="deleteItem(index)">
           <!-- <uni-icons type="closeempty" class="x-uploader__preview-delete-icon" color="white" /> -->
-          <image src="https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1701338940500/close%402x.png" class="delete-image" mode="aspectFill" />
+          <image src="https://udstatic.imeik.com/pcUploads/1701338940500/close%402x.png" class="delete-image" mode="aspectFill" />
         </view>
       </view>
 
@@ -66,7 +66,7 @@ export default {
     useBeforeRead: Boolean,
     uploadIcon: {
       type: String,
-      default: 'https://imeikud.oss-cn-beijing.aliyuncs.com/pcUploads/1706670226639/ziliao_Impor%402x%20(1).png'
+      default: 'https://udstatic.imeik.com/pcUploads/1706670226639/ziliao_Impor%402x%20(1).png'
     },
     afterRead: null,
     beforeRead: null,

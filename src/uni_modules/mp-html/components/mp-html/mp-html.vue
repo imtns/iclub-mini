@@ -1,18 +1,18 @@
 <template>
-  <view id="_root" :class="(selectable?'_select ':'')+'_root'" :style="containerStyle">
+  <view id="_root" :class="(selectable ? '_select ' : '') + '_root'" :style="containerStyle">
     <slot v-if="!nodes[0]" />
     <!-- #ifndef APP-PLUS-NVUE -->
-    <node v-else :childs="nodes" :opts="[lazyLoad,loadingImg,errorImg,showImgMenu]" name="span" />
+    <node v-else :childs="nodes" :opts="[lazyLoad, loadingImg, errorImg, showImgMenu, selectable, imgCount]" name="span" />
     <!-- #endif -->
     <!-- #ifdef APP-PLUS-NVUE -->
-    <web-view ref="web" src="/uni_modules/mp-html/static/app-plus/mp-html/local.html" :style="'margin-top:-2px;height:' + height + 'px'" @onPostMessage="_onMessage" />
+    <web-view ref="web" src="/static/app-plus/mp-html/local.html" :style="'margin-top:-2px;height:' + height + 'px'" @onPostMessage="_onMessage" />
     <!-- #endif -->
   </view>
 </template>
 
 <script>
 /**
- * mp-html v2.2.0
+ * mp-html v2.5.1
  * @description 富文本组件
  * @tutorial https://github.com/jin-yufeng/mp-html
  * @property {String} container-style 容器的样式
@@ -32,21 +32,22 @@
  * @property {Boolean | Number} use-anchor 是否使用锚点链接
  * @event {Function} load dom 结构加载完毕时触发
  * @event {Function} ready 所有图片加载完毕时触发
- * @event {Function} imgTap 图片被点击时触发
- * @event {Function} linkTap 链接被点击时触发
+ * @event {Function} imgtap 图片被点击时触发
+ * @event {Function} linktap 链接被点击时触发
+ * @event {Function} play 音视频播放时触发
  * @event {Function} error 媒体加载出错时触发
  */
 // #ifndef APP-PLUS-NVUE
 import node from './node/node'
 // #endif
-const plugins=[]
-const Parser = require('./parser')
+import Parser from './parser'
+const plugins = []
 // #ifdef APP-PLUS-NVUE
 const dom = weex.requireModule('dom')
 // #endif
 export default {
   name: 'mp-html',
-  data () {
+  data() {
     return {
       nodes: [],
       // #ifdef APP-PLUS-NVUE
@@ -55,11 +56,18 @@ export default {
     }
   },
   props: {
+    imgCount: {
+      type: Number,
+      default: 0
+    },
     containerStyle: {
       type: String,
       default: ''
     },
-    content: String,
+    content: {
+      type: String,
+      default: ''
+    },
     copyLink: {
       type: [Boolean, String],
       default: true
@@ -98,30 +106,32 @@ export default {
     tagStyle: Object,
     useAnchor: [Boolean, Number]
   },
+  // #ifdef VUE3
+  emits: ['load', 'ready', 'imgtap', 'linktap', 'play', 'error', 'img-load'],
+  // #endif
   // #ifndef APP-PLUS-NVUE
   components: {
     node
   },
   // #endif
   watch: {
-    content (content) {
+    content(content) {
       this.setContent(content)
     }
   },
-  created () {
+  created() {
     this.plugins = []
-    for (let i = plugins.length; i--;) {
+    for (let i = plugins.length; i--; ) {
       this.plugins.push(new plugins[i](this))
     }
   },
-  mounted () {
+  mounted() {
     if (this.content && !this.nodes.length) {
       this.setContent(this.content)
     }
   },
-  beforeDestroy () {
+  beforeDestroy() {
     this._hook('onDetached')
-    clearInterval(this._timer)
   },
   methods: {
     /**
@@ -130,7 +140,7 @@ export default {
      * @param {String} selector scroll-view 的选择器
      * @param {String} scrollTop scroll-view scroll-top 属性绑定的变量名
      */
-    in (page, selector, scrollTop) {
+    in(page, selector, scrollTop) {
       // #ifndef APP-PLUS-NVUE
       if (page && selector && scrollTop) {
         this._in = {
@@ -148,7 +158,7 @@ export default {
      * @param {Number} offset 跳转位置的偏移量
      * @returns {Promise}
      */
-    navigateTo (id, offset) {
+    navigateTo(id, offset) {
       return new Promise((resolve, reject) => {
         if (!this.useAnchor) {
           reject(Error('Anchor is disabled'))
@@ -175,19 +185,20 @@ export default {
         // #ifdef MP-WEIXIN || MP-QQ || MP-TOUTIAO
         deep = '>>>'
         // #endif
-        const selector = uni.createSelectorQuery()
+        const selector = uni
+          .createSelectorQuery()
           // #ifndef MP-ALIPAY
           .in(this._in ? this._in.page : this)
           // #endif
-          .select((this._in ? this._in.selector : '._root') + (id ? `${deep}#${id}` : '')).boundingClientRect()
+          .select((this._in ? this._in.selector : '._root') + (id ? `${deep}#${id}` : ''))
+          .boundingClientRect()
         if (this._in) {
-          selector.select(this._in.selector).scrollOffset()
-            .select(this._in.selector).boundingClientRect()
+          selector.select(this._in.selector).scrollOffset().select(this._in.selector).boundingClientRect()
         } else {
           // 获取 scroll-view 的位置和滚动距离
           selector.selectViewport().scrollOffset() // 获取窗口的滚动距离
         }
-        selector.exec(res => {
+        selector.exec((res) => {
           if (!res[0]) {
             reject(Error('Label not found'))
             return
@@ -213,9 +224,9 @@ export default {
      * @description 获取文本内容
      * @return {String}
      */
-    getText (nodes) {
-      let text = '';
-      (function traversal (nodes) {
+    getText(nodes) {
+      let text = ''
+      ;(function traversal(nodes) {
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i]
           if (node.type === 'text') {
@@ -247,14 +258,59 @@ export default {
      * @description 获取内容大小和位置
      * @return {Promise}
      */
-    getRect () {
+    getRect() {
       return new Promise((resolve, reject) => {
-        uni.createSelectorQuery()
+        uni
+          .createSelectorQuery()
           // #ifndef MP-ALIPAY
           .in(this)
           // #endif
-          .select('#_root').boundingClientRect().exec(res => res[0] ? resolve(res[0]) : reject(Error('Root label not found')))
+          .select('#_root')
+          .boundingClientRect()
+          .exec((res) => (res[0] ? resolve(res[0]) : reject(Error('Root label not found'))))
       })
+    },
+
+    /**
+     * @description 暂停播放媒体
+     */
+    pauseMedia() {
+      for (let i = (this._videos || []).length; i--; ) {
+        this._videos[i].pause()
+      }
+      // #ifdef APP-PLUS
+      const command = 'for(var e=document.getElementsByTagName("video"),i=e.length;i--;)e[i].pause()'
+      // #ifndef APP-PLUS-NVUE
+      let page = this.$parent
+      while (!page.$scope) page = page.$parent
+      page.$scope.$getAppWebview().evalJS(command)
+      // #endif
+      // #ifdef APP-PLUS-NVUE
+      this.$refs.web.evalJs(command)
+      // #endif
+      // #endif
+    },
+
+    /**
+     * @description 设置媒体播放速率
+     * @param {Number} rate 播放速率
+     */
+    setPlaybackRate(rate) {
+      this.playbackRate = rate
+      for (let i = (this._videos || []).length; i--; ) {
+        this._videos[i].playbackRate(rate)
+      }
+      // #ifdef APP-PLUS
+      const command = 'for(var e=document.getElementsByTagName("video"),i=e.length;i--;)e[i].playbackRate=' + rate
+      // #ifndef APP-PLUS-NVUE
+      let page = this.$parent
+      while (!page.$scope) page = page.$parent
+      page.$scope.$getAppWebview().evalJS(command)
+      // #endif
+      // #ifdef APP-PLUS-NVUE
+      this.$refs.web.evalJs(command)
+      // #endif
+      // #endif
     },
 
     /**
@@ -262,7 +318,7 @@ export default {
      * @param {String} content html 内容
      * @param {Boolean} append 是否在尾部追加
      */
-    setContent (content, append) {
+    setContent(content, append) {
       if (!append || !this.imgList) {
         this.imgList = []
       }
@@ -281,27 +337,42 @@ export default {
         this.$emit('load')
       })
 
-      // 等待图片加载完毕
-      let height
-      clearInterval(this._timer)
-      this._timer = setInterval(() => {
-        this.getRect().then(rect => {
+      if (this.lazyLoad || this.imgList._unloadimgs < this.imgList.length / 2) {
+        // 设置懒加载，每 350ms 获取高度，不变则认为加载完毕
+        let height = 0
+        const callback = (rect) => {
+          if (!rect || !rect.height) rect = {}
           // 350ms 总高度无变化就触发 ready 事件
           if (rect.height === height) {
             this.$emit('ready', rect)
-            clearInterval(this._timer)
+          } else {
+            height = rect.height
+            setTimeout(() => {
+              this.getRect().then(callback).catch(callback)
+            }, 350)
           }
-          height = rect.height
-        }).catch(() => { })
-      }, 350)
+        }
+        this.getRect().then(callback).catch(callback)
+      } else {
+        // 未设置懒加载，等待所有图片加载完毕
+        if (!this.imgList._unloadimgs) {
+          this.getRect()
+            .then((rect) => {
+              this.$emit('ready', rect)
+            })
+            .catch(() => {
+              this.$emit('ready', {})
+            })
+        }
+      }
       // #endif
     },
 
     /**
      * @description 调用插件钩子函数
      */
-    _hook (name) {
-      for (let i = plugins.length; i--;) {
+    _hook(name) {
+      for (let i = plugins.length; i--; ) {
         if (this.plugins[i][name]) {
           this.plugins[i][name]()
         }
@@ -312,14 +383,22 @@ export default {
     /**
      * @description 设置内容
      */
-    _set (nodes, append) {
-      this.$refs.web.evalJs('setContent(' + JSON.stringify(nodes) + ',' + JSON.stringify([this.containerStyle.replace(/(?:margin|padding)[^;]+/g, ''), this.errorImg, this.loadingImg, this.pauseVideo, this.scrollTable, this.selectable]) + ',' + append + ')')
+    _set(nodes, append) {
+      this.$refs.web.evalJs(
+        'setContent(' +
+          JSON.stringify(nodes).replace(/%22/g, '') +
+          ',' +
+          JSON.stringify([this.containerStyle.replace(/(?:margin|padding)[^;]+/g, ''), this.errorImg, this.loadingImg, this.pauseVideo, this.scrollTable, this.selectable]) +
+          ',' +
+          append +
+          ')'
+      )
     },
 
     /**
      * @description 接收到 web-view 消息
      */
-    _onMessage (e) {
+    _onMessage(e) {
       const message = e.detail.data[0]
       switch (message.action) {
         // web-view 初始化完毕
@@ -337,9 +416,13 @@ export default {
           break
         // 所有图片加载完毕
         case 'onReady':
-          this.getRect().then(res => {
-            this.$emit('ready', res)
-          }).catch(() => { })
+          this.getRect()
+            .then((res) => {
+              this.$emit('ready', res)
+            })
+            .catch(() => {
+              this.$emit('ready', {})
+            })
           break
         // 总高度发生变化
         case 'onHeightChange':
@@ -373,9 +456,9 @@ export default {
                 plus.runtime.openWeb(href)
               }
             } else {
-              uni.navigateTo({
+              this.go({
                 url: href,
-                fail () {
+                fail() {
                   uni.switchTab({
                     url: href
                   })
@@ -385,6 +468,9 @@ export default {
           }
           break
         }
+        case 'onPlay':
+          this.$emit('play')
+          break
         // 获取到锚点的偏移量
         case 'getOffset':
           if (typeof message.offset === 'number') {

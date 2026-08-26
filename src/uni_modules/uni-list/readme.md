@@ -221,7 +221,7 @@ direction		| String	|row		|	排版方向，可选值，row:水平排列;  column
 
 属性名				|	说明
 :-:					|	:-:
-navigateTo 	| 	同 uni.navigateTo()
+navigateTo 	| 	同 this.go()
 redirectTo 	|	同 uni.reLaunch()
 reLaunch		|	同 uni.reLaunch()
 switchTab  	|	同 uni.switchTab()
@@ -300,7 +300,7 @@ avatarList 		|Array	 	|-			|	头像组，格式为 [{url:''}]
 
 属性名		|	说明
 :-:			|	:-:
-navigateTo 	| 	同 uni.navigateTo()
+navigateTo 	| 	同 this.go()
 redirectTo 	|	同 uni.reLaunch()
 reLaunch	|	同 uni.reLaunch()
 switchTab  	|	同 uni.switchTab()

@@ -1,5 +1,5 @@
 <template name="regionPicker">
-  <view class="region-list">
+  <view class="region-list" :class="{ 'region-list--flat': flat }">
     <view v-if="!onlySlot" class="item">所在城市</view>
 
     <picker class="picker" mode="multiSelector" :range="range" :value="dataValue" :disabled="disabled" @change="regionChange" @columnchange="regionChangeCol" @cancel="regionCancel">
@@ -12,7 +12,6 @@
 </template>
 
 <script>
-// import { cityTree } from './region-picker.js'
 import { mapState } from 'vuex'
 export default {
   name: 'regionPicker',
@@ -32,7 +31,9 @@ export default {
       type: Number,
       default: 2
     },
-    onlySlot: Boolean
+    onlySlot: Boolean,
+    // 扁平模式：去掉自带下划线/行高/内边距，由外层容器控制布局
+    flat: Boolean
   },
   data() {
     return {
@@ -43,46 +44,54 @@ export default {
     }
   },
   computed: {
-    ...mapState(['cityTree'])
+    ...mapState({
+      cityTree: state => state.location.cityTree
+    })
   },
   watch: {
     inputValue: {
       handler(nv, ov) {
         console.log('🚀 ~ handler ~ nv:', nv)
-        if (JSON.stringify(nv) !== JSON.stringify(ov)) {
+        if (JSON.stringify(nv) !== JSON.stringify(ov) && nv) {
           this.valueFormat()
           this.rangeSet()
           this.regionChange({ detail: { value: this.dataValue } })
         }
       },
       immediate: true
-    }
-  },
-  mounted() {
-    // cityTree().then((res) => {
-    const res = this.cityTree
-    console.log('res', res)
-    if (this.allowEmpty) {
-      res.unshift({
-        fullname: '全国',
-        name: '全国',
-        code: '',
-        subRegin: [
-          {
-            fullname: '',
-            name: '',
-            code: '',
-            subRegin: []
+    },
+    cityTree: {
+      handler(value) {
+        console.log('city-tree-value:', value)
+        if (Object.keys(value).length > 0) {
+          const treeCopy = JSON.parse(JSON.stringify(value))
+          if (this.allowEmpty) {
+            treeCopy.unshift({
+              fullname: '全国',
+              name: '全国',
+              code: '',
+              subRegin: [
+                {
+                  fullname: '',
+                  name: '',
+                  code: '',
+                  subRegin: []
+                }
+              ]
+            })
           }
-        ]
-      })
+          this.zonesTree = treeCopy
+          this.valueFormat()
+          this.rangeSet()
+          if (this.dataValue.length && !this.allowEmpty) {
+            this.regionChange({ detail: { value: this.dataValue } })
+          }
+        }
+      },
+      immediate: true
     }
-    this.zonesTree = res
-    this.valueFormat()
-    this.rangeSet()
-    this.regionChange({ detail: { value: this.dataValue } })
-    // })
   },
+
   methods: {
     valueFormat(type) {
       let value = this.inputValue || ''
@@ -139,13 +148,16 @@ export default {
 
     rangeSet() {
       const zonesAry = this.depth === 3 ? [[], [], []] : [[], []]
+      // dataValue 可能为空数组，兜底取 0，保证首次打开就渲染出市/区子列
+      const d0 = this.dataValue[0] || 0
+      const d1 = this.dataValue[1] || 0
       this.zonesTree.forEach((sv, si) => {
         zonesAry[0].push(sv.name)
-        if (si === this.dataValue[0]) {
+        if (si === d0) {
           sv.subRegin.forEach((cv, ci) => {
             zonesAry[1].push(cv.name)
             if (this.depth === 3) {
-              if (ci === this.dataValue[1]) {
+              if (ci === d1) {
                 cv.subRegin.forEach((zv, zi) => {
                   zonesAry[2].push(zv.name)
                 })
@@ -160,36 +172,42 @@ export default {
 
     regionChange(e) {
       const v = e.detail.value
+
+      const safeV = [v[0], this.dataValue[0] !== v[0] ? 0 : v[1], this.dataValue[0] !== v[0] || this.dataValue[1] !== v[1] ? 0 : v[2]]
+
       const value = []
       const code = []
       let data = {}
 
-      // 省
-      const sv = this.zonesTree[v[0]]
+      const sv = this.zonesTree[safeV[0]]
       if (sv) {
         value.push(sv?.name)
         code.push(sv?.code)
         data = JSON.parse(JSON.stringify(sv))
         let cv
-        // 市
         if (sv?.subRegin.length) {
-          cv = sv.subRegin[v[1]]
+          cv = sv.subRegin[safeV[1]]
           value.push(cv?.name)
           code.push(cv?.code)
           data = JSON.parse(JSON.stringify(cv))
         }
 
-        // 区
-        if (this.depth === 3 && cv?.subRegin?.length && cv?.subRegin[v[2]]) {
-          const zv = cv.subRegin[v[2]]
+        if (this.depth === 3 && cv?.subRegin?.length && cv?.subRegin[safeV[2]]) {
+          const zv = cv.subRegin[safeV[2]]
           value.push(zv?.name)
           code.push(zv?.code)
           data = JSON.parse(JSON.stringify(zv))
         }
-        e.detail = { code: code, value: value, data: data }
+
+        e.detail = { code, value, data }
         this.address = sv.name + ',' + data.name
         this.addressCode = data.code
+
+        // 关键：用 safeV 更新 dataValue 并刷新 range
+        this.dataValue = [...safeV]
+        this.rangeSet()
       }
+
       this.$emit('change', this.address)
       this.$emit('GetKye', this.addressCode)
       this.$emit('data', data)
@@ -219,6 +237,18 @@ export default {
 </script>
 
 <style lang="scss">
+.region-list.region-list--flat {
+  display: block;
+  padding-bottom: 0;
+  line-height: normal;
+  border-bottom: none;
+
+  .picker {
+    display: block;
+    width: 100%;
+  }
+}
+
 .region-list {
   display: flex;
   flex-direction: row;

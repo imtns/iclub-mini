@@ -1,18 +1,16 @@
-## C端爱+小程序
+## C端用户四级查询小程序
 
-### 首次安装
+### 首次
 
-node版本: 14
-
-```node
-  npm install --legacy-peer-deps
+```
+npm install
 ```
 
 ### 本地开发(分两步)
 
 #### 一、run
 
-npm run test  启动
+npm run test // test环境
 
 #### 二、打开"微信开发者工具"，然后打开dist/dev/mp-weixin目录
 
@@ -29,6 +27,6 @@ npm run build // 连线上环境，自动build并打开"微信开发者工具"
 npm run build:test // 连test环境，自动build并打开"微信开发者工具"
 ```
 
-### 打包后自动提交预览版
+**提交审核时，因为小程序中包含需要资质才能用的AI相关功能，所以审核一般会被拒，此时，需要在OSS文件夹中，更改小程序配置文件"isShenHe",  将isShenHe 更改为true后提审，审核后将isShenHe还原**
 
-不是不行，vue-cli有提供相应命令，但是不建议使用，因为每次打包后，用开发者工具测试一遍再用开发者工具上传预览版比较靠谱~
+oss配置文件地址：https://imeikud.oss-cn-beijing.aliyuncs.com/iclub/config_test.json

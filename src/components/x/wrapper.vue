@@ -1,5 +1,6 @@
 <template>
   <div class="container" :style="{ background: bg, 'padding-bottom': footer ? `calc(${pb}rpx + env(safe-area-inset-bottom))` : 0 }">
+    <x-loading v-if="loading" :top="loadingTop" />
     <uni-transition :show="show">
       <slot />
     </uni-transition>
@@ -9,7 +10,12 @@
 <script>
 export default {
   props: {
+    loading: Boolean,
     footer: Boolean,
+    loadingTop: {
+      type: String,
+      default: '44%'
+    },
     pb: {
       type: Number,
       default: 250
@@ -25,13 +31,23 @@ export default {
     }
   },
   computed: {},
-  watch: {},
+  watch: {
+    loading(newVal) {
+      if (!newVal) {
+        // 加载完成后显示内容
+        setTimeout(() => {
+          this.show = true
+        }, 300)
+      }
+    }
+  },
   mounted() {},
   created() {},
   onReady() {
     /**
      * 延迟300ms，不然页面初始化显示会样式错乱闪烁0.5秒
      */
+    if (this.loading) return
     setTimeout(() => {
       this.show = true
     }, 300)

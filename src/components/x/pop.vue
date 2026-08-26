@@ -1,20 +1,27 @@
 <template>
-  <div class="x-pop">
+  <div class="x-pop" :style="{ zIndex }">
     <uni-popup ref="pop" type="center" :is-mask-click="false" :mask-background-color="maskColor">
       <view class="pop-content" :style="{ background: transparent ? '' : '#fff' }">
-        <view class="pop-content-text"> <slot /></view>
+        <view v-if="title" class="pop-content-title">{{ title }}</view>
+        <view class="pop-content-text" :style="{ paddingTop: !title ? '48rpx' : 0, textAlign: contentAlign }"> <slot /></view>
         <view v-if="footer" class="bottom">
           <view class="line" />
           <view class="btns">
-            <view v-if="cancel" class="btn cancel" @click="onCancel">{{ cancelText }}</view>
+            <view v-if="cancel" class="btn cancel" @click.stop="onCancel">{{ cancelText }}</view>
             <view class="btn">
-              <x-btn v-if="!$slots.footer" type="default" :loading="loading" @click="$emit('confirm')">
+              <x-btn v-if="!$slots.footer" type="default" :loading="loading" @click.stop="$emit('confirm')">
                 {{ confirmText }}
               </x-btn>
               <slot v-else name="footer" />
             </view>
           </view>
         </view>
+        <image
+          v-if="showClose"
+          src="https://udstatic.imeik.com/pcUploads/1699867879319/icon_guanbi%402x.png"
+          style="position: absolute; bottom: -100rpx; left: 50%; width: 66rpx; height: 64rpx; transform: translateX(-50%)"
+          @click.stop="show = false"
+        />
       </view>
     </uni-popup>
   </div>
@@ -23,7 +30,12 @@
 <script>
 export default {
   props: {
+    zIndex: {
+      type: [String, Number],
+      default: 1000
+    },
     loading: Boolean,
+    showClose: Boolean,
     footer: {
       type: Boolean,
       default: true
@@ -35,6 +47,11 @@ export default {
     },
     cancel: Boolean,
     value: Boolean,
+    title: String,
+    contentAlign: {
+      type: String,
+      default: 'center'
+    },
     cancelText: {
       type: String,
       default: '取消'
@@ -86,15 +103,22 @@ export default {
 </style>
 <style lang="scss" scoped>
 .x-pop {
-  position: relative;
+  position: fixed;
   .pop-content {
     position: relative;
     top: -60rpx;
     width: 622rpx;
     /* height: 304rpx; */
     border-radius: 40rpx;
+    &-title {
+      color: #323233;
+      font-size: 36rpx;
+      font-weight: 600;
+      padding: 48rpx 0 32rpx;
+      text-align: center;
+    }
     &-text {
-      padding: 48rpx 44rpx;
+      padding: 48rpx;
       color: #323233;
       font-size: 32rpx;
       text-align: center;
@@ -110,7 +134,6 @@ export default {
         flex: 1;
         height: 96rpx;
         color: #366bd5;
-        font-weight: 400;
         font-size: 32rpx;
         > x-btn {
           width: 100%;

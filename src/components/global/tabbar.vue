@@ -2,7 +2,8 @@
   <view class="tabbar-container">
     <view class="shadow" />
     <view v-if="!hideTab" class="tabbar-container-content" :style="{ paddingBottom: !sysInfo.model.includes('iPhone') ? '20rpx' : `calc(env(safe-area-inset-bottom) - 10rpx)` }">
-      <view v-for="(item, index) in tabbarList" :key="index" class="tabbar-item" :class="[item.centerItem ? ' center-item' : '']" @click="changeItem(item)">
+      <view v-for="(item, index) in tabbarList" :key="index" class="tabbar-item" :class="[item.centerItem ? ' center-item' : '']" @tap="changeItem(item)">
+        <!-- <div v-if="item.index == 3 && isMallTaskShowTip" class="notify" /> -->
         <view class="item-top"><image :src="currentIndex == item.index ? item.selectIcon : item.icon"></image></view>
         <view class="item-bottom" :class="[currentIndex == item.index ? 'item-active' : '']">
           <text>{{ item.text }}</text>
@@ -14,6 +15,10 @@
 
 <script>
 import { sysInfo } from '@/utils/sysInfo'
+import { subscribeMessage } from '@/utils/subscribe'
+import { mallSubscribeIds } from '@/dict/subscribe'
+import { mapGetters, mapState } from 'vuex'
+import { ls } from '@/utils/util'
 export default {
   props: {
     value: {
@@ -37,9 +42,9 @@ export default {
         {
           index: 1,
           path: '/pages/product/index',
-          icon: '/static/tabBar/icon-pinpai.png',
-          selectIcon: '/static/tabBar/icon-pinpai-active.png',
-          text: '品牌馆',
+          icon: '/static/tabBar/icon-hot.png',
+          selectIcon: '/static/tabBar/icon-hot-active.png',
+          text: '热门',
           centerItem: false
         },
         {
@@ -47,15 +52,15 @@ export default {
           path: '/pages/auth/index',
           icon: '/static/tabBar/icon-scan.png',
           selectIcon: '/static/tabBar/icon-scan.png',
-          text: '扫码验真',
+          text: '产品溯源',
           centerItem: true
         },
         {
           index: 3,
-          path: '/pages/jifen/index',
-          icon: '/static/tabBar/icon-jifen.png',
-          selectIcon: '/static/tabBar/icon-jifen-active.png',
-          text: '权益中心',
+          path: '/pages/points/index',
+          icon: '/static/tabBar/icon-pinpai.png',
+          selectIcon: '/static/tabBar/icon-pinpai-active.png',
+          text: '品牌馆',
           centerItem: false
         },
         {
@@ -71,6 +76,11 @@ export default {
     }
   },
   computed: {
+    ...mapState({
+      commonConfig: state => state.config.commonConfig,
+      isLogin: state => state.user.isLogin
+    }),
+    ...mapGetters(['isMallTaskShowTip']),
     currentIndex: {
       get() {
         return this.value
@@ -87,7 +97,7 @@ export default {
     })
   },
   methods: {
-    changeItem(item) {
+    async changeItem(item) {
       this.currentIndex = item.index
     }
   }
@@ -190,6 +200,17 @@ export default {
   .center-item .item-top image {
     width: 100%;
     height: 100%;
+  }
+  .notify {
+    position: absolute;
+    top: 5rpx;
+    right: 52rpx;
+    z-index: 1;
+    width: 15rpx;
+    height: 15rpx;
+    background: #f4334a;
+    border-radius: 50%;
+    @include flex-center;
   }
 }
 </style>
