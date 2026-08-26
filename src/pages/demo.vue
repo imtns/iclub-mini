@@ -169,6 +169,7 @@
         <button class="popup-card__btn" type="primary" @click="closePopup">知道了</button>
       </view>
     </uni-popup>
+    <button open-type="share" @click="handleShare">点击分享按钮</button>
   </view>
 </template>
 
@@ -178,10 +179,26 @@
 
 export default {
   data() {
-    return {};
+    return {
+      shareInfo: {
+        title: "MBTI 模块 DEMO",
+        path: "/pages/demo",
+        imageUrl: "https://imeikud.oss-cn-beijing.aliyuncs.com/compressed/10.jpeg",
+        //分享朋友圈的缩略图参数
+        timelineImage: "https://imeikud.oss-cn-beijing.aliyuncs.com/compressed/12.jpeg",
+      },
+    };
   },
 
   methods: {
+    handleShare() {
+      // 点击的时候设置分享参数
+      this.shareInfo = {
+        buttonTitle: "MBTI 模块 DEMO-点击示例",
+        path: "/pages/demo?a=1&b=2",
+        buttonImage: "https://imeikud.oss-cn-beijing.aliyuncs.com/compressed/11.jpeg",
+      };
+    },
     /**
      * 打开 Popup
      * 支持：top / left / bottom / right / center
