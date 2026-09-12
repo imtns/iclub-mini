@@ -3,270 +3,581 @@
   font-family: Pangmenzhengdao; /* 指定字体名称 */
   src: url("https://udstatic.imeik.com/pcUploads/1712648373491/pangmenzhengdao.ttf");
 }
-.game-main{
+.input-placeholder {
+  color: #ccc;
+}
+.form-wrapper {
+  box-sizing: border-box;
+  padding: 48rpx 48rpx 10rpx;
+  background: white;
+  border-radius: 16rpx;
+}
+.form-wrapper .uni-forms-item__inner {
+  padding-bottom: 48rpx !important;
+}
+.form-wrapper .uni-forms-item__label {
+  height: 42rpx;
+  margin-bottom: 24rpx !important;
+  padding: 0 !important;
+}
+.form-wrapper .uni-forms-item__label .label-text {
+  color: #29323d;
+  font-weight: bold;
+  font-size: 30rpx;
+}
+.form-wrapper .uni-forms-item .uni-easyinput__content-input {
+  width: 100%;
+  height: 88rpx !important;
+  color: #5a6067;
+  font-size: 32rpx;
+  border-radius: 16rpx;
+}
+.form-wrapper .uni-forms-item .uni-easyinput__content.is-input-border {
+  border-radius: 16rpx;
+}
+.form-wrapper .uni-forms-item .uni-error-message {
+  bottom: 0rpx;
+  color: #f4334a;
+  font-size: 24rpx;
+}
+view,
+text {
+  box-sizing: border-box;
+}
+checkbox .wx-checkbox-input {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 4rpx;
+}
+/* checkbox选中后样式  */
+checkbox .wx-checkbox-input.wx-checkbox-input-checked {
+  background: #356ad3;
+  border-color: #356ad3;
+}
+/* checkbox选中后图标样式  */
+checkbox .wx-checkbox-input.wx-checkbox-input-checked::before {
+  width: 20rpx;
+  height: 20rpx;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 20rpx;
+  text-align: center;
+  background: transparent;
+  -webkit-transform: translate(-50%, -50%) scale(1);
+          transform: translate(-50%, -50%) scale(1);
+}
+wx-slider {
+  margin: 3rpx 32rpx 6rpx;
+}
+wx-slider .wx-slider-handle-wrapper {
+  height: 6rpx;
+}
+.no-data.no-more {
+  color: #d3d3d3 !important;
+  font-size: 24rpx !important;
+  text-align: center;
+}
+image {
+  width: 100%;
+  height: auto;
+}
+.uni-popup .uni-popup__wrapper {
+  border-radius: 32rpx 32rpx 0 0 !important;
+}
+.uni-popup {
+  position: fixed;
+  z-index: 2000 !important;
+}
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  color: transparent;
+}
+::-webkit-scrollbar {
+  display: none;
+}
+.wx-slider-thumb {
+  display: none;
+}
+.comment-input .is-input-border {
+  border: none;
+}
+.comment-input .uni-easyinput__content-textarea {
+  flex: auto !important;
+  min-height: 72rpx !important;
+  max-height: 396rpx !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 30rpx;
+  background: #f9f9f9 !important;
+}
+.publish-component {
+  position: relative;
+  top: -18rpx;
+}
+.load-status {
+  display: flex;
+  justify-content: center;
+  padding: 10rpx 0 40rpx;
+}
+.load-text {
+  color: #bbb;
+  font-size: 24rpx;
+}
+@font-face {
+  font-family: Pangmenzhengdao;
+  src: url("https://udstatic.imeik.com/pcUploads/1712648373491/pangmenzhengdao.ttf");
+}
+.game-main {
   width: 100%;
   display: flex;
   flex-direction: column;
   position: fixed;
 }
-.ui-center{
-  width:100%;
+.ui-center {
+  width: 100%;
   height: 100%;
   display: flex;
-  overflow:hidden;
+  overflow: hidden;
   justify-content: center;
   align-items: center;
   position: fixed;
 }
-.game-ui{
+.game-ui {
   display: flex;
-  width:750rpx;
-  height:1700rpx;
-  position:fixed;
+  width: 750rpx;
+  height: 1700rpx;
+  position: fixed;
   flex-direction: column;
   margin-top: 100rpx;
 }
-.obj{
+.obj {
   display: flex;
   position: absolute;
 }
-.heartbeat{
-  animation: heartbeat-data 1.5s infinite;
+.heartbeat {
+  -webkit-animation: heartbeat-data 1.5s infinite;
+          animation: heartbeat-data 1.5s infinite;
 }
-.page{
-  position:relative; 
+.page {
+  position: relative;
 }
-.page .title{
+.page .title {
   display: flex;
   position: absolute;
 }
-@keyframes heartbeat-data{
-  0%{ transform: scale(0.95); }
-  50%{ transform: scale(1); }
- 100%{ transform: scale(0.95); }
+@-webkit-keyframes heartbeat-data {
+0% {
+    -webkit-transform: scale(0.95);
+            transform: scale(0.95);
 }
-.heartbeat2{
-  animation: heartbeat-data2 1.5s infinite;
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
 }
-@keyframes heartbeat-data2{
-  0%{ transform: scale(1.05); }
-  50%{ transform: scale(1); }
- 100%{ transform: scale(1.05); }
+100% {
+    -webkit-transform: scale(0.95);
+            transform: scale(0.95);
 }
-.light{
-  animation: light-data 1.5s infinite;
 }
-@keyframes light-data{
-  0%{ box-shadow: 10rpx 10rpx 20rpx #F2F0EE; }
-  50%{ box-shadow: 10rpx 10rpx 20rpx #F2F0EE; }
- 100%{ box-shadow: 10rpx 10rpx 20rpx #F2F0EE; }
+@keyframes heartbeat-data {
+0% {
+    -webkit-transform: scale(0.95);
+            transform: scale(0.95);
 }
-.alpha{
-  animation: alpha-data 1.5s infinite;
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
 }
-@keyframes alpha-data{
-  0%{ opacity: 0; }
-  50%{ opacity: 1;}
- 100%{ opacity: 0; }
+100% {
+    -webkit-transform: scale(0.95);
+            transform: scale(0.95);
 }
-.alpha2{
-  animation: alpha-data2 1.5s infinite;
 }
-@keyframes alpha-data2{
-  0%{ opacity: 1; }
-  50%{ opacity: 0;}
- 100%{ opacity: 1; }
+.heartbeat2 {
+  -webkit-animation: heartbeat-data2 1.5s infinite;
+          animation: heartbeat-data2 1.5s infinite;
 }
-.rotate{
-  animation: rotate-data 1.5s infinite;
+@-webkit-keyframes heartbeat-data2 {
+0% {
+    -webkit-transform: scale(1.05);
+            transform: scale(1.05);
 }
-@keyframes rotate-data{
-  0%{ transform: rotate(5deg); }
-  50%{ transform: rotate(-5deg); }
- 100%{ transform: rotate(5deg); }
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
 }
-.rotate2{
-  animation: rotate-data2 1.5s infinite;
+100% {
+    -webkit-transform: scale(1.05);
+            transform: scale(1.05);
 }
-@keyframes rotate-data2{
-  0%{ transform: rotate(-5deg); }
-  50%{ transform: rotate(5deg); }
- 100%{ transform: rotate(-5deg); }
 }
-.button-class{
-  transform: scale(1.1);
+@keyframes heartbeat-data2 {
+0% {
+    -webkit-transform: scale(1.05);
+            transform: scale(1.05);
 }
- /*去按钮边框*/
- button::after{
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+}
+100% {
+    -webkit-transform: scale(1.05);
+            transform: scale(1.05);
+}
+}
+.light {
+  -webkit-animation: light-data 1.5s infinite;
+          animation: light-data 1.5s infinite;
+}
+@-webkit-keyframes light-data {
+0% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+50% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+100% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+}
+@keyframes light-data {
+0% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+50% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+100% {
+    box-shadow: 10rpx 10rpx 20rpx #F2F0EE;
+}
+}
+.alpha {
+  -webkit-animation: alpha-data 1.5s infinite;
+          animation: alpha-data 1.5s infinite;
+}
+@-webkit-keyframes alpha-data {
+0% {
+    opacity: 0;
+}
+50% {
+    opacity: 1;
+}
+100% {
+    opacity: 0;
+}
+}
+@keyframes alpha-data {
+0% {
+    opacity: 0;
+}
+50% {
+    opacity: 1;
+}
+100% {
+    opacity: 0;
+}
+}
+.alpha2 {
+  -webkit-animation: alpha-data2 1.5s infinite;
+          animation: alpha-data2 1.5s infinite;
+}
+@-webkit-keyframes alpha-data2 {
+0% {
+    opacity: 1;
+}
+50% {
+    opacity: 0;
+}
+100% {
+    opacity: 1;
+}
+}
+@keyframes alpha-data2 {
+0% {
+    opacity: 1;
+}
+50% {
+    opacity: 0;
+}
+100% {
+    opacity: 1;
+}
+}
+.rotate {
+  -webkit-animation: rotate-data 1.5s infinite;
+          animation: rotate-data 1.5s infinite;
+}
+@-webkit-keyframes rotate-data {
+0% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+50% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+100% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+}
+@keyframes rotate-data {
+0% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+50% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+100% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+}
+.rotate2 {
+  -webkit-animation: rotate-data2 1.5s infinite;
+          animation: rotate-data2 1.5s infinite;
+}
+@-webkit-keyframes rotate-data2 {
+0% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+50% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+100% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+}
+@keyframes rotate-data2 {
+0% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+50% {
+    -webkit-transform: rotate(5deg);
+            transform: rotate(5deg);
+}
+100% {
+    -webkit-transform: rotate(-5deg);
+            transform: rotate(-5deg);
+}
+}
+.button-class {
+  -webkit-transform: scale(1.1);
+          transform: scale(1.1);
+}
+button::after {
   border: none;
-  }
-.start-button{
+}
+.start-button {
   width: 643rpx;
   height: 166rpx;
-  padding:0;
+  padding: 0;
   left: 71rpx;
   top: 1226rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  background-image:url(https://wx.amo9.com/h5/2026/sep/imeik/start_btn0.png);
+  background: rgba(255, 204, 51, 0);
+  background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/start_btn0.png);
   background-size: 100% 100%;
-  background-repeat:no-repeat;
-  border:none;
+  background-repeat: no-repeat;
+  border: none;
   border-radius: 0;
 }
-.start-ui{
+.start-ui {
   display: flex;
   margin-left: 142rpx;
   margin-top: 18rpx;
-  animation: heartbeat-data 1.5s infinite;
+  -webkit-animation: heartbeat-data 1.5s infinite;
+          animation: heartbeat-data 1.5s infinite;
 }
-.start-button  .start-ui .txt{
-  width:329rpx;
-  height:115rpx;
+.start-button .start-ui .txt {
+  width: 329rpx;
+  height: 115rpx;
 }
-.rule-button{
+.rule-button {
   width: 138rpx;
   height: 30rpx;
-  padding:0;
+  padding: 0;
   left: 325rpx;
   top: 1404rpx;
   margin: auto;
-  border:none;
+  border: none;
   border-radius: 0;
-  background: rgba(255,204,51, 0);
+  background: rgba(255, 204, 51, 0);
 }
-.rule-button  .txt{
-  width:112rpx;
-  height:27rpx;
+.rule-button .txt {
+  width: 112rpx;
+  height: 27rpx;
 }
-.rule-button  .arrow{
-  width:13rpx;
-  height:16rpx;
+.rule-button .arrow {
+  width: 13rpx;
+  height: 16rpx;
   margin-top: 8rpx;
-  animation: arrow-data 1.5s infinite;
+  -webkit-animation: arrow-data 1.5s infinite;
+          animation: arrow-data 1.5s infinite;
 }
-@keyframes arrow-data{
-  0%{  margin-left: 10rpx; }
-  50%{  margin-left: 0rpx;}
- 100%{  margin-left: 10rpx; }
+@-webkit-keyframes arrow-data {
+0% {
+    margin-left: 10rpx;
 }
-.return-button{
-  position:fixed;
-  padding:0;
+50% {
+    margin-left: 0rpx;
+}
+100% {
+    margin-left: 10rpx;
+}
+}
+@keyframes arrow-data {
+0% {
+    margin-left: 10rpx;
+}
+50% {
+    margin-left: 0rpx;
+}
+100% {
+    margin-left: 10rpx;
+}
+}
+.return-button {
+  position: fixed;
+  padding: 0;
   left: 31rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  background-image:url(https://wx.amo9.com/h5/2026/sep/imeik/return.png);
+  background: rgba(255, 204, 51, 0);
+  background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/return.png);
   background-size: 100% 100%;
-  background-repeat:no-repeat;
-  border:none;
+  background-repeat: no-repeat;
+  border: none;
   border-radius: 0;
 }
-.tips-wnd{
-  top:0;
+.tips-wnd {
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  overflow:hidden;
+  overflow: hidden;
   position: fixed;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index:100;
+  z-index: 100;
 }
-.tips-bg{
+.tips-bg {
   display: flex;
   width: 100%;
   height: 100%;
-  overflow:hidden;
+  overflow: hidden;
   background-color: rgba(0, 0, 0, 0);
 }
-.bg-show{
+.bg-show {
   background-color: rgba(0, 0, 0, 0.7);
-  transition:all 0.5s ease;
+  transition: all 0.5s ease;
 }
-.bg-hidden{
+.bg-hidden {
   background-color: rgba(0, 0, 0, 0);
-  transition:all 0.5s ease;
+  transition: all 0.5s ease;
 }
-.show{
-  margin-bottom:0;
-  transition:all 0.5s ease;
+.show {
+  margin-bottom: 0;
+  transition: all 0.5s ease;
 }
-.hidden{
-  margin-bottom:-3000rpx;
-  transition:all 0.5s ease;
+.hidden {
+  margin-bottom: -3000rpx;
+  transition: all 0.5s ease;
 }
-.tips-ui{
+.tips-ui {
   position: absolute;
   display: flex;
   align-items: center;
   flex-direction: column;
 }
-.rule{
+.rule {
   display: flex;
-  position:relative; 
+  position: relative;
   width: 702rpx;
   height: 1075rpx;
   margin-top: 110rpx;
 }
-.rule-out{
+.rule-out {
   width: 95rpx;
   height: 95rpx;
-  padding:0;
+  padding: 0;
   left: 606rpx;
   top: -41rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  background-image:url(https://wx.amo9.com/h5/2026/sep/imeik/rule/out.png);
+  background: rgba(255, 204, 51, 0);
+  background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/rule/out.png);
   background-size: 100% 100%;
-  background-repeat:no-repeat;
-  border:none;
+  background-repeat: no-repeat;
+  border: none;
   border-radius: 0;
 }
-.soundioc{
-  position:fixed;
+.soundioc {
+  position: fixed;
   display: flex;
   left: 120rpx;
 }
-.soundImg-play{
-  animation: rotate360 1s linear infinite;
+.soundImg-play {
+  -webkit-animation: rotate360 1s linear infinite;
+          animation: rotate360 1s linear infinite;
+}
+@-webkit-keyframes rotate360 {
+from {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+}
+to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+}
 }
 @keyframes rotate360 {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
- }
- .answer-button{
+from {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+}
+to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+}
+}
+.answer-button {
   width: 278rpx;
   height: 90rpx;
-  padding:0;
+  padding: 0;
   top: 1346rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  background-image:url(https://wx.amo9.com/h5/2026/sep/imeik/answer/btn_bg.png);
+  background: rgba(255, 204, 51, 0);
+  background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/answer/btn_bg.png);
   background-size: 100% 100%;
-  background-repeat:no-repeat;
-  border:none;
+  background-repeat: no-repeat;
+  border: none;
   border-radius: 0;
 }
-.save-button{
+.save-button {
   width: 244rpx;
   height: 79rpx;
-  padding:0;
+  padding: 0;
   top: 1124rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  border:none;
+  background: rgba(255, 204, 51, 0);
+  border: none;
   border-radius: 0;
 }
-.store-button{
+.store-button {
   width: 228rpx;
   height: 52rpx;
-  padding:0;
+  padding: 0;
   left: 403rpx;
   top: 1355rpx;
   margin: auto;
-  background: rgba(255,204,51, 0);
-  border:none;
+  background: rgba(255, 204, 51, 0);
+  border: none;
   border-radius: 0;
 }
