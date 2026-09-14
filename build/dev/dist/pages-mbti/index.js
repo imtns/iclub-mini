@@ -170,6 +170,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _util = __webpack_require__(/*! @/utils/util */ 10);
 //
 //
 //
@@ -280,14 +281,8 @@ exports.default = void 0;
 //
 
 // 逆转换自原生小程序 build/dev/dist/pages-mbti/index.js
-// 保持与原生版本功能一致：MBTI 肌肤测试，含登录授权、答题、结果海报生成、埋点上报
-
-// 登录授权相关配置 —— 与项目 ls() 保持一致，key 带 test 环境前缀
-var TOKEN_KEY = 'test_iclubUserToken3';
-var USER_INFO_KEY = 'test_userInfo';
-var RETURN_URL_KEY = 'test_returnUrl';
-var MBTI_PENDING_KEY = 'test_mbtiPendingStart';
-var LOGIN_PAGE_URL = '/pages-sub/login/index';
+// 登录授权使用项目统一方式：全局 mixin 的 isLogin / userInfo / goLogin()
+// 与 demo.vue 一致，不直接操作 storage，正式环境也可正常使用
 
 // 模块级变量（对应原生 Page 外的 var）
 var innerAudioContext = null;
@@ -382,7 +377,6 @@ var _default = {
       answerShow: false,
       answerID: -1,
       answer: [],
-      userInfo: null,
       mainShow: true,
       imgShow: false,
       bgColor: '#ffdfee',
@@ -449,53 +443,56 @@ var _default = {
   },
   methods: {
     startOpen: function startOpen() {
-      // 1. 判断用户是否已登录并授权过用户信息
-      var token = wx.getStorageSync(TOKEN_KEY);
-      var userInfo = wx.getStorageSync(USER_INFO_KEY);
-      if (token && userInfo) {
-        this.userInfo = userInfo;
-        console.log('已授权，用户信息：', userInfo);
+      // 与 demo.vue 一致：用全局 mixin 的 isLogin 判断登录状态
+      if (this.isLogin && this.userInfo && this.userInfo.objectCode) {
+        // 已登录且用户信息已获取：直接开始答题
+        console.log('已授权，用户信息：', this.userInfo);
         this.beginAnswer();
         return;
       }
-      // 2. 未授权：跳转登录页弹出授权窗口
-      wx.setStorageSync(RETURN_URL_KEY, '/pages-mbti/index');
-      wx.setStorageSync(MBTI_PENDING_KEY, true);
-      wx.navigateTo({
-        url: LOGIN_PAGE_URL,
-        fail: function fail() {
-          wx.showToast({
-            title: '无法打开登录页，请重试',
-            icon: 'none'
-          });
-        }
-      });
+      // 未授权：用 ls() 存储 returnUrl（自动加环境前缀），调用 goLogin() 跳登录页
+      (0, _util.ls)('returnUrl', '/pages-mbti/index');
+      this._pendingStart = true;
+      this.goLogin();
     },
+    /**
+     * 登录页授权完成后 redirectTo 回来，页面会重建（onLoad → onShow）
+     * 此时 isLogin=true 但 userInfo 可能为空（getUserInfo 是异步的）
+     * 用 $watch 等待 userInfo 填充后自动开始答题
+     */
     waitUserInfoAndStart: function waitUserInfoAndStart() {
-      var times = 0;
-      var maxTimes = 10;
-      var that = this;
-      var timer = setInterval(function () {
-        times++;
-        var userInfo = wx.getStorageSync(USER_INFO_KEY);
-        if (userInfo) {
-          clearInterval(timer);
-          wx.removeStorageSync(MBTI_PENDING_KEY);
-          that.userInfo = userInfo;
-          console.log('授权成功，用户信息：', userInfo);
-          that.beginAnswer();
-        } else if (times >= maxTimes) {
-          clearInterval(timer);
-          wx.removeStorageSync(MBTI_PENDING_KEY);
+      var _this = this;
+      // 如果 userInfo 已经有了，直接开始
+      if (this.userInfo && this.userInfo.objectCode) {
+        this._pendingStart = false;
+        this.beginAnswer();
+        return;
+      }
+      // 监听 userInfo 变化（来自 Vuex mapState，getUserInfo action 填充后触发）
+      var unwatch = this.$watch('userInfo', function (newVal) {
+        if (newVal && newVal.objectCode) {
+          unwatch();
+          _this._pendingStart = false;
+          console.log('授权成功，用户信息：', newVal);
+          _this.beginAnswer();
+        }
+      }, {
+        deep: true
+      });
+      // 5 秒超时保护
+      setTimeout(function () {
+        if (_this._pendingStart && !_this.answerShow) {
+          unwatch();
+          _this._pendingStart = false;
           wx.showToast({
             title: '获取用户信息失败，请重试',
             icon: 'none'
           });
         }
-      }, 500);
+      }, 5000);
     },
     beginAnswer: function beginAnswer() {
-      var _this = this;
+      var _this2 = this;
       this.answer = [{
         id: 0,
         x: 750,
@@ -599,7 +596,7 @@ var _default = {
       this.answerShow = true;
       this.answerID = 0;
       setTimeout(function () {
-        _this.answer[_this.answerID].x = 0;
+        _this2.answer[_this2.answerID].x = 0;
       }, 100);
       this.report('开始测试');
     },
@@ -691,7 +688,7 @@ var _default = {
       }
     },
     gamePlay: function gamePlay() {
-      var _this2 = this;
+      var _this3 = this;
       console.log('gamePlay');
       ctx2d.clearRect(0, 0, wWidth, wHeight);
       ctx2d.drawImage(texture['head'].obj, 0, 0, texture['head'].width, texture['head'].height, 41 * imgScale, 81 * imgScale, 66 * imgScale, 66 * imgScale);
@@ -701,16 +698,16 @@ var _default = {
       ctx2d.textAlign = 'left';
       ctx2d.fillText('@美客+' + this.userInfo.nickName, 121 * imgScale, (97 + 32) * imgScale);
       setTimeout(function () {
-        _this2.canvasToTempFilePath();
+        _this3.canvasToTempFilePath();
       }, 1000);
     },
     canvasToTempFilePath: function canvasToTempFilePath() {
-      var _this3 = this;
+      var _this4 = this;
       wx.canvasToTempFilePath({
         canvas: this.canvas,
         success: function success(res) {
           console.log(res.tempFilePath);
-          _this3.tempFilePath = res.tempFilePath;
+          _this4.tempFilePath = res.tempFilePath;
         }
       });
     },
@@ -759,25 +756,41 @@ var _default = {
       }
     },
     exit: function exit() {
-      wx.navigateBack();
+      console.log("exit");
+      if (this.haveBackPath()) {
+        uni.navigateBack();
+      } else {
+        console.log("跳回主页");
+        uni.redirectTo({
+          url: '/pages/home/index'
+        });
+      }
+      //wx.navigateBack();
       this.report('返回到主页');
     },
+    haveBackPath: function haveBackPath() {
+      var routers = getCurrentPages().map(function (i) {
+        return i.route;
+      });
+      console.log(routers);
+      return routers.length > 1;
+    },
     ruleOpen: function ruleOpen() {
-      var _this4 = this;
+      var _this5 = this;
       this.ruleShow = true;
       setTimeout(function () {
-        _this4.tipsClass = 'show';
-        _this4.bgClass = 'bg-show';
+        _this5.tipsClass = 'show';
+        _this5.bgClass = 'bg-show';
       }, 200);
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
       this.report('活动规则');
     },
     ruleClose: function ruleClose() {
-      var _this5 = this;
+      var _this6 = this;
       this.tipsClass = 'hidden';
       this.bgClass = 'bg-hidden';
       setTimeout(function () {
-        _this5.ruleShow = false;
+        _this6.ruleShow = false;
       }, 500);
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
     },
@@ -844,7 +857,8 @@ var _default = {
      */
     report: function report(value) {
       var gd = getApp() && getApp().globalData ? getApp().globalData : {};
-      var user = wx.getStorageSync('test_userInfo') || {};
+      // 用全局 mixin 的 userInfo（Vuex mapState），不直接读 storage
+      var user = this.userInfo || {};
       var pages = getCurrentPages();
       var curPage = pages[pages.length - 1] || {};
       var prevPage = pages[pages.length - 2] || {};
@@ -854,8 +868,8 @@ var _default = {
       var params = {
         visitId: gd.visitId || '',
         appid: appBaseInfo.appId || gd.appId || '',
-        openId: wx.getStorageSync('test_openId') || '',
-        unionid: wx.getStorageSync('test_unionId') || '',
+        openId: this.lsGet('openId') || '',
+        unionid: this.lsGet('unionId') || '',
         platSource: 9,
         eventType: 2,
         scene: scene,
@@ -927,12 +941,12 @@ var _default = {
   },
   onReady: function onReady() {},
   onShow: function onShow() {
-    var token = wx.getStorageSync(TOKEN_KEY);
-    var pending = wx.getStorageSync(MBTI_PENDING_KEY);
-    if (token && pending) {
+    // 登录页 redirectTo 回来后触发：isLogin=true（Vuex），但 userInfo 可能还在异步加载
+    if (this.isLogin && this._pendingStart) {
       this.waitUserInfoAndStart();
-    } else if (!token) {
-      wx.removeStorageSync(MBTI_PENDING_KEY);
+    } else if (!this.isLogin) {
+      // 未登录返回（用户取消授权）：清除待开始标记
+      this._pendingStart = false;
     }
   },
   onHide: function onHide() {},

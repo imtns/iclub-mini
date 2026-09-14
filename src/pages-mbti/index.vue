@@ -107,15 +107,8 @@
 </template>
 
 <script>
-// 逆转换自原生小程序 build/dev/dist/pages-mbti/index.js
-// 保持与原生版本功能一致：MBTI 肌肤测试，含登录授权、答题、结果海报生成、埋点上报
 
-// 登录授权相关配置 —— 与项目 ls() 保持一致，key 带 test 环境前缀
-const TOKEN_KEY = 'test_iclubUserToken3';
-const USER_INFO_KEY = 'test_userInfo';
-const RETURN_URL_KEY = 'test_returnUrl';
-const MBTI_PENDING_KEY = 'test_mbtiPendingStart';
-const LOGIN_PAGE_URL = '/pages-sub/login/index';
+import { ls } from '@/utils/util';
 
 // 模块级变量（对应原生 Page 外的 var）
 let innerAudioContext = null;
@@ -164,7 +157,6 @@ export default {
       answerShow: false,
       answerID: -1,
       answer: [],
-      userInfo: null,
       mainShow: true,
       imgShow: false,
       bgColor: '#ffdfee',
@@ -231,44 +223,50 @@ export default {
   },
   methods: {
     startOpen() {
-      // 1. 判断用户是否已登录并授权过用户信息
-      const token = wx.getStorageSync(TOKEN_KEY);
-      const userInfo = wx.getStorageSync(USER_INFO_KEY);
-      if (token && userInfo) {
-        this.userInfo = userInfo;
-        console.log('已授权，用户信息：', userInfo);
+      // 与 demo.vue 一致
+      if (this.isLogin && this.userInfo && this.userInfo.objectCode) {
+        // 已登录且用户信息已获取：直接开始答题
+        console.log('已授权，用户信息：', this.userInfo);
         this.beginAnswer();
         return;
       }
-      // 2. 未授权：跳转登录页弹出授权窗口
-      wx.setStorageSync(RETURN_URL_KEY, '/pages-mbti/index');
-      wx.setStorageSync(MBTI_PENDING_KEY, true);
-      wx.navigateTo({
-        url: LOGIN_PAGE_URL,
-        fail: () => {
-          wx.showToast({ title: '无法打开登录页，请重试', icon: 'none' });
-        }
-      });
+      ls('returnUrl', '/pages-mbti/index');
+      this._pendingStart = true;
+      this.goLogin();
     },
+    /**
+     * 登录页授权完成后 redirectTo 回来，页面会重建（onLoad → onShow）
+     * 此时 isLogin=true 但 userInfo 可能为空（getUserInfo 是异步的）
+     * 用 $watch 等待 userInfo 填充后自动开始答题
+     */
     waitUserInfoAndStart() {
-      let times = 0;
-      const maxTimes = 10;
-      const that = this;
-      const timer = setInterval(() => {
-        times++;
-        const userInfo = wx.getStorageSync(USER_INFO_KEY);
-        if (userInfo) {
-          clearInterval(timer);
-          wx.removeStorageSync(MBTI_PENDING_KEY);
-          that.userInfo = userInfo;
-          console.log('授权成功，用户信息：', userInfo);
-          that.beginAnswer();
-        } else if (times >= maxTimes) {
-          clearInterval(timer);
-          wx.removeStorageSync(MBTI_PENDING_KEY);
+      // 如果 userInfo 已经有了，直接开始
+      if (this.userInfo && this.userInfo.objectCode) {
+        this._pendingStart = false;
+        this.beginAnswer();
+        return;
+      }
+      // 监听 userInfo 变化（来自 Vuex mapState，getUserInfo action 填充后触发）
+      const unwatch = this.$watch(
+        'userInfo',
+        (newVal) => {
+          if (newVal && newVal.objectCode) {
+            unwatch();
+            this._pendingStart = false;
+            console.log('授权成功，用户信息：', newVal);
+            this.beginAnswer();
+          }
+        },
+        { deep: true }
+      );
+      // 5 秒超时保护
+      setTimeout(() => {
+        if (this._pendingStart && !this.answerShow) {
+          unwatch();
+          this._pendingStart = false;
           wx.showToast({ title: '获取用户信息失败，请重试', icon: 'none' });
         }
-      }, 500);
+      }, 5000);
     },
     beginAnswer() {
       this.answer = [
@@ -436,8 +434,22 @@ export default {
       }
     },
     exit() {
-      wx.navigateBack();
+       console.log("exit");
+    if (this.haveBackPath()) {
+          uni.navigateBack()
+        } else {
+          console.log("跳回主页");
+          uni.redirectTo({
+            url: '/pages/home/index'
+          })
+      }
+      //wx.navigateBack();
       this.report('返回到主页');
+    },
+    haveBackPath() {
+      const routers = getCurrentPages().map((i) => i.route)
+      console.log(routers);
+      return routers.length > 1
     },
     ruleOpen() {
       this.ruleShow = true;
@@ -517,7 +529,8 @@ export default {
      */
     report(value) {
       const gd = getApp() && getApp().globalData ? getApp().globalData : {};
-      const user = wx.getStorageSync('test_userInfo') || {};
+      // 用全局 mixin 的 userInfo（Vuex mapState），不直接读 storage
+      const user = this.userInfo || {};
       const pages = getCurrentPages();
       const curPage = pages[pages.length - 1] || {};
       const prevPage = pages[pages.length - 2] || {};
@@ -528,8 +541,8 @@ export default {
       const params = {
         visitId: gd.visitId || '',
         appid: appBaseInfo.appId || gd.appId || '',
-        openId: wx.getStorageSync('test_openId') || '',
-        unionid: wx.getStorageSync('test_unionId') || '',
+        openId: this.lsGet('openId') || '',
+        unionid: this.lsGet('unionId') || '',
         platSource: 9,
         eventType: 2,
         scene: scene,
@@ -595,12 +608,12 @@ export default {
   },
   onReady() {},
   onShow() {
-    const token = wx.getStorageSync(TOKEN_KEY);
-    const pending = wx.getStorageSync(MBTI_PENDING_KEY);
-    if (token && pending) {
+    // 登录页 redirectTo 回来后触发：isLogin=true（Vuex），但 userInfo 可能还在异步加载
+    if (this.isLogin && this._pendingStart) {
       this.waitUserInfoAndStart();
-    } else if (!token) {
-      wx.removeStorageSync(MBTI_PENDING_KEY);
+    } else if (!this.isLogin) {
+      // 未登录返回（用户取消授权）：清除待开始标记
+      this._pendingStart = false;
     }
   },
   onHide() {},
