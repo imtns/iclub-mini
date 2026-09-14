@@ -280,10 +280,6 @@ var _util = __webpack_require__(/*! @/utils/util */ 10);
 //
 //
 
-// 逆转换自原生小程序 build/dev/dist/pages-mbti/index.js
-// 登录授权使用项目统一方式：全局 mixin 的 isLogin / userInfo / goLogin()
-// 与 demo.vue 一致，不直接操作 storage，正式环境也可正常使用
-
 // 模块级变量（对应原生 Page 外的 var）
 var innerAudioContext = null;
 var answerUrl = 'https://wx.amo9.com/h5/2026/sep/imeik/answer/v1/';
@@ -390,6 +386,7 @@ var _default = {
     };
   },
   onLoad: function onLoad(options) {
+    console.log("v1.0.4");
     var that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -429,28 +426,25 @@ var _default = {
       node: true,
       size: true
     }).exec(function (res) {
-      console.log('222');
       canvas = res[0].node;
       that.canvas = canvas;
       ctx2d = canvas.getContext('2d');
       var dpr = windowInfo.pixelRatio;
-      var _w = res[0].width;
-      console.log(res[0].width, res[0].height, dpr);
-      canvas.width = res[0].width * dpr;
-      canvas.height = 1334 * (_w / 750) * dpr;
+      // 直接用 wWidth/imgScale 设置画布像素尺寸，避免依赖可能未更新的 DOM 尺寸
+      canvas.width = wWidth * dpr;
+      canvas.height = 1334 * imgScale * dpr;
       ctx2d.scale(dpr, dpr);
     });
   },
   methods: {
     startOpen: function startOpen() {
-      // 与 demo.vue 一致：用全局 mixin 的 isLogin 判断登录状态
+      // 与 demo.vue 一致
       if (this.isLogin && this.userInfo && this.userInfo.objectCode) {
         // 已登录且用户信息已获取：直接开始答题
         console.log('已授权，用户信息：', this.userInfo);
         this.beginAnswer();
         return;
       }
-      // 未授权：用 ls() 存储 returnUrl（自动加环境前缀），调用 goLogin() 跳登录页
       (0, _util.ls)('returnUrl', '/pages-mbti/index');
       this._pendingStart = true;
       this.goLogin();
@@ -633,13 +627,13 @@ var _default = {
         this.tempFilePath = '';
         this.imgShow = true;
         this.imgUrl = 'https://wx.amo9.com/h5/2026/sep/imeik/img/' + imgID + '.png';
-        this.bgClass = imgData[imgID].color;
+        this.bgColor = imgData[imgID].color;
         this.imgType = imgData[imgID].type;
 
         // 加载资源生成海报
         resource = [{
           name: 'bg',
-          url: 'https://wx.amo9.com/h5/2026/sep/imeik/img/v2/_' + imgID + '.png'
+          url: 'https://wx.amo9.com/h5/2026/sep/imeik/img/v3/_' + imgID + '.png'
         }];
         resource.push({
           name: 'head',
@@ -655,7 +649,7 @@ var _default = {
           this.answerID++;
           this.answer[this.answerID].x = 0;
         }
-        this.report('下一题');
+        this.report("第" + this.answerID + "题点击" + '下一题');
       }
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
     },
@@ -744,7 +738,7 @@ var _default = {
         this.answerID--;
         this.answer[this.answerID].x = 0;
         this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
-        this.report('上一题');
+        this.report("第" + (this.answerID + 1) + "题点击" + '上一题');
       }
     },
     loadComplete: function loadComplete() {
@@ -804,41 +798,43 @@ var _default = {
       wx.setStorageSync('bgSound', String(this.audioPlay));
     },
     saveImg: function saveImg() {
-      wx.saveImageToPhotosAlbum({
-        filePath: this.tempFilePath,
-        success: function success(res) {
-          wx.showToast({
-            title: '已保存到相册'
-          });
-        },
-        fail: function fail(err) {
-          console.log(err);
-          if (err.errMsg === 'saveImageToPhotosAlbum:fail:auth denied' || err.errMsg === 'saveImageToPhotosAlbum:fail auth deny' || err.errMsg === 'saveImageToPhotosAlbum:fail authorize no response') {
-            console.log('用户一开始拒绝了，我们想再次发起授权');
-            var title = '系统提示';
-            var content = '请允许我们保存图片到相册';
-            wx.showModal({
-              title: title,
-              content: content,
-              showCancel: false,
-              success: function success(res) {
-                if (res.confirm) {
-                  wx.openSetting({
-                    success: function success(res) {
-                      if (res.authSetting['scope.writePhotosAlbum']) {
-                        // 授权成功
-                      } else {
-                        // 用户仍未授权
-                      }
-                    }
-                  });
-                }
-              }
+      if (this.tempFilePath.length > 3) {
+        wx.saveImageToPhotosAlbum({
+          filePath: this.tempFilePath,
+          success: function success(res) {
+            wx.showToast({
+              title: '已保存到相册'
             });
+          },
+          fail: function fail(err) {
+            console.log(err);
+            if (err.errMsg === 'saveImageToPhotosAlbum:fail:auth denied' || err.errMsg === 'saveImageToPhotosAlbum:fail auth deny' || err.errMsg === 'saveImageToPhotosAlbum:fail authorize no response') {
+              console.log('用户一开始拒绝了，我们想再次发起授权');
+              var title = '系统提示';
+              var content = '请允许我们保存图片到相册';
+              wx.showModal({
+                title: title,
+                content: content,
+                showCancel: false,
+                success: function success(res) {
+                  if (res.confirm) {
+                    wx.openSetting({
+                      success: function success(res) {
+                        if (res.authSetting['scope.writePhotosAlbum']) {
+                          // 授权成功
+                        } else {
+                          // 用户仍未授权
+                        }
+                      }
+                    });
+                  }
+                }
+              });
+            }
           }
-        }
-      });
-      this.report('一键保存');
+        });
+        this.report('一键保存');
+      }
     },
     setAudioPlay: function setAudioPlay(str) {
       if (this.audioPlay) {
@@ -851,92 +847,6 @@ var _default = {
           console.log('销毁');
         });
       }
-    },
-    /**
-     * 埋点上报 —— 与全局 mixin 的 report(name) 保持一致
-     */
-    report: function report(value) {
-      var gd = getApp() && getApp().globalData ? getApp().globalData : {};
-      // 用全局 mixin 的 userInfo（Vuex mapState），不直接读 storage
-      var user = this.userInfo || {};
-      var pages = getCurrentPages();
-      var curPage = pages[pages.length - 1] || {};
-      var prevPage = pages[pages.length - 2] || {};
-      var scene = wx.getLaunchOptionsSync().scene;
-      var deviceInfo = wx.getDeviceInfo();
-      var appBaseInfo = wx.getAppBaseInfo();
-      var params = {
-        visitId: gd.visitId || '',
-        appid: appBaseInfo.appId || gd.appId || '',
-        openId: this.lsGet('openId') || '',
-        unionid: this.lsGet('unionId') || '',
-        platSource: 9,
-        eventType: 2,
-        scene: scene,
-        phone: user.phone || '',
-        userId: user.objectCode || '',
-        doctorLevel: user.doctorLevel || '',
-        pageUrl: curPage.route || 'pages-mbti/index',
-        referrerUrl: prevPage.route || '',
-        imei: deviceInfo.deviceId || '',
-        wechatEdition: appBaseInfo.hostVersion || '',
-        platform: (deviceInfo.osName || '') + ' ' + (deviceInfo.osVersion || ''),
-        version: gd.version || '',
-        phoneModelId: deviceInfo.deviceModel || '',
-        manufacturer: deviceInfo.deviceBrand || '',
-        networkType: gd.networkType || '',
-        actionTime: this._formatTime(),
-        pageSession: Math.random().toString(16).substring(2) + new Date().getTime(),
-        activityName: value
-      };
-      var wxParams = {};
-      Object.keys(params).forEach(function (k) {
-        wxParams[k.toLowerCase()] = params[k];
-      });
-      try {
-        wx.reportEvent('element_click', wxParams);
-      } catch (e) {
-        console.warn('wx.reportEvent 上报失败', e);
-      }
-      var baseUrl = 'https://user-test.imeik.com';
-      if (!params.unionid || !params.openId) {
-        console.log('埋点暂缓上报（缺少 unionid/openId）', params);
-        return;
-      }
-      wx.request({
-        url: baseUrl + '/base/burypoint/pageEventReport',
-        method: 'POST',
-        data: params,
-        header: {
-          'content-type': 'application/json'
-        },
-        success: function success(res) {
-          console.log('埋点上报成功', value, res);
-        },
-        fail: function fail(err) {
-          console.warn('埋点上报失败', value, err);
-        }
-      });
-    },
-    _formatTime: function _formatTime(time) {
-      time = time || new Date();
-      var opt = {
-        'Y+': time.getFullYear().toString(),
-        'M+': (time.getMonth() + 1).toString(),
-        'D+': time.getDate().toString(),
-        'H+': time.getHours().toString(),
-        'm+': time.getMinutes().toString(),
-        's+': time.getSeconds().toString()
-      };
-      var format = 'YYYY-MM-DD HH:mm:ss';
-      var ret;
-      for (var k in opt) {
-        ret = new RegExp('(' + k + ')').exec(format);
-        if (ret) {
-          format = format.replace(ret[1], ret[1].length === 1 ? opt[k] : opt[k].padStart(ret[1].length, '0'));
-        }
-      }
-      return format;
     }
   },
   onReady: function onReady() {},
