@@ -96,6 +96,16 @@
         </view>
       </view>
     </view>
+    <!--敬请期待-->
+    <view class="tips-wnd" v-show="tipsShow" @touchmove.stop.prevent>
+      <view class="tips-bg" :class="bgClass" />
+      <view class="tips-ui" :class="tipsClass">
+        <view class="tips">
+          <image :style="{ width: '536rpx', height: '349rpx' }" src="https://wx.amo9.com/h5/2026/sep/imeik/tips.png" />
+          <button class="tips-out" :style="{ width: '84rpx', height: '83rpx' }" hover-class="button-class" @tap="tipsClose" />
+        </view>
+      </view>
+    </view>
     <!--音乐按钮-->
     <view class="soundioc" :style="{ top: returnY + 'px' }">
       <image :class="audioPlay ? 'soundImg-play' : ''" :style="{ display: 'flex', width: returnSize + 'px', height: returnSize + 'px' }" :src="audioPlay ? 'https://wx.amo9.com/h5/2026/sep/imeik/audio/on.png' : 'https://wx.amo9.com/h5/2026/sep/imeik/audio/off.png'" @tap="bgSoundClick" />
@@ -151,6 +161,7 @@ export default {
       tipsClass: 'hidden',
       bgClass: 'bg-hidden',
       ruleShow: false,
+      tipsShow: false,
       returnY: 0,
       returnSize: 0,
       audioPlay: true,
@@ -166,11 +177,12 @@ export default {
       width: 750,
       height: 1334,
       canvasX: -4000,
-      tempFilePath: ''
+      tempFilePath: '',
+      mbtiToken: ''
     };
   },
   onLoad(options) {
-    console.log("v1.0.4");
+    console.log("v1.0.7");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -224,14 +236,37 @@ export default {
     startOpen() {
       // 与 demo.vue 一致
       if (this.isLogin && this.userInfo && this.userInfo.objectCode) {
-        // 已登录且用户信息已获取：直接开始答题
+        // 已登录且用户信息已获取：请求接口获取 token 后开始答题
         console.log('已授权，用户信息：', this.userInfo);
-        this.beginAnswer();
+        this.loginAndStart();
         return;
       }
       ls('returnUrl', '/pages-mbti/index');
       this._pendingStart = true;
       this.goLogin();
+    },
+    /**
+     * 调用登录接口，获取 token 保存，然后开始答题
+     */
+    loginAndStart() {
+      const u = this.userInfo;
+      const url = `https://h5.amo9.com/h5/2026/sept/imeik/login.do?openid=${encodeURIComponent(u.objectCode)}&nickname=${encodeURIComponent(u.nickName || '')}&headimg=${encodeURIComponent(u.headUrl || '')}`;
+      uni.request({
+        url: url,
+        method: 'GET',
+        success: (res) => {
+          console.log('login.do 返回：', res.data);
+          if (res.data && res.data.errcode === 1 && res.data.data && res.data.data.token) {
+            this.mbtiToken = res.data.data.token;
+            console.log('mbti token 已保存：', this.mbtiToken);
+          }
+          this.beginAnswer();
+        },
+        fail: (err) => {
+          console.error('login.do 请求失败：', err);
+          this.beginAnswer();
+        }
+      });
     },
     /**
      * 登录页授权完成后 redirectTo 回来，页面会重建（onLoad → onShow）
@@ -242,7 +277,7 @@ export default {
       // 如果 userInfo 已经有了，直接开始
       if (this.userInfo && this.userInfo.objectCode) {
         this._pendingStart = false;
-        this.beginAnswer();
+        this.loginAndStart();
         return;
       }
       // 监听 userInfo 变化（来自 Vuex mapState，getUserInfo action 填充后触发）
@@ -253,7 +288,7 @@ export default {
             unwatch();
             this._pendingStart = false;
             console.log('授权成功，用户信息：', newVal);
-            this.beginAnswer();
+            this.loginAndStart();
           }
         },
         { deep: true }
@@ -292,6 +327,11 @@ export default {
       if (this.answerID == 7) {
         imgID = '';
         const sList = [1, 2, 3];
+        const abc = ["a", "b", "c"];
+        let answers="";
+        for(let i=0;i<8;i++){
+          answers += abc[this.answer[i].select];
+        }
         let s = sList[this.answer[0].select] + sList[this.answer[1].select];
         console.log('第1个字母分数：' + s);
         if (s > 3) {
@@ -314,6 +354,16 @@ export default {
         } else imgID += 'o';
         console.log('imgID：' + imgID);
         console.log(imgData[imgID]);
+
+        // 异步上报答题结果，不阻塞后续逻辑
+        const openId = this.userInfo ? this.userInfo.objectCode : '';
+        const playUrl = `https://h5.amo9.com/h5/2026/sept/imeik/play.do?openid=${encodeURIComponent(openId)}&token=${encodeURIComponent(this.mbtiToken)}&answers=${encodeURIComponent(answers)}&result=${encodeURIComponent(imgID)}`;
+        uni.request({
+          url: playUrl,
+          method: 'GET',
+          success: (res) => { console.log('play.do 返回：', res.data); },
+          fail: (err) => { console.error('play.do 请求失败：', err); }
+        });
 
         this.answer[this.answerID].x = -750;
         console.log(this.userInfo);
@@ -343,7 +393,22 @@ export default {
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
     },
     storeOpen() {
-      this.report('立即咨询');
+      //this.report('立即咨询');
+      if (imgID === 'esux' || imgID === 'esuo') {
+        this.report('立即咨询跳转嗨体');
+        uni.navigateTo({ url: '/pages-partner/home/index?code=1663107655561707522' });
+      } else if (imgID === 'efuo') {
+        this.report('立即咨询冭活泡泡');
+        uni.navigateTo({ url: '/pages-partner/home/index?code=1663107764420673538' });
+      }else if (imgID === 'lsuo' || imgID === 'lfux' || imgID === 'lufo' || imgID === 'lfdx' || imgID === 'lsux') {
+        this.report('立即咨询敬请期待');p
+       this.tipsShow = true;
+      setTimeout(() => {
+        this.tipsClass = 'show';
+        this.bgClass = 'bg-show';
+      }, 200);
+      this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
+      }
     },
     resourceLoad() {
       console.log('resourceLoad');
@@ -464,6 +529,14 @@ export default {
       this.bgClass = 'bg-hidden';
       setTimeout(() => {
         this.ruleShow = false;
+      }, 500);
+      this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
+    },
+    tipsClose() {
+      this.tipsClass = 'hidden';
+      this.bgClass = 'bg-hidden';
+      setTimeout(() => {
+        this.tipsShow = false;
       }, 500);
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
     },
@@ -819,6 +892,12 @@ button::after {
   margin-top: 110rpx;
 }
 
+.tips {
+  display: flex;
+  position: relative;
+  flex-direction: column;/*竖版布局，如果要横版布局去掉，或者用flex-direction:row;*/
+  margin-top: 110rpx;
+}
 .rule-out {
   width: 95rpx;
   height: 95rpx;
@@ -828,6 +907,20 @@ button::after {
   margin: auto;
   background: rgba(255, 204, 51, 0);
   background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/rule/out.png);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 0;
+}
+
+.tips-out {
+  display: flex;
+  width: 82rpx;
+  height: 83rpx;
+  padding: 0;
+  margin: auto;
+  background: rgba(255, 204, 51, 0);
+  background-image: url(https://wx.amo9.com/h5/2026/sep/imeik/tips_out.png);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   border: none;
