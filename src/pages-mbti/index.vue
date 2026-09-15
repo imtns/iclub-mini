@@ -137,22 +137,22 @@ let resource = [];
 let texture = [];
 
 const imgData = {
-  efdo: { color: '#ffdfee', type: '0' },
-  efdx: { color: '#ffdfee', type: '0' },
-  efuo: { color: '#ffe0b8', type: '1' },
-  efux: { color: '#ffdfee', type: '0' },
-  esdo: { color: '#ffdfee', type: '0' },
-  esdx: { color: '#ffdfee', type: '0' },
-  esuo: { color: '#ffe0b8', type: '1' },
-  esux: { color: '#ffe0b8', type: '1' },
-  lfdo: { color: '#ffdfee', type: '0' },
-  lfdx: { color: '#ffdfee', type: '0' },
-  lfuo: { color: '#ffdfee', type: '0' },
-  lfux: { color: '#ffdfee', type: '0' },
-  lsdo: { color: '#ffdfee', type: '0' },
-  lsdx: { color: '#ffdfee', type: '0' },
-  lsuo: { color: '#ffdfee', type: '0' },
-  lsux: { color: '#ffdfee', type: '0' }
+  efdo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  efdx: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  efuo: { color: '#ffe0b8', type: '1' ,txt:'#ee7722' },
+  efux: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  esdo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  esdx: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  esuo: { color: '#ffe0b8', type: '1' ,txt:'#ee7722' },
+  esux: { color: '#ffe0b8', type: '1' ,txt:'#ee7722' },
+  lfdo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lfdx: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lfuo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lfux: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lsdo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lsdx: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lsuo: { color: '#ffdfee', type: '0' ,txt:'#f22d61' },
+  lsux: { color: '#ffdfee', type: '0' ,txt:'#f22d61' }
 };
 
 export default {
@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.0.9");
+    console.log("v1.1.3");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -241,6 +241,10 @@ export default {
         this.loginAndStart();
         return;
       }
+      //如果跳登录，需要关闭背景音乐，经测试部分设备跳登录成功时会播放2个背景音乐，原页面未关闭
+      if (this.audioPlay) { 
+      innerAudioContext.pause();
+      }
       ls('returnUrl', '/pages-mbti/index');
       this._pendingStart = true;
       this.goLogin();
@@ -249,6 +253,7 @@ export default {
      * 调用登录接口，获取 token 保存，然后开始答题
      */
     loginAndStart() {
+      this.beginAnswer();
       const u = this.userInfo;
       const url = `https://h5.amo9.com/h5/2026/sept/imeik/login.do?openid=${encodeURIComponent(u.objectCode)}&nickname=${encodeURIComponent(u.nickName || '')}&headimg=${encodeURIComponent(u.headUrl || '')}`;
       uni.request({
@@ -260,11 +265,9 @@ export default {
             this.mbtiToken = res.data.data.token;
             console.log('mbti token 已保存：', this.mbtiToken);
           }
-          this.beginAnswer();
         },
         fail: (err) => {
           console.error('login.do 请求失败：', err);
-          this.beginAnswer();
         }
       });
     },
@@ -356,6 +359,7 @@ export default {
         console.log(imgData[imgID]);
 
         // 异步上报答题结果，不阻塞后续逻辑
+        if(this.mbtiToken.length>0){
         const openId = this.userInfo ? this.userInfo.objectCode : '';
         const playUrl = `https://h5.amo9.com/h5/2026/sept/imeik/play.do?openid=${encodeURIComponent(openId)}&token=${encodeURIComponent(this.mbtiToken)}&answers=${encodeURIComponent(answers)}&result=${encodeURIComponent(imgID)}`;
         uni.request({
@@ -364,19 +368,19 @@ export default {
           success: (res) => { console.log('play.do 返回：', res.data); },
           fail: (err) => { console.error('play.do 请求失败：', err); }
         });
-
+       }
         this.answer[this.answerID].x = -750;
         console.log(this.userInfo);
         this.answerShow = false;
         this.canvasX = -4000;
         this.tempFilePath = '';
         this.imgShow = true;
-        this.imgUrl = 'https://wx.amo9.com/h5/2026/sep/imeik/img/' + imgID + '.png';
+        this.imgUrl = 'https://wx.amo9.com/h5/2026/sep/imeik/img/v5/' + imgID + '.png';
         this.bgColor = imgData[imgID].color;
         this.imgType = imgData[imgID].type;
 
         // 加载资源生成海报
-        resource = [{ name: 'bg', url: 'https://wx.amo9.com/h5/2026/sep/imeik/img/v3/_' + imgID + '.png' }];
+        resource = [{ name: 'bg', url: 'https://wx.amo9.com/h5/2026/sep/imeik/img/v5/_' + imgID + '.png' }];
         resource.push({ name: 'head', url: this.userInfo.headUrl });
         resourceI = -1;
         resourceL = resource.length;
@@ -387,8 +391,8 @@ export default {
           this.answer[this.answerID].x = -750;
           this.answerID++;
           this.answer[this.answerID].x = 0;
+          this.report("第"+this.answerID+"题点击"+'下一题');
         }
-        this.report("第"+this.answerID+"题点击"+'下一题');
       }
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
     },
@@ -440,9 +444,9 @@ export default {
       ctx2d.drawImage(texture['head'].obj, 0, 0, texture['head'].width, texture['head'].height, 41 * imgScale, 81 * imgScale, 66 * imgScale, 66 * imgScale);
       ctx2d.drawImage(texture['bg'].obj, 0, 0, texture['bg'].width, texture['bg'].height, 0, 0, 750 * imgScale, 1334 * imgScale);
       ctx2d.font = 32 * imgScale + 'px Arial';
-      ctx2d.fillStyle = '#f22d61';
+      ctx2d.fillStyle = imgData[imgID].txt;
       ctx2d.textAlign = 'left';
-      ctx2d.fillText('@美客+' + this.userInfo.nickName, 121 * imgScale, (97 + 32) * imgScale);
+      ctx2d.fillText(this.userInfo.nickName, 121 * imgScale, (97 + 32) * imgScale);
       setTimeout(() => {
         this.canvasToTempFilePath();
       }, 1000);
