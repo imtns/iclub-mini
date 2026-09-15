@@ -101,7 +101,7 @@
       <view class="tips-bg" :class="bgClass" />
       <view class="tips-ui" :class="tipsClass">
         <view class="tips">
-          <image :style="{ width: '536rpx', height: '349rpx' }" src="https://wx.amo9.com/h5/2026/sep/imeik/tips.png" />
+          <image :style="{ width: '536rpx', height: '349rpx' }" src="https://wx.amo9.com/h5/2026/sep/imeik/tips_bg.png" />
           <button class="tips-out" :style="{ width: '84rpx', height: '83rpx' }" hover-class="button-class" @tap="tipsClose" />
         </view>
       </view>
@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.0.7");
+    console.log("v1.0.9");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -401,13 +401,16 @@ export default {
         this.report('立即咨询冭活泡泡');
         uni.navigateTo({ url: '/pages-partner/home/index?code=1663107764420673538' });
       }else if (imgID === 'lsuo' || imgID === 'lfux' || imgID === 'lufo' || imgID === 'lfdx' || imgID === 'lsux') {
-        this.report('立即咨询敬请期待');p
+        this.report('立即咨询敬请期待');
        this.tipsShow = true;
       setTimeout(() => {
         this.tipsClass = 'show';
         this.bgClass = 'bg-show';
       }, 200);
       this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
+      }else{
+         this.report('立即咨询惟她');
+        uni.navigateTo({ url: '/pages-partner/home/index?code=1977936706365071363' });
       }
     },
     resourceLoad() {
