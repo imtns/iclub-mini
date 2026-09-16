@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.1.4");
+    console.log("v1.1.7");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -328,6 +328,7 @@ export default {
     },
     nextQuestion() {
       if (this.answerID == 7) {
+          if (this.answer[this.answerID].select > -1) {
         imgID = '';
         const sList = [1, 2, 3];
         const abc = ["a", "b", "c"];
@@ -386,6 +387,7 @@ export default {
         resourceL = resource.length;
         this.resourceLoad();
         this.report('生成结果');
+        }
       } else {
         if (this.answer[this.answerID].select > -1) {
           this.answer[this.answerID].x = -750;
@@ -446,7 +448,25 @@ export default {
       ctx2d.font = 32 * imgScale + 'px Arial';
       ctx2d.fillStyle = imgData[imgID].txt;
       ctx2d.textAlign = 'left';
-      ctx2d.fillText(this.userInfo.nickName, 121 * imgScale, (97 + 32) * imgScale);
+      const nickName = this.userInfo.nickName || '';
+      // 逐字符绘制，每次 save/restore 隔离状态，避免 emoji 导致后续汉字乱码
+      const startX = 121 * imgScale;
+      const textY = (97 + 32) * imgScale;
+      const fontSize = 32 * imgScale;
+      let curX = startX;
+      // 去掉不可见的变体选择符和零宽连接符，避免渲染异常
+      const cleanName = nickName.replace(/[\u{FE00}-\u{FE0F}\u{200D}\u{200B}-\u{200F}]/gu, '');
+      const chars = Array.from(cleanName);
+      for (let i = 0; i < chars.length; i++) {
+        ctx2d.save();
+        ctx2d.font = fontSize + 'px Arial';
+        ctx2d.fillStyle = imgData[imgID].txt;
+        ctx2d.textAlign = 'left';
+        ctx2d.textBaseline = 'alphabetic';
+        ctx2d.fillText(chars[i], curX, textY);
+        curX += ctx2d.measureText(chars[i]).width;
+        ctx2d.restore();
+      }
       setTimeout(() => {
         this.canvasToTempFilePath();
       }, 1000);
