@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.1.7");
+    console.log("v1.1.10");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -245,7 +245,7 @@ export default {
       if (this.audioPlay) { 
       innerAudioContext.pause();
       }
-      ls('returnUrl', '/pages-mbti/index');
+      //ls('returnUrl', '/pages-mbti/index');
       this._pendingStart = true;
       this.goLogin();
     },
@@ -451,7 +451,7 @@ export default {
       const nickName = this.userInfo.nickName || '';
       // 逐字符绘制，每次 save/restore 隔离状态，避免 emoji 导致后续汉字乱码
       const startX = 121 * imgScale;
-      const textY = (97 + 32) * imgScale;
+      const textY = (91 + 32) * imgScale;
       const fontSize = 32 * imgScale;
       let curX = startX;
       // 去掉不可见的变体选择符和零宽连接符，避免渲染异常
