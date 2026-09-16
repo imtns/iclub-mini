@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.1.10");
+    console.log("v1.1.11");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -242,9 +242,10 @@ export default {
         return;
       }
       //如果跳登录，需要关闭背景音乐，经测试部分设备跳登录成功时会播放2个背景音乐，原页面未关闭
+      /*
       if (this.audioPlay) { 
       innerAudioContext.pause();
-      }
+      }*/
       //ls('returnUrl', '/pages-mbti/index');
       this._pendingStart = true;
       this.goLogin();
