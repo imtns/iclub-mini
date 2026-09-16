@@ -182,7 +182,7 @@ export default {
     };
   },
   onLoad(options) {
-    console.log("v1.1.3");
+    console.log("v1.1.4");
     const that = this;
     innerAudioContext = wx.createInnerAudioContext();
     innerAudioContext.src = 'https://wx.amo9.com/h5/2026/sep/imeik/bg.mp3';
@@ -493,7 +493,7 @@ export default {
         this.answerID--;
         this.answer[this.answerID].x = 0;
         this.setAudioPlay('https://wx.amo9.com/h5/2026/sep/imeik/button.mp3');
-        this.report("第"+(this.answerID+1)+"题点击"+'上一题');
+        this.report("第"+(this.answerID+2)+"题点击"+'上一题');
       }
     },
     loadComplete() {
